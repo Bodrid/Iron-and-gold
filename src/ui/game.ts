@@ -12,6 +12,7 @@ import { DIPLO_REASON } from './tabs/diploText';
 import { LAW_BY_ID } from '../content/laws';
 import { TECH_BY_ID } from '../content/techs';
 import { GROUPS } from '../content/groups';
+import { COMPANY_BY_ID } from '../content/companies';
 import type { GameHost } from '../worker/host';
 import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
@@ -158,6 +159,21 @@ export class GameController {
       else if (e.type === 'revolt') pushToast({ kind: 'info', text: `Revolt in ${name(e.country)}: the ${GROUPS[e.group].name.toLowerCase()} have risen up.` });
       else if (e.type === 'revoltEnded' && e.country === me) pushToast({ kind: e.won ? 'war' : 'good', text: e.won ? 'The rebels won: their law is now yours, and their land comes back to you.' : 'The revolt is over and the land is yours again.' });
       else if (e.type === 'revoltEnded') continue;
+      else if (e.type === 'blocInvited' && e.to === me) {
+        const from = e.from;
+        const id = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} invites you into its power bloc.`, actions: [
+          { label: 'Join', run: () => { this.send({ type: 'respondBlocInvite', country: me, from, accept: true }); dismiss(); } },
+          { label: 'Refuse', run: () => { this.send({ type: 'respondBlocInvite', country: me, from, accept: false }); dismiss(); } },
+        ] });
+        const dismiss = () => { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); };
+      }
+      else if (e.type === 'blocJoined' && (e.country === me || e.leader === me)) pushToast({ kind: 'good', text: e.country === me ? `You joined ${name(e.leader)}’s power bloc.` : `${name(e.country)} joined your power bloc.` });
+      else if (e.type === 'blocRefused' && e.from === me) pushToast({ kind: 'info', text: `${name(e.to)} turned down your invitation.` });
+      else if (e.type === 'blocLeft' && (e.country === me || e.leader === me)) pushToast({ kind: 'info', text: e.country === me ? `You left ${name(e.leader)}’s power bloc.` : `${name(e.country)} left your power bloc.` });
+      else if (e.type === 'blocFounded') pushToast({ kind: e.leader === me ? 'good' : 'info', text: e.leader === me ? 'Your power bloc is founded. Invite members from their country panels.' : `${name(e.leader)} founded a power bloc.` });
+      else if (e.type === 'blocLeaderChanged' && ui.diplo.value?.bloc.mine && (e.from === ui.diplo.value.bloc.mine.leader || e.to === me)) pushToast({ kind: 'info', text: `${name(e.to)} now leads the power bloc.` });
+      else if (e.type === 'companyFounded' && e.country === me) pushToast({ kind: 'good', text: `${COMPANY_BY_ID[e.company]?.name ?? 'The company'} is founded.` });
+      else if (e.type === 'charterEnded' && e.country === me) pushToast({ kind: 'info', text: `${COMPANY_BY_ID[e.company]?.name ?? 'A company'} lost its investment charter: you have no puppets left.` });
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
       else if (e.type === 'playCancelled' && e.target === me && !country(e.initiator)?.alive) continue;
@@ -184,7 +200,7 @@ export class GameController {
     const a = keyAction(e);
     if (!a) return;
     e.preventDefault();
-    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabTrade: 'trade', tabDiplomacy: 'diplomacy', tabResearch: 'research', tabNation: 'nation' };
+    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabTrade: 'trade', tabDiplomacy: 'diplomacy', tabResearch: 'research', tabBloc: 'bloc', tabNation: 'nation' };
     if (a === 'pause') this.setSpeed(ui.speed.value === 0 ? 2 : 0);
     else if (a.startsWith('speed')) this.setSpeed(Number(a.slice(5)) as 1 | 2 | 3);
     else if (tabs[a]) ui.tab.value = ui.tab.value === tabs[a] ? null : tabs[a];

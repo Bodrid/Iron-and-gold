@@ -23,6 +23,7 @@ function view(over: Partial<PoliticsView['research']> = {}): PoliticsView {
     ] }],
     enacting: null,
     groups: [{ id: 'workers', clout: 0.2, approval: -7, radicalism: 80, wants: 'freeLabour' }, { id: 'landowners', clout: 0.5, approval: 6, radicalism: 0, wants: null }],
+    companies: { limit: 1, cost: 50_000, mine: [], available: [] },
   };
 }
 

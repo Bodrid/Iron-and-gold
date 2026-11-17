@@ -215,3 +215,9 @@ button.big small { font-weight: 400; font-size: 12px; opacity: 0.8; }
 .mood.good { background: rgba(127, 212, 143, 0.2); }
 .mood.warn { background: rgba(229, 181, 74, 0.2); color: var(--gold); }
 .mood.war { background: rgba(229, 83, 75, 0.25); color: #ffb3ae; }
+.principles { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.principles button { display: grid; gap: 2px; text-align: left; padding: 6px 10px; }
+.principles button small { color: var(--dim); font-size: 11px; }
+.principles button.on { background: rgba(229, 181, 74, 0.2); outline: 1px solid var(--gold); }
+.principles button:disabled { opacity: 0.45; }
+.seg { flex-wrap: wrap; }

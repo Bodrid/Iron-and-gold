@@ -1,3 +1,6 @@
+import { blocCountries, blocOf, foundCheck, inviteCheck } from '../sim/blocs';
+import { BALANCE } from '../sim/balance';
+import type { BlocView } from './protocol';
 import { LAW_BY_ID } from '../content/laws';
 // The player's diplomatic picture, for the Diplomacy tab.
 import { DEMAND_NAMES } from '../content/diplomacy';
@@ -20,6 +23,7 @@ export function demandLabel(state: GameState, d: Demand): string {
 export function diploView(state: GameState, me: CountryId): DiploView {
   const n = state.countries.length;
   return {
+    bloc: blocView(state, me),
     infamy: state.countries[me].infamy,
     capacity: { used: state.diploActions.filter(a => a.from === me).length, total: diploCapacity(state, me) },
     relations: Array.from({ length: n }, (_, i) => (i === me || !i ? 0 : relation(state, me, i))),
@@ -59,5 +63,20 @@ export function countryDetail(state: GameState, me: CountryId, id: CountryId): C
     play: playCheck(state, { type: 'startPlay', country: me, target: id, demands: [{ kind: 'reparations' }] }),
     states: state.states.filter(s => s.id && s.owner === id).map(s => ({ id: s.id, name: state.map.states[s.id].name, population: Math.round(s.population) })).sort((a, b) => b.population - a.population),
     privateers: relation(state, me, id) <= -50 ? null : 'needsHostile',
+    invite: state.blocs.some(b => b.leader === me) ? inviteCheck(state, me, id) : undefined,
+    askJoin: state.blocs.some(b => b.leader === id) ? (blocOf(state, me) ? 'inBloc' : state.countries[me].overlord ? 'puppet' : null) : undefined,
+    theirBloc: (() => { const b = blocOf(state, id); return b ? { leader: b.leader, type: b.type } : null; })(),
+  };
+}
+
+export function blocView(state: GameState, me: CountryId): BlocView {
+  const b = blocOf(state, me);
+  return {
+    mine: b ? { leader: b.leader, type: b.type, principles: [...b.principles], members: [...b.members], puppets: blocCountries(state, b).filter(c => c !== b.leader && !b.members.includes(c)),
+      isLeader: b.leader === me, canSetPrinciples: b.leader === me && state.tick - b.principlesSet >= 365 * TICKS_PER_DAY } : null,
+    found: foundCheck(state, me, 'tradeLeague', []),
+    cost: BALANCE.blocs.FOUND_COST,
+    all: state.blocs.map(x => ({ leader: x.leader, type: x.type, members: blocCountries(state, x).length })),
+    invites: state.blocOffers.filter(o => o.to === me).map(o => o.from),
   };
 }

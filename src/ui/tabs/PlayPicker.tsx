@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { DEMAND_INFAMY, DEMAND_NAMES } from '../../content/diplomacy';
 import type { Demand } from '../../sim/types';
 import type { CountryDetail } from '../../worker/protocol';
-import { fmtNum } from '../store';
+import { fmtNum, ui } from '../store';
 import type { Send } from './common';
 import { DIPLO_REASON } from './diploText';
 
@@ -27,6 +27,7 @@ export function PlayPicker({ me, targetName, detail, send, onDone }: { me: numbe
         {option({ kind: 'puppet' }, DEMAND_NAMES.puppet)}
         {option({ kind: 'openMarket' }, DEMAND_NAMES.openMarket)}
         {option({ kind: 'reparations' }, DEMAND_NAMES.reparations)}
+        {ui.diplo.value?.bloc.mine?.isLeader && !detail.theirBloc && option({ kind: 'joinBloc' }, DEMAND_NAMES.joinBloc)}
       </div>
       <p class="hint">Infamy +{Math.round(infamy / 2)} when the play starts, +{infamy} more if you win.</p>
       <div class="row">

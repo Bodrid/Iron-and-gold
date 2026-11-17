@@ -1,3 +1,5 @@
+import type { BlocType, PrincipleId } from '../content/blocs';
+import type { CharterKind } from '../content/companies';
 import type { GroupId } from '../content/groups';
 import type { LawArea } from '../content/laws';
 // Messages between the main thread and the simulation worker.
@@ -42,6 +44,7 @@ export interface FleetView {
 export const SHIP_STRIDE = 5;
 
 export interface DiploView {
+  bloc: BlocView;
   infamy: number; capacity: { used: number; total: number };
   relations: number[];                                   // by country id, player's row
   actions: { to: CountryId; kind: 'improve' | 'worsen' }[];
@@ -58,6 +61,21 @@ export interface DiploView {
 export interface CountryDetail {
   id: CountryId; treaty: Record<TreatyKind, string | null>; play: string | null; states: { id: number; name: string; population: number }[];
   privateers: string | null;
+  /** Why the player can't invite them into the player's bloc / ask to join theirs (null = can; undefined = not applicable). */
+  invite?: string | null; askJoin?: string | null; theirBloc?: { leader: CountryId; type: BlocType } | null;
+}
+
+export interface BlocView {
+  mine: { leader: CountryId; type: BlocType; principles: PrincipleId[]; members: CountryId[]; puppets: CountryId[]; isLeader: boolean; canSetPrinciples: boolean } | null;
+  /** Why the player can't found a bloc (null = can). */ found: string | null;
+  cost: number;
+  all: { leader: CountryId; type: BlocType; members: number }[];
+  invites: CountryId[];
+}
+export interface CompanyView {
+  limit: number; cost: number;
+  mine: { id: string; bonus: number; charter: CharterKind | null; charters: Record<CharterKind, string | null> }[];
+  available: { id: string; check: string | null }[];
 }
 
 export interface ReadyMsg {
@@ -108,4 +126,5 @@ export interface PoliticsView {
   laws: { area: LawArea; current: string; options: { id: string; support: number; chance: number; check: string | null }[] }[];
   enacting: { law: string; months: number; support: number; chance: number; minMonths: number; maxMonths: number } | null;
   groups: { id: GroupId; clout: number; approval: number; radicalism: number; wants: string | null }[];
+  companies: CompanyView;
 }

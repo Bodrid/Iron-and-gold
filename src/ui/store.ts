@@ -3,7 +3,7 @@ import { signal } from '@preact/signals';
 import type { CountryDetail, CountrySummary, DiploView, FleetView, PoliticsView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
 import type { ScoreRow } from '../sim/victory';
 
-export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'research' | 'nation';
+export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'research' | 'nation' | 'bloc';
 export type Screen = 'menu' | 'newGame' | 'loading' | 'game';
 export interface Toast { id: number; text: string; kind: 'info' | 'war' | 'peace' | 'good'; actions?: { label: string; run: () => void }[]; sticky?: boolean }
 

@@ -1,7 +1,7 @@
-export type KeyAction = 'pause' | 'speed1' | 'speed2' | 'speed3' | 'tabBuild' | 'tabArmy' | 'tabTrade' | 'tabDiplomacy' | 'tabResearch' | 'tabNation' | 'close' | 'panUp' | 'panDown' | 'panLeft' | 'panRight';
+export type KeyAction = 'pause' | 'speed1' | 'speed2' | 'speed3' | 'tabBuild' | 'tabArmy' | 'tabTrade' | 'tabDiplomacy' | 'tabResearch' | 'tabBloc' | 'tabNation' | 'close' | 'panUp' | 'panDown' | 'panLeft' | 'panRight';
 
 const MAP: Record<string, KeyAction> = {
-  ' ': 'pause', '1': 'speed1', '2': 'speed2', '3': 'speed3', b: 'tabBuild', a: 'tabArmy', t: 'tabTrade', d: 'tabDiplomacy', r: 'tabResearch', n: 'tabNation', escape: 'close',
+  ' ': 'pause', '1': 'speed1', '2': 'speed2', '3': 'speed3', b: 'tabBuild', a: 'tabArmy', t: 'tabTrade', d: 'tabDiplomacy', r: 'tabResearch', p: 'tabBloc', n: 'tabNation', escape: 'close',
   w: 'panUp', s: 'panDown', arrowup: 'panUp', arrowdown: 'panDown', arrowleft: 'panLeft', arrowright: 'panRight',
 };
 

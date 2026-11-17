@@ -5,6 +5,8 @@ import { defaultSend, type Send } from './common';
 import { DIPLO_REASON, TREATY_NAMES, relationText } from './diploText';
 import { PeaceDeal } from './PeaceDeal';
 import { PlayPicker } from './PlayPicker';
+import { BlocSection } from './BlocSection';
+import { BLOC_TYPES } from '../../content/blocs';
 import type { TreatyKind } from '../../sim/types';
 
 // Tell the worker which country the panel shows, so it can send what we may do with it.
@@ -35,6 +37,7 @@ function Overview({ send }: { send: Send }) {
   const list = ui.countries.value.filter(c => c.alive && !c.isPlayer).sort((a, b) => b.gdp - a.gdp);
   return (
     <div class="diplo">
+      {ui.layout.value !== 'dock' && <BlocSection send={send} />}
       <div class="kv">
         <div><small>Infamy</small><b class={d.infamy >= 25 ? 'warn' : ''}>{Math.round(d.infamy)}</b></div>
         <div><small>Diplomats</small><b>{d.capacity.used} of {d.capacity.total}</b></div>
@@ -144,6 +147,16 @@ function CountryPanel({ send }: { send: Send }) {
           {det.treaty[k] && <small>{reason(det.treaty[k])}</small>}
         </div>
       ))}
+      {det && (det.invite !== undefined || det.askJoin !== undefined || det.theirBloc) && <h3>Power bloc</h3>}
+      {det?.theirBloc && <p class="hint">{det.theirBloc.leader === id ? `They lead a ${BLOC_TYPES[det.theirBloc.type].name}.` : `Member of ${country(det.theirBloc.leader)?.name ?? '…'}’s ${BLOC_TYPES[det.theirBloc.type].name}.`}</p>}
+      {det && det.invite !== undefined && <div class="row">
+        <button disabled={!!det.invite} onClick={() => send({ type: 'inviteToBloc', country: me, target: id })}>Invite to our bloc</button>
+        {det.invite && <small>{reason(det.invite)}</small>}
+      </div>}
+      {det && det.askJoin !== undefined && <div class="row">
+        <button disabled={!!det.askJoin} onClick={() => send({ type: 'askToJoinBloc', country: me, leader: id })}>Ask to join their bloc</button>
+        {det.askJoin && <small>{reason(det.askJoin)}</small>}
+      </div>}
       <h3>Demands</h3>
       {det && <div class="row">
         <button class="war" disabled={!!det.play} onClick={() => (ui.diploScreen.value = { kind: 'play', target: id })}>Start a diplomatic play…</button>

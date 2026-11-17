@@ -5,6 +5,8 @@ import { DiplomacyTab } from './DiplomacyTab';
 import { NationTab } from './NationTab';
 import { ResearchTab } from './ResearchTab';
 import { PoliticsSection } from './PoliticsSection';
+import { BlocSection } from './BlocSection';
+import { CompaniesSection } from './CompaniesSection';
 import { TradeTab } from './TradeTab';
 import { backToMenu } from '../screens/ScoreScreen';
 import { session } from '../game';
@@ -16,7 +18,8 @@ export function TabContent({ tab }: { tab: Tab }) {
   if (tab === 'trade') return <TradeTab />;
   if (tab === 'diplomacy') return <DiplomacyTab />;
   if (tab === 'research') return <ResearchTab />;
-  return <NationTab extra={<><PoliticsSection /><SaveRow /></>} />;
+  if (tab === 'bloc') return <BlocSection />;
+  return <NationTab extra={<><PoliticsSection /><CompaniesSection /><SaveRow /></>} />;
 }
 
 function SaveRow() {
