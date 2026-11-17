@@ -20,5 +20,6 @@ import './diplomacy/privateers';
 import './revolts';
 import './blocs';
 import './companies';
+import './events';
 import './ai/ai';
 import './victory';

@@ -13,7 +13,7 @@ export function makeCountry(id: number, def: CountryDef, capitalState: number, i
     id, tag: def.tag, name: def.name, color: def.color, alive: id !== 0, isPlayer, capitalState, difficulty,
     personality: def.personality ?? 'default', troops: 0, maxTroops: 0, money: def.money,
     stockpile: emptyGoods(), prices: { ...BASE_PRICE }, produced: emptyGoods(), demanded: emptyGoods(),
-    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, researchRate: 0, techs: [], researching: null, researchQueue: [], laws: { ...DEFAULT_LAWS }, enacting: null, groups: emptyGroups(), lastDefeat: 0, companies: [], tradeIncome: 0, infamy: 0, overlord: 0, puppetSince: 0, tiles: 0, controlled: 0, population: 0, history: [],
+    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, researchRate: 0, techs: [], researching: null, researchQueue: [], laws: { ...DEFAULT_LAWS }, enacting: null, groups: emptyGroups(), lastDefeat: 0, companies: [], flags: [], modifiers: [], tradeIncome: 0, infamy: 0, overlord: 0, puppetSince: 0, tiles: 0, controlled: 0, population: 0, history: [],
   };
 }
 

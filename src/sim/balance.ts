@@ -175,6 +175,14 @@ export const BALANCE = {
     INVESTMENT_TRIBUTE: 0.05,
     INVESTMENT_RELATION: -10,
   },
+  events: {
+    /** The player has at most this many event cards open; more wait. */
+    MAX_OPEN_CARDS: 2,
+    /** Days before an unanswered card takes its first option. */
+    CARD_DAYS: 30,
+    /** Floor for "months of income" effects, so broke countries still pay or gain something. */
+    MIN_MONTHLY_INCOME: 1000,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,
