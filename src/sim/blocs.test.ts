@@ -130,3 +130,20 @@ it('imperial tribute moves money from members to the leader', () => {
   runDays(g, 35); runDays(h, 35);
   expect(g.countries[1].money).toBeGreaterThan(h.countries[1].money);
 });
+
+// ---- Task 3: the joinBloc demand ----
+it('a play can force a country into your bloc; stale or invalid demands are refused or skipped', async () => {
+  const { playCheck } = await import('./diplomacy/plays');
+  const { applyDemands } = await import('./diplomacy/demands');
+  const g = world();
+  const demand = [{ kind: 'joinBloc' as const }];
+  expect(playCheck(g, { type: 'startPlay', country: 1, target: 2, demands: demand })).toBe('noBloc');
+  found(g);
+  expect(playCheck(g, { type: 'startPlay', country: 1, target: 2, demands: demand })).toBeNull();
+  const done = applyDemands(g, 1, 2, demand, [], []);
+  expect(done).toEqual(demand);
+  expect(blocOf(g, 2)?.leader).toBe(1);
+  // Already in a bloc: refused for plays, skipped in peace terms.
+  expect(playCheck(g, { type: 'startPlay', country: 1, target: 2, demands: demand })).toBe('targetInBloc');
+  expect(applyDemands(g, 1, 2, demand, [], [])).toEqual([]);
+});

@@ -5,7 +5,7 @@ import { TICKS_PER_DAY } from '../calendar';
 import { handlers, systems } from '../registry';
 import { atWar, startWar } from '../war';
 import type { Command, CountryId, Demand, GameState, Play, SimEvent } from '../types';
-import { applyDemands } from './demands';
+import { applyDemands, demandHooks } from './demands';
 import { addInfamy, coalitionDefenders } from './infamy';
 import { hasTreaty } from './treaties';
 
@@ -37,7 +37,8 @@ export function playCheck(state: GameState, cmd: Extract<Command, { type: 'start
   if (!Array.isArray(cmd.demands) || !cmd.demands.length || cmd.demands.length > D.MAX_DEMANDS) return 'badDemands';
   for (const d of cmd.demands) {
     if (d.kind === 'state' && state.states[d.state]?.owner !== cmd.target) return 'notTheirState';
-    if (!['state', 'puppet', 'openMarket', 'reparations'].includes(d.kind)) return 'badDemands';
+    if (!['state', 'puppet', 'openMarket', 'reparations', 'joinBloc'].includes(d.kind)) return 'badDemands';
+    if (d.kind === 'joinBloc') { const bad = demandHooks.joinBlocCheck(state, cmd.country, cmd.target); if (bad) return bad; }
   }
   return null;
 }

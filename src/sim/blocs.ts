@@ -7,6 +7,7 @@ import { effectSources } from './mods';
 import { handlers, systems } from './registry';
 import { atWar } from './war';
 import { joinerHooks } from './diplomacy/plays';
+import { demandHooks } from './diplomacy/demands';
 import { changeRelation, relation, relationPairHooks } from './diplomacy/relations';
 import { tradeHooks } from './naval/trade';
 import { computeScores } from './victory';
@@ -136,6 +137,14 @@ export function blocMonth(state: GameState): void {
     }
   }
 }
+
+// The joinBloc demand: the initiator must lead a bloc, the target must be free to join.
+demandHooks.joinBlocCheck = (state, initiator, target) => {
+  if (!state.blocs.some(b => b.leader === initiator)) return 'noBloc';
+  if (blocOf(state, target)) return 'targetInBloc';
+  return null;
+};
+demandHooks.joinBloc = (state, leader, c, events) => addToBloc(state, leader, c, events);
 
 // ---- wiring ----
 effectSources.push({

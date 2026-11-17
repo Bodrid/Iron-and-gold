@@ -17,6 +17,12 @@ export const subjectHooks = {
   makePuppet: (state: GameState, overlord: CountryId, puppet: CountryId, _events: SimEvent[]) => { state.countries[puppet].overlord = overlord; },
 };
 
+/** Power blocs plug in here (blocs.ts), so this module doesn't import them. */
+export const demandHooks = {
+  joinBlocCheck: (_s: GameState, _initiator: CountryId, _target: CountryId): string | null => 'noBloc',
+  joinBloc: (_s: GameState, _leader: CountryId, _c: CountryId, _e: SimEvent[]): boolean => false,
+};
+
 /** Applies what still makes sense; returns the demands actually applied. Stale ones (state no longer theirs…) are skipped. */
 export function applyDemands(state: GameState, winner: CountryId, loser: CountryId, demands: Demand[], events: SimEvent[], changed: number[]): Demand[] {
   const done: Demand[] = [];
@@ -32,6 +38,8 @@ export function applyDemands(state: GameState, winner: CountryId, loser: Country
     } else if (d.kind === 'openMarket') {
       if (hasTreaty(state, winner, loser, 'tradeAgreement')) continue;
       sign(state, winner, loser, 'tradeAgreement', events);
+    } else if (d.kind === 'joinBloc') {
+      if (!demandHooks.joinBloc(state, winner, loser, events)) continue;
     } else if (d.kind === 'law') {
       if (Object.values(state.countries[loser].laws).includes(d.law)) continue;
       setLaw(state.countries[loser], d.law);

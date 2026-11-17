@@ -51,7 +51,7 @@ export interface Building { type: BuildingType; level: number; tile: number }
 export interface StateRuntime { id: number; owner: CountryId; controller: CountryId; population: number; buildings: Building[] }
 export interface Construction { id: number; country: CountryId; state: number; type: BuildingType; doneTick: number }
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
-export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' } | { kind: 'law'; law: string };
+export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' } | { kind: 'law'; law: string } | { kind: 'joinBloc' };
 /** a/b are the side leaders (the play's initiator and target). casualties[0] is side A's, [1] side B's. */
 export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number];
   /** Refused peace proposals (the AI waits before proposing again). */ refusals?: { from: CountryId; tick: number }[] }
