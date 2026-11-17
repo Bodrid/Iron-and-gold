@@ -102,6 +102,10 @@ export const BALANCE = {
     LOSS_RATE: 0.6,
     /** Damage taken by the winner, per unit of the loser's strength relative to the winner's. */
     WINNER_DAMAGE: 0.25,
+    /** Troops a one-off boat carries when the country has no free transport. */
+    BOAT_TROOPS_MAX: 5000,
+    /** How far (in navigation cells) troops look for another beach if theirs is lost. */
+    REROUTE_CELLS: 10,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

@@ -50,6 +50,7 @@ export interface Ship {
   id: number; owner: CountryId; kind: ShipKind; cell: number;
   /** Lane endpoints; the lane itself comes from the sea-lane cache. */ fromCell: number; toCell: number;
   pathPos: number; dir: 1 | -1; order: ShipOrder; hp: number; routeId?: number; troops?: number;
+  /** A one-off boat for an invasion, removed when its job is done. */ temp?: boolean;
 }
 export interface ShipBuild { id: number; country: CountryId; state: number; kind: ShipKind; doneTick: number }
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number }
@@ -89,7 +90,8 @@ export type Command =
   | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
   | { type: 'setTradeAuto'; country: CountryId; on: boolean }
   | { type: 'buildShip'; country: CountryId; state: number; kind: 'warship' | 'transport' }
-  | { type: 'orderShip'; country: CountryId; shipId: number; order: ShipOrder };
+  | { type: 'orderShip'; country: CountryId; shipId: number; order: ShipOrder }
+  | { type: 'navalInvasion'; country: CountryId; target: CountryId; tile: number; ratio: number };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
