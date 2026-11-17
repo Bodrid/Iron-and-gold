@@ -117,7 +117,7 @@ export function aiAcceptsPeace(state: GameState, ai: CountryId, from: CountryId)
 
 // ---- wiring ----
 peacePolicy.accepts = aiAcceptsPeace;
-const gm = (c: Country) => !c.isPlayer && DIFFICULTIES[c.difficulty].bonuses;
+const gm = (c: Country) => (c.isPlayer ? null : DIFFICULTIES[c.difficulty].bonuses);
 refillBonusHooks.push((_s, c) => gm(c)?.troopRefillPct ?? 0);
 buildCostHooks.push((_s, c) => 1 + (gm(c)?.buildCostPct ?? 0) / 100);
 researchHooks.push((_s, c) => 1 + (gm(c)?.researchPct ?? 0) / 100);
