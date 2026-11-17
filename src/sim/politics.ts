@@ -51,7 +51,8 @@ export function computeClout(c: Country, w: Workforce | undefined): Record<Group
   const agri = (w?.agri ?? 0) / emp, ind = (w?.industry ?? 0) / emp;
   const laws = c.laws;
   const raw: Record<GroupId, number> = {
-    landowners: 1 + 4 * agri + (laws.labour === 'serfdom' || laws.labour === 'slavery' ? 1 : 0),
+    // Landowners lose ground as the country industrialises and learns to read.
+    landowners: (1 + 4 * agri + (laws.labour === 'serfdom' || laws.labour === 'slavery' ? 1 : 0)) * Math.max(0.3, 1.3 - c.literacy),
     industrialists: 0.2 + 4 * ind,
     workers: 0.2 + 3 * ind + (laws.voting === 'universalSuffrage' ? 0.5 : 0),
     clergy: Math.max(0.2, 1.2 - c.literacy) + (laws.education === 'religiousSchools' ? 0.3 : 0),

@@ -30,7 +30,9 @@ it('an Easy AI gives a rising group the law it wants before it revolts', () => {
   c.isPlayer = false;
   c.laws = { ...c.laws, labour: 'serfdom' };
   for (const st of g.states) if (st.owner === 1) addLevel(g, st.id, 'textileMill', 6);
-  c.groups.workers.clout = 0.3; c.groups.workers.radicalism = 80;
+  const clout = { landowners: 0.1, industrialists: 0.3, workers: 0.3, clergy: 0.1, army: 0.1, intellectuals: 0.1 };
+  for (const [k, v] of Object.entries(clout)) c.groups[k as keyof typeof clout].clout = v;
+  c.groups.workers.radicalism = 80;
   expect(chooseLaw(g, c)).toBe('freeLabour');
 });
 

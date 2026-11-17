@@ -20,7 +20,8 @@ export interface StartDef { id: string; name: string; startDate: GameDate; endYe
   /** Every tech up to this era is known at the start (default: the era before the start year's). */ knownEra?: number;
   /** Extra known techs by country tag. */ extraTechs?: Record<string, string[]>;
   /** Starting laws by country tag (the rest are the defaults). */ laws?: Record<string, Partial<Record<LawArea, string>>>;
-  /** Starting literacy by tag, and for everyone else. */ literacy?: Record<string, number>; defaultLiteracy?: number }
+  /** Starting literacy by tag, and for everyone else. */ literacy?: Record<string, number>; defaultLiteracy?: number;
+  /** Treaties in force at the start (e.g. the German Confederation's guarantees); `a` proposed or guarantees. */ treaties?: { kind: TreatyKind; a: string; b: string }[] }
 export interface GameSetup { startId: string; playerTag: string; difficulty: Difficulty; rivalsHarder: boolean; seed: number; /** Tests/tools: AI countries do nothing. */ aiDisabled?: boolean }
 
 export interface StatSample { tick: number; gdp: number; population: number; sol: number; tiles: number; money: number }

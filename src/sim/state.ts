@@ -119,6 +119,12 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     if (!c.tiles) c.alive = false;
   }
   if (start.seedEconomy !== false) seedEconomy(state);
+  // Treaties already in force (signed before relations are first set, so they count toward them).
+  for (const t of start.treaties ?? []) {
+    const a = tagToId.get(t.a), b = tagToId.get(t.b);
+    if (!a || !b) throw new Error(`Unknown tag in starting treaty ${t.a}-${t.b} in start ${start.id}`);
+    state.treaties.push({ id: state.nextId++, kind: t.kind, a, b, since: 0 });
+  }
   for (const s of systems.init) s(state, [], []);
   return state;
 }
