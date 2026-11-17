@@ -3,6 +3,7 @@ import type { MapData } from '../map/format';
 import { DIFFICULTIES } from '../sim/ai/difficulty';
 import { dateAtTick, formatDate } from '../sim/calendar';
 import { rebuildControl } from '../sim/control';
+import { getNavGrid } from '../sim/naval/nav';
 import type { GameState } from '../sim/types';
 
 export type SaveSlot = 'auto' | 'background' | '1' | '2' | '3';
@@ -52,6 +53,7 @@ export function serialize(state: GameState, slot: SaveSlot = '1'): SavedGame {
 export function deserialize(saved: SavedGame, map: MapData): GameState {
   const state = { ...structuredClone(saved.state), map } as GameState;
   rebuildControl(state);
+  getNavGrid(map);
   return state;
 }
 

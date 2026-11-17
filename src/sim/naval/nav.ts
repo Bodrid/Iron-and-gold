@@ -3,7 +3,7 @@ import { COAST_BIT, Terrain, TERRAIN_MASK, type MapData } from '../../map/format
 import { getStateTiles } from '../../map/stateTiles';
 import { Heap } from '../heap';
 
-export const NAV_CELL = 4;
+export const NAV_CELL = 8;
 const MIN_SEA_TILES = 4;
 
 export interface NavGrid { w: number; h: number; sea: Uint8Array; region: Int32Array /* sea body id per cell, 0 = not navigable */ }
@@ -99,6 +99,11 @@ export function portCell(map: MapData, stateId: number): number {
   return best;
 }
 
+/** True if this lane is already known (no search needed). */
+export function seaPathKnown(map: MapData, from: number, to: number): boolean {
+  return paths.get(map)?.has(`${from},${to}`) ?? false;
+}
+
 /** Shortest sea lane between two navigable cells (8 directions), or null if they are on different seas. Cached. */
 export function seaPath(map: MapData, from: number, to: number): Int32Array | null {
   const g = getNavGrid(map);
@@ -114,7 +119,8 @@ export function seaPath(map: MapData, from: number, to: number): Int32Array | nu
   const hdist = (c: number) => { const dx = Math.abs((c % g.w) - tx), dy = Math.abs(Math.floor(c / g.w) - ty); return 10 * Math.max(dx, dy) + 4 * Math.min(dx, dy); };
   const open = new Heap();
   cost[from] = 0;
-  open.push(hdist(from), from);
+  // A slightly greedy heuristic (×1.5) explores far fewer cells; lanes stay within a few percent of shortest.
+  open.push(hdist(from) * 1.5, from);
   const reg = g.region[from];
   let found = false;
   while (open.size) {
@@ -132,7 +138,7 @@ export function seaPath(map: MapData, from: number, to: number): Int32Array | nu
       if (cost[nc] >= 0 && cost[nc] <= nd) continue;
       cost[nc] = nd;
       prev[nc] = c;
-      open.push(nd + hdist(nc), nc);
+      open.push(nd + hdist(nc) * 1.5, nc);
     }
   }
   let out: Int32Array | null = null;

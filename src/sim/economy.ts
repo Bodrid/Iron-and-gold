@@ -209,6 +209,13 @@ export function seedEconomy(state: GameState): void {
       if (st.population >= E.START_MINE_MIN_POP && sd.resources.coal) put('coalMine', 1);
       if (st.population >= E.START_MINE_MIN_POP && sd.resources.iron) put('ironMine', 1);
     }
+    // A port in the most populous coastal state: every coastal country traded by sea in 1836.
+    let portState = 0;
+    for (const s of statesOwnedBy(state, c.id)) {
+      if (state.states[s].owner !== c.id || !state.map.states[s].coastal) continue;
+      if (!portState || state.states[s].population > state.states[portState].population) portState = s;
+    }
+    if (portState) addLevel(state, portState, 'port', c.population >= E.START_BIG_PORT_POP ? 2 : 1);
     const cap = c.capitalState;
     if (state.states[cap]?.owner === c.id) {
       addLevel(state, cap, 'barracks', 1);

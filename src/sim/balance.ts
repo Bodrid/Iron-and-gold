@@ -70,6 +70,7 @@ export const BALANCE = {
     START_LOGGING_SHARE: 0.05,
     START_MINE_MIN_POP: 300_000,
     START_UNIVERSITY_MIN_POP: 5_000_000,
+    START_BIG_PORT_POP: 20_000_000,
   },
   growth: {
     /** Monthly population growth at SoL 10. */
@@ -82,6 +83,19 @@ export const BALANCE = {
     /** Output bonus per point of literacy (1.0 = +100% at full literacy). */
     LITERACY_OUTPUT: 1,
     RESEARCH_PER_LEVEL: 5,
+  },
+  trade: {
+    /** Months of demand an exporter keeps before selling the rest. */
+    EXPORT_KEEP_MONTHS: 2,
+    MAX_ROUTE_AMOUNT: 400,
+    /** Share of the goods' value the exporter earns. */
+    EXPORT_EARN: 0.7,
+    /** Customs income for the importer, as a share of the goods' value. */
+    IMPORT_EARN: 0.1,
+    IDLE_END_MONTHS: 3,
+    /** Importers considered per new route (closest shortages first). */
+    CANDIDATES: 5,
+    PATH_SEARCHES_PER_MONTH: 2,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

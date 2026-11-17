@@ -23,6 +23,7 @@ export interface Country {
   /** Last month's production and demand per good (for prices and the UI). */
   produced: Record<Good, number>; demanded: Record<Good, number>;
   gdp: number; income: number; sol: number; literacy: number; researchPoints: number;
+  /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Owned tiles. */ tiles: number;
   /** Controlled tiles (owned and not occupied, plus occupied enemy tiles). */ controlled: number;
   population: number; history: StatSample[];
@@ -33,6 +34,10 @@ export interface StateRuntime { id: number; owner: CountryId; controller: Countr
 export interface Construction { id: number; country: CountryId; state: number; type: BuildingType; doneTick: number }
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
 export interface War { id: number; a: CountryId; b: CountryId; startTick: number; casualties: [number, number] }
+export interface TradeRoute {
+  id: number; exporter: CountryId; importer: CountryId; fromState: number; toState: number; good: Good; amount: number;
+  createdTick: number; idleMonths: number; /** Set when its trade ship was captured; that month's cargo is lost. */ captured: boolean;
+}
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
@@ -52,6 +57,8 @@ export interface GameState {
   attacks: Attack[];
   wars: War[];
   peaceOffers: PeaceOffer[];
+  tradeRoutes: TradeRoute[];
+  /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
   outcome: Outcome;
 }
@@ -62,7 +69,9 @@ export type Command =
   | { type: 'build'; country: CountryId; state: number; building: BuildingType }
   | { type: 'declareWar'; country: CountryId; target: CountryId }
   | { type: 'offerPeace'; country: CountryId; target: CountryId }
-  | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean };
+  | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean }
+  | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
+  | { type: 'setTradeAuto'; country: CountryId; on: boolean };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
