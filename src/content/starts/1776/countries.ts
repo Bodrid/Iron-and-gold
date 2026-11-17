@@ -1,0 +1,76 @@
+import type { CountryDef } from '../../../sim/types';
+
+// [tag, name, colour, capital state key, population (millions, used where no territory total applies), personality]
+type Row = [string, string, number, string, number, string?];
+
+const ROWS: Row[] = [
+  // Great powers
+  ['GBR', 'Great Britain', 0xc23b3b, 'GBR-South East', 12, 'britain'],
+  ['FRA', 'France', 0x3a5fcd, 'FRA-Île-de-France', 27, 'france'],
+  ['SPA', 'Spain', 0xe0b23a, 'ESP-Castilla-La Mancha', 10],
+  ['AUS', 'Austria', 0xe6d68a, 'AUT-Niederösterreich', 20, 'austria'],
+  ['PRU', 'Prussia', 0x3d4250, 'DEU-Brandenburg', 5.5, 'prussia'],
+  ['RUS', 'Russia', 0x3f8a50, 'RUS-Leningrad', 28, 'russia'],
+  ['TUR', 'Ottoman Empire', 0x2f9c95, 'TUR-Balikesir', 24, 'ottoman'],
+  ['CHI', 'Qing China', 0xd9a441, 'CHN-Hebei', 290, 'qing'],
+  ['JAP', 'Japan', 0xc75b7a, 'JPN-Chubu', 26, 'japan'],
+  // Europe
+  ['POR', 'Portugal', 0x2e8b57, 'PRT-Santarém', 3],
+  ['NET', 'Dutch Republic', 0xf08a24, 'NLD-Gelderland', 2],
+  ['POL', 'Poland-Lithuania', 0xc9506f, 'POL-Masovian', 9],
+  ['SWE', 'Sweden', 0x2f6fb5, 'SWE-Stockholm', 2.6],
+  ['DEN', 'Denmark-Norway', 0xd65a5a, 'DNK-Sjaælland', 1.7],
+  ['SWI', 'Switzerland', 0x30a630, 'CHE-Bern', 1.6],
+  ['SAR', 'Sardinia-Piedmont', 0x7aa0d8, 'ITA-Piemonte', 3],
+  ['VEN', 'Venice', 0x2c7f7f, 'ITA-Veneto', 1.5],
+  ['PAP', 'Papal States', 0xf2efe0, 'ITA-Lazio', 2.3],
+  ['TUS', 'Tuscany', 0x9b59b6, 'ITA-Toscana', 1],
+  ['SIC', 'Naples and Sicily', 0x8fbf5a, 'ITA-Campania', 6],
+  ['BAV', 'Bavaria', 0x8cc3e8, 'DEU-Bayern', 3],
+  ['SAX', 'Saxony', 0x3d9970, 'DEU-Sachsen', 1.6],
+  ['HAN', 'Hanover', 0xe8c547, 'DEU-Niedersachsen', 1.2],
+  ['WUR', 'Württemberg', 0xc0392b, 'DEU-Baden-Württemberg', 2.2],
+  ['HES', 'Hesse', 0x6d4c8a, 'DEU-Hessen', 1],
+  ['THU', 'Saxe-Weimar', 0x9ccc65, 'DEU-Thüringen', 1],
+  ['PAL', 'Palatinate', 0xb36b3e, 'DEU-Rheinland-Pfalz', 1],
+  ['MON', 'Montenegro', 0x7f6a3a, 'MNE-Cetinje', 0.08],
+  ['WAL', 'Wallachia', 0xd4b84a, 'ROU-Arges', 1.5],
+  ['MOL', 'Moldavia', 0x8e5a9e, 'ROU-Neamt', 1.2],
+  ['CRI', 'Crimean Khanate', 0x9a6b3a, 'UKR-Kherson', 0.5],
+  ['GEO', 'Kartli-Kakheti', 0xa04848, 'GEO-Imereti', 0.6],
+  // Middle East and Africa
+  ['MOR', 'Morocco', 0x9e3b3b, 'MAR-Taza - Al Hoceima - Taounate', 3],
+  ['ALG', 'Algiers', 0x4f8a6b, "DZA-M'Sila", 2.5],
+  ['TUN', 'Tunis', 0x5c8a3a, 'TUN-Kebili', 1],
+  ['TRI', 'Tripoli', 0x8a7a3a, 'LBY-Mizdah', 0.5],
+  ['NEJ', 'Diriyah', 0x6b8e23, 'SAU-Ar Riyad', 0.8],
+  ['OMN', 'Oman', 0x3030a6, 'OMN-Ad Dakhliyah', 0.7],
+  ['ETH', 'Ethiopia', 0x6aa84f, 'ETH-Amhara', 3.5],
+  ['ASH', 'Ashanti', 0xd4a017, 'GHA-Brong Ahafo', 1.2],
+  ['OYO', 'Oyo', 0x8a5a9e, 'NGA-Niger', 4],
+  ['MER', 'Merina', 0x7b5e9e, 'MDG-Alaotra-Mangoro', 0.8],
+  // Asia
+  ['PER', 'Persia', 0x6fbf8f, 'IRN-Semnan', 6],
+  ['AFG', 'Durrani Empire', 0x8930a6, 'AFG-Hilmand', 5],
+  ['KHI', 'Khiva', 0xc8a050, 'UZB-Karakalpakstan', 0.6],
+  ['BUK', 'Bukhara', 0x4f9a8f, 'UZB-Navoi', 2],
+  ['KOK', 'Kokand', 0xa65f2e, 'KGZ-Naryn', 1],
+  ['PUN', 'Sikh Confederacy', 0x30a630, 'PAK-Punjab', 6],
+  ['MUG', 'Mughal Empire', 0x2f7f4f, 'IND-Uttar Pradesh', 20],
+  ['MAR', 'Maratha Confederacy', 0xe07b39, 'IND-Maharashtra', 30],
+  ['MYS', 'Mysore', 0x6a4c93, 'IND-Karnataka', 12],
+  ['HYD', 'Hyderabad', 0x8f4fa8, 'IND-Telangana', 10],
+  ['AHM', 'Ahom', 0x9e7b3a, 'IND-Assam', 2],
+  ['NEP', 'Gorkha', 0x5e5eba, 'NPL-Seti', 2.5],
+  ['BHU', 'Bhutan', 0xad81da, 'BTN-Bumthang', 0.1],
+  ['BUR', 'Burma', 0x30a630, 'MMR-Sagaing', 3.5],
+  ['SIA', 'Siam', 0x4a78c4, 'THA-Nakhon Ratchasima', 3.5],
+  ['DAI', 'Dai Viet', 0xd9534f, 'VNM-Đông Nam Bộ', 6],
+  ['KOR', 'Korea', 0x6fa8dc, 'KOR-North Chungcheong', 7],
+  ['BRU', 'Brunei', 0xd4c14a, 'BRN-Tutong', 0.15],
+  ['HAW', 'Hawaii', 0xd47f3a, 'USA-Hawaii', 0.25],
+];
+
+export const COUNTRIES_1776: CountryDef[] = ROWS.map(([tag, name, color, capital, pop, personality]) => ({
+  tag, name, color, capital, population: Math.round(pop * 1e6), money: Math.round(15_000 + pop * 6_000), ...(personality ? { personality } : {}),
+}));

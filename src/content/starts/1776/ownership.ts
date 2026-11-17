@@ -1,0 +1,98 @@
+import type { OwnershipRule } from '../../../sim/types';
+
+const own = (owner: string, ...modern: string[]): OwnershipRule[] => modern.map(m => ({ modern: m, owner }));
+const states = (owner: string, ...keys: string[]): OwnershipRule => ({ states: keys, owner });
+
+/** Borders on 1 January 1776, simplified (after the first partition of Poland). Later rules override earlier ones. */
+export const OWNERSHIP_1776: OwnershipRule[] = [
+  // ---- whole modern territories ----
+  ...own('GBR', 'GBR', 'IRL', 'IMN', 'JEY', 'BGD', 'JAM', 'BHS', 'BRB', 'ATG', 'GRD', 'DMA', 'CYM', 'TCA', 'SHN', 'BLZ'),
+  ...own('FRA', 'FRA', 'HTI', 'LCA', 'MUS'),
+  ...own('SPA', 'ESP', 'AND', 'CUB', 'PRI', 'PHL', 'DOM', 'TTO', 'MEX', 'GTM', 'HND', 'SLV', 'NIC', 'CRI', 'PAN', 'COL', 'VEN', 'ECU', 'PER', 'BOL', 'CHL', 'ARG', 'URY', 'PRY'),
+  ...own('POR', 'PRT', 'BRA', 'CPV', 'GNB', 'STP', 'TLS'),
+  ...own('NET', 'NLD', 'SUR', 'CUW', 'GUY', 'LKA'),
+  ...own('AUS', 'AUT', 'CZE', 'SVK', 'HUN', 'SVN', 'HRV', 'BEL', 'LUX', 'LIE'),
+  ...own('RUS', 'RUS', 'EST', 'ALD'),
+  ...own('TUR', 'TUR', 'BGR', 'GRC', 'ALB', 'MKD', 'KOS', 'BIH', 'SRB', 'IRQ', 'SYR', 'LBN', 'ISR', 'PSX', 'JOR', 'CYP', 'CYN', 'EGY', 'KWT'),
+  ...own('POL', 'LTU'),
+  ...own('SWE', 'SWE', 'FIN'),
+  ...own('DEN', 'DNK', 'NOR', 'ISL', 'FRO'),
+  ...own('SWI', 'CHE'),
+  ...own('MOL', 'MDA'),
+  ...own('MOR', 'MAR'),
+  ...own('TUN', 'TUN'),
+  ...own('OMN', 'OMN', 'ARE', 'QAT'),
+  ...own('PER', 'IRN', 'ARM', 'AZE'),
+  ...own('GEO', 'GEO'),
+  ...own('AFG', 'AFG', 'KAS'),
+  ...own('NEP', 'NPL'),
+  ...own('BHU', 'BTN'),
+  ...own('BUR', 'MMR'),
+  ...own('SIA', 'THA', 'LAO'),
+  ...own('DAI', 'VNM', 'KHM'),
+  ...own('CHI', 'CHN', 'MNG', 'TWN', 'HKG'),
+  ...own('JAP', 'JPN'),
+  ...own('KOR', 'KOR', 'PRK'),
+  ...own('BRU', 'BRN'),
+  ...own('ETH', 'ERI'),
+
+  // ---- Europe ----
+  states('PRU', 'DEU-Brandenburg', 'DEU-Sachsen-Anhalt', 'DEU-Nordrhein-Westfalen', 'POL-West Pomeranian', 'POL-Pomeranian', 'POL-Kuyavian-Pomeranian',
+    'POL-Warmian-Masurian', 'POL-Lower Silesian', 'POL-Opole', 'POL-Silesian', 'POL-Lubusz', 'RUS-Kaliningrad', 'LTU-Klaipedos'),
+  states('POL', 'POL-Greater Poland', 'POL-Masovian', 'POL-Łódź', 'POL-Lublin', 'POL-Podlachian', 'POL-Świętokrzyskie', 'POL-Lesser Poland',
+    'BLR-Brest', 'BLR-Grodno', 'BLR-Minsk', 'UKR-Volyn', 'UKR-Rivne', 'UKR-Zhytomyr', "UKR-Khmel'nyts'kyy", 'UKR-Vinnytsya', 'UKR-Cherkasy',
+    'LVA-Kuldigas', 'LVA-Iecavas'),
+  states('RUS', 'BLR-Vitebsk', 'BLR-Mogilev', 'BLR-Gomel', 'LVA-Burtnieku', 'LVA-Madona', 'LVA-Ludzas', 'FIN-South Karelia',
+    'UKR-Kiev', 'UKR-Chernihiv', 'UKR-Sumy', 'UKR-Poltava', 'UKR-Kharkiv', "UKR-Luhans'k", "UKR-Donets'k", "UKR-Dnipropetrovs'k", 'UKR-Zaporizhzhya', 'UKR-Kirovohrad'),
+  states('AUS', 'POL-Subcarpathian', "UKR-L'viv", "UKR-Ivano-Frankivs'k", "UKR-Ternopil'", 'UKR-Transcarpathia', 'UKR-Chernivtsi',
+    'ITA-Lombardia', 'ITA-Trentino-Alto Adige', 'ROU-Alba', 'ROU-Arad', 'ROU-Brasov', 'ROU-Cluj', 'ROU-Mures', 'ROU-Maramures',
+    'ROU-Caras-Severin', 'ROU-Timis', 'ROU-Suceava', 'SRB-Južno-Backi'),
+  states('CRI', 'UKR-Kherson', 'UKR-Mykolayiv'),
+  states('TUR', 'UKR-Odessa', 'LBY-Al Jufrah', 'SAU-Makkah', 'SAU-Al Madinah'),
+  states('SWE', 'DEU-Mecklenburg-Vorpommern'),
+  states('DEN', 'DEU-Schleswig-Holstein', 'GRL-Kommune Kujalleq', 'GRL-Qeqqata Kommunia', 'GRL-Kommuneqarfik Sermersooq (West)'),
+  states('BAV', 'DEU-Bayern'), states('SAX', 'DEU-Sachsen'), states('HAN', 'DEU-Niedersachsen'), states('WUR', 'DEU-Baden-Württemberg'),
+  states('HES', 'DEU-Hessen'), states('THU', 'DEU-Thüringen'), states('PAL', 'DEU-Rheinland-Pfalz'),
+  states('WAL', 'ROU-Arges', 'ROU-Dolj', 'ROU-Gorj', 'ROU-Teleorman', 'ROU-Ialomita', 'ROU-Buzau', 'ROU-Braila'),
+  states('MOL', 'ROU-Neamt'),
+  states('MON', 'MNE-Cetinje'),
+  states('SAR', 'ITA-Piemonte', 'ITA-Sardegna'),
+  states('VEN', 'ITA-Veneto'),
+  states('PAP', 'ITA-Lazio', 'ITA-Marche', 'ITA-Emilia-Romagna'),
+  states('TUS', 'ITA-Toscana'),
+  states('SIC', 'ITA-Campania', 'ITA-Apulia', 'ITA-Basilicata', 'ITA-Calabria', 'ITA-Sicily', 'ITA-Abruzzo'),
+
+  // ---- Africa and the Middle East ----
+  states('ALG', "DZA-M'Sila", 'DZA-Djelfa', 'DZA-El Bayadh'),
+  states('TRI', 'LBY-Mizdah', 'LBY-Ajdabiya', 'LBY-Al Butnan'),
+  states('NEJ', 'SAU-Ar Riyad', 'SAU-Ash Sharqiyah'),
+  states('ETH', 'ETH-Amhara', 'ETH-Oromiya'),
+  states('ASH', 'GHA-Brong Ahafo'),
+  states('OYO', 'NGA-Niger', 'NGA-Kebbi'),
+  states('MER', 'MDG-Alaotra-Mangoro'),
+  states('OMN', 'TZA-Lindi'),
+  states('POR', 'AGO-Zaire', 'AGO-Malanje', 'MOZ-Sofala', 'MOZ-Zambezia'),
+  states('NET', 'ZAF-Western Cape', 'IDN-Jawa Timur', 'IDN-Sumatera Selatan', 'IDN-Sulawesi Selatan'),
+  states('FRA', 'FRA-Guadeloupe', 'FRA-Guyane française', 'FRA-Réunion'),
+
+  // ---- Asia ----
+  states('KHI', 'UZB-Karakalpakstan', 'TKM-Tashauz', 'TKM-Balkan'),
+  states('BUK', 'UZB-Navoi', 'TKM-Chardzhou', 'TJK-Tadzhikistan Territories'),
+  states('KOK', 'KGZ-Naryn'),
+  states('AFG', 'PAK-K.P.', 'PAK-Sind', 'PAK-Baluchistan'),
+  states('PUN', 'PAK-Punjab'),
+  states('GBR', 'IND-West Bengal', 'IND-Bihar', 'IND-Jharkhand', 'IND-Tamil Nadu'),
+  states('MUG', 'IND-Uttar Pradesh'),
+  states('MAR', 'IND-Maharashtra', 'IND-Gujarat', 'IND-Madhya Pradesh', 'IND-Rajasthan', 'IND-Odisha', 'IND-Chhattisgarh'),
+  states('MYS', 'IND-Karnataka'),
+  states('HYD', 'IND-Telangana', 'IND-Andhra Pradesh'),
+  states('AHM', 'IND-Assam'),
+  states('CHI', "RUS-Amur", "RUS-Primor'ye", 'RUS-Khabarovsk (South-West)', 'RUS-Sakhalin'),
+
+  // ---- the Americas ----
+  // The thirteen colonies, Florida and Quebec are British; Louisiana and the north of New Spain are Spanish.
+  states('GBR', 'USA-New York', 'USA-Pennsylvania', 'USA-Virginia', 'USA-North Carolina', 'USA-South Carolina', 'USA-Georgia', 'USA-Maine', 'USA-Vermont',
+    'USA-Florida', 'CAN-Québec (West)', 'CAN-Québec (East)', 'CAN-Ontario (South-East)', 'CAN-New Brunswick', 'CAN-Nova Scotia', 'CAN-Newfoundland and Labrador'),
+  states('SPA', 'USA-California', 'USA-Arizona', 'USA-New Mexico', 'USA-Texas', 'USA-Louisiana', 'USA-Arkansas', 'USA-Missouri'),
+  states('HAW', 'USA-Hawaii'),
+];

@@ -38,7 +38,8 @@ export type EventEffect =
   | { kind: 'transferStates'; keys: string[]; to: string; from?: string }
   | { kind: 'revolt'; group: GroupId }
   /** Rebels rise for independence holding these states (Task 2). */
-  | { kind: 'independence'; tag: string; name: string; color: number; keys: string[]; group?: GroupId }
+  | { kind: 'independence'; tag: string; name: string; color: number; keys: string[]; group?: GroupId;
+      /** Fresh troops as a share of the parent's (default from balance) and extra home defence, for famous risings. */ troops?: number; defensePct?: number }
   /** A new country appears peacefully on these states (Task 2). */
   | { kind: 'release'; tag: string; name: string; color: number; keys: string[] }
   | { kind: 'formNation'; tag: string }

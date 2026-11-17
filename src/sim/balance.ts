@@ -130,6 +130,8 @@ export const BALANCE = {
     REVOLT_MAX_SHARE: 0.6,
     RADICAL_AFTER_REVOLT: 40,
     MAX_COUNTRIES: 4000,
+    /** War score an AI needs before it ends a war with rebels (either side). */
+    CIVIL_WAR_PEACE_SCORE: 100,
     /** The AI starts a law only with at least this much support. */
     AI_MIN_SUPPORT: 0.3,
     /** How the AI scores a law: support (which mostly decides whether it can pass), its effects, and the unrest it causes. */
@@ -193,6 +195,13 @@ export const BALANCE = {
     INDEPENDENCE_MAX_SHARE: 0.5,
     /** …and at least this many times their own manpower. */
     INDEPENDENCE_TROOPS: 1.5,
+    /** …and at least this share of the parent's troops (raised fresh, not taken from the parent). */
+    INDEPENDENCE_MIN_PARENT_SHARE: 0.25,
+    /** A temporary boost while they fight for their freedom. */
+    INDEPENDENCE_DEFENSE_PCT: 60,
+    INDEPENDENCE_REFILL_PCT: 100,
+    INDEPENDENCE_MAX_TROOPS_PCT: 300,
+    INDEPENDENCE_MONTHS: 120,
     RELEASE_RELATION: 30,
     /** A newly formed nation's lasting output bonus. */
     FORM_OUTPUT_PCT: 5,

@@ -136,7 +136,11 @@ function peaceTerms(state: GameState, w: War, me: CountryId, enemy: CountryId): 
     .filter(st => st.id && st.owner && from.includes(st.owner) && st.controller === by)
     .sort((a, b) => b.population - a.population || a.id - b.id);
   if (mine.winning && mine.score >= 60 && state.countries[me].rebel) return myGoals.length ? { demands: [...myGoals] } : null;   // rebels want their law, nothing else
-  if (mine.winning && mine.score >= 60) {
+  // A civil war decides everything (any peace ends the revolt), so it ends only in total victory or after years of stalemate.
+  const civil = !!state.countries[me].rebel || !!state.countries[enemy].rebel;
+  const bar = civil ? BALANCE.politics.CIVIL_WAR_PEACE_SCORE : 60;
+  if (civil && !old && !(mine.score >= bar) && !(theirs.score >= bar)) return null;
+  if (mine.winning && mine.score >= bar) {
     // Our goals first (if we have any), then the enemy's most valuable occupied states while points last.
     const demands: Demand[] = [...myGoals];
     for (const st of occupiedBy(me, enemiesIn(w, me))) {
@@ -147,7 +151,7 @@ function peaceTerms(state: GameState, w: War, me: CountryId, enemy: CountryId): 
     if (!demands.length && termsCost(state, w, me, [{ kind: 'reparations' }]) <= mine.available) demands.push({ kind: 'reparations' });
     if (demands.length && termsCost(state, w, me, demands) <= mine.available) return { demands };
   }
-  if (theirs.winning && theirs.score >= 60) {
+  if (theirs.winning && theirs.score >= bar) {
     // Beaten: hand over what they fought for, or what they hold plus reparations.
     const theirGoals = w.a === enemy ? w.goals : [];
     const demands: Demand[] = theirGoals.length ? [...theirGoals]

@@ -2,6 +2,7 @@
 import { FORMABLES, formableByTag, type FormableDef } from '../content/formables';
 import type { GroupId } from '../content/groups';
 import { BALANCE } from './balance';
+import { TICKS_PER_DAY } from './calendar';
 import { setTile } from './control';
 import { changeRelation } from './diplomacy/relations';
 import { effectHooks } from './events';
@@ -14,7 +15,7 @@ const N = BALANCE.nations;
 const stateIdsFor = (state: GameState, keys: string[]) => keys.map(k => state.map.states.find(s => s.key === k)?.id ?? 0).filter(s => s > 0);
 const tagTaken = (state: GameState, tag: string) => state.countries.some(c => c.alive && c.id && c.tag === tag);
 
-interface Who { tag: string; name: string; color: number; keys: string[]; group?: GroupId }
+interface Who { tag: string; name: string; color: number; keys: string[]; group?: GroupId; troops?: number; defensePct?: number }
 
 /** Rebels rise for independence in the listed states the parent owns (never its capital). */
 export function startIndependence(state: GameState, parent: Country, who: Who, events: SimEvent[], changed: number[]): Country | null {
@@ -25,7 +26,13 @@ export function startIndependence(state: GameState, parent: Country, who: Who, e
   const share = Math.min(N.INDEPENDENCE_MAX_SHARE, N.INDEPENDENCE_BASE_SHARE + pop / Math.max(1, parent.population));
   const rebels = splinter(state, parent, who, ids, share, changed);
   rebels.rebel = { parent: parent.id, group: who.group ?? 'intellectuals', law: '', independence: true };
-  rebels.troops = Math.max(rebels.troops, Math.round(pop * BALANCE.troops.MANPOWER_SHARE * N.INDEPENDENCE_TROOPS));
+  // Independence fighters raise more than their numbers suggest and defend their homes fiercely for some years.
+  const extra = Math.max(0, Math.round(Math.max(pop * BALANCE.troops.MANPOWER_SHARE * N.INDEPENDENCE_TROOPS, parent.troops * (who.troops ?? N.INDEPENDENCE_MIN_PARENT_SHARE))) - rebels.troops);
+  rebels.troops += extra;
+  // The troop limit rises enough to keep the army they start with (it would otherwise melt back down to the limit).
+  const baseMax = Math.max(1, pop * BALANCE.troops.MANPOWER_SHARE);
+  const maxPct = Math.max(N.INDEPENDENCE_MAX_TROOPS_PCT, Math.round(100 * (rebels.troops / baseMax - 1)));
+  rebels.modifiers.push({ name: 'War of independence', effects: { defensePct: who.defensePct ?? N.INDEPENDENCE_DEFENSE_PCT, refillPct: N.INDEPENDENCE_REFILL_PCT, maxTroopsPct: maxPct }, until: state.tick + N.INDEPENDENCE_MONTHS * 30 * TICKS_PER_DAY });
   changeRelation(state, rebels.id, parent.id, -100);
   startWar(state, [rebels.id], [parent.id], [{ kind: 'independence' }], events);
   events.push({ type: 'revolt', country: parent.id, rebels: rebels.id, group: rebels.rebel.group, law: '' });
@@ -88,7 +95,7 @@ handlers.formNation = (state, cmd: Extract<Command, { type: 'formNation' }>, eve
   return null;
 };
 
-effectHooks.independence = (state, c, e: { tag: string; name: string; color: number; keys: string[]; group?: GroupId }, events, changed) => !!startIndependence(state, c, e, events, changed);
+effectHooks.independence = (state, c, e: Who, events, changed) => !!startIndependence(state, c, e, events, changed);
 effectHooks.release = (state, c, e: { tag: string; name: string; color: number; keys: string[] }, events, changed) => !!releaseNation(state, c, e, events, changed);
 effectHooks.formNation = (state, c, e: { tag: string }, events, changed) => { if (formCheck(state, c.id, e.tag)) return false; formNation(state, c.id, e.tag, events, changed); return true; };
 
