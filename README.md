@@ -9,7 +9,17 @@ A single-player grand strategy game for iPhone and iPad (it runs on PC too): Ope
 
 The game saves itself every 1 January and whenever you leave the app; **Continue** on the menu picks up where you left off.
 
-## What's in this version (stages 1–6)
+## How to play
+
+1. **New game:** pick 1776 or 1836, a difficulty and a country. Great powers are easiest to learn with; minors are a challenge.
+2. **Build** (bottom tab): tap one of your states on the map, then build farms, mines, mills and factories. Money comes from taxes on what you produce; goods raise living standards and feed industry.
+3. **Grow:** expand into grey unclaimed land with the attack slider (right edge), open ports for trade, and research techs (Research tab).
+4. **Diplomacy:** there are no surprise wars. Make demands with a diplomatic play; others pick sides; the target gives in or it's war. Win wars to take states, puppets or reparations. Dominating, and bleeding for it, earns extra demands.
+5. **Politics:** keep your interest groups happy with your laws (Nation tab), or they'll grow radical and revolt.
+6. **History happens:** event cards pause the game and ask you to choose. Unite Germany or Italy from Nation → Decisions.
+7. **Win:** have the best score (GDP, population, living standards, land) at the end date, or hold half the world's land.
+
+## What's in this version (stages 1–7)
 
 - The real world map with 958 named states and the 1836 borders (71 countries).
 - Tile-by-tile attacks with an attack slider, colonising unclaimed land, wars, occupation and a simple peace deal.
@@ -29,7 +39,10 @@ The game saves itself every 1 January and whenever you leave the app; **Continue
 - History events: event cards with 2–3 choices for the player and the AI alike — the Great Game, German and Italian unification, the opening of Japan, the Opium Wars, the Eastern Question, Manifest Destiny and the Civil War (1836); the American Revolution, the French Revolution, Napoleon and the partitions of Poland (1776). Independence wars can create new countries; Germany and Italy can be proclaimed (Nation tab → Decisions).
 - Two start dates: 1776 (Age of Revolution, to 1876) and 1836 (Victorian Era, to 1936).
 
-Coming next: deeper AI up to Grand Master, balance and polish. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
+- AI on five levels that clearly differ: higher levels pick their moment (attacking busy or weakened neighbours), guard their best trade, research what fits their economy and head off revolts earlier; Easy leaves you in peace for years at a time.
+- Balance for a plausible century: historical literacy, believable population growth, living standards that climb, Britain leading the 1836 economy, the German Confederation and the Holy Roman Empire protecting small German states.
+
+Multiplayer, more start dates (Napoleonic Wars, World War I and II) and more history events are planned for later. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
 
 ## Develop
 
