@@ -21,5 +21,6 @@ import './revolts';
 import './blocs';
 import './companies';
 import './events';
+import './nations';
 import './ai/ai';
 import './victory';

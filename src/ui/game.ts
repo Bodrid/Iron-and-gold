@@ -288,7 +288,7 @@ export function rejectionText(reason: string): string {
 /** "white peace", "they demand Take Saxony, Reparations", "they hand you Take Alsace". */
 export function peaceTermsText(terms: PeaceTerms, map: MapData): string {
   if (terms.white || !terms.demands.length) return 'a white peace, nobody gives anything';
-  const words = terms.give ? { puppet: 'becoming your puppet', openMarket: 'opening their market', reparations: 'reparations', joinBloc: 'joining your power bloc' } : { puppet: 'you become their puppet', openMarket: 'you open your market', reparations: 'reparations', joinBloc: 'you join their power bloc' };
+  const words = terms.give ? { puppet: 'becoming your puppet', openMarket: 'opening their market', reparations: 'reparations', joinBloc: 'joining your power bloc', independence: 'their independence' } : { puppet: 'you become their puppet', openMarket: 'you open your market', reparations: 'reparations', joinBloc: 'you join their power bloc', independence: 'their independence' };
   const list = terms.demands.map(d => (d.kind === 'state' ? `${map.states[d.state]?.name ?? 'a state'}` : d.kind === 'law' ? `the ${LAW_BY_ID[d.law]?.name ?? 'new'} law` : words[d.kind])).join(', ');
   return terms.give ? `they give you ${list}` : `they demand ${list}`;
 }

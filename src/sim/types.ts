@@ -42,7 +42,7 @@ export interface Country {
   companies: { id: string; founded: number; charter: CharterKind | null; /** Output bonus %, recomputed monthly. */ bonus: number }[];
   flags: string[];
   /** Temporary modifiers from events. */ modifiers: { name: string; effects: Effects; until: number }[];
-  /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string };
+  /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string; /** Fighting to be a country of its own. */ independence?: boolean };
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
@@ -56,7 +56,7 @@ export interface Building { type: BuildingType; level: number; tile: number }
 export interface StateRuntime { id: number; owner: CountryId; controller: CountryId; population: number; buildings: Building[] }
 export interface Construction { id: number; country: CountryId; state: number; type: BuildingType; doneTick: number }
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
-export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' } | { kind: 'law'; law: string } | { kind: 'joinBloc' };
+export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' } | { kind: 'law'; law: string } | { kind: 'joinBloc' } | { kind: 'independence' };
 /** a/b are the side leaders (the play's initiator and target). casualties[0] is side A's, [1] side B's. */
 export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number];
   /** Refused peace proposals (the AI waits before proposing again). */ refusals?: { from: CountryId; tick: number }[] }
@@ -165,6 +165,7 @@ export type Command =
   | { type: 'foundCompany'; country: CountryId; company: string }
   | { type: 'grantCharter'; country: CountryId; company: string; charter: CharterKind }
   | { type: 'revokeCharter'; country: CountryId; company: string }
+  | { type: 'formNation'; country: CountryId; tag: string }
   | { type: 'chooseEventOption'; country: CountryId; pending: number; option: number };
 
 export type SimEvent =
@@ -197,7 +198,7 @@ export type SimEvent =
   | { type: 'lawPassed'; country: CountryId; law: string }
   | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' | 'revolution' }
   | { type: 'revolt'; country: CountryId; rebels: CountryId; group: GroupId; law: string }
-  | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean }
+  | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean; independence?: boolean }
   | { type: 'blocFounded'; leader: CountryId; blocType: BlocType }
   | { type: 'blocInvited'; from: CountryId; to: CountryId }
   | { type: 'blocJoined'; country: CountryId; leader: CountryId }
@@ -207,6 +208,8 @@ export type SimEvent =
   | { type: 'blocDissolved'; leader: CountryId }
   | { type: 'companyFounded'; country: CountryId; company: string }
   | { type: 'charterEnded'; country: CountryId; company: string }
+  | { type: 'nationFormed'; country: CountryId; tag: string; name: string }
+  | { type: 'nationReleased'; country: CountryId; from: CountryId }
   | { type: 'eventFired'; country: CountryId; event: string; pending: number }
   | { type: 'eventResolved'; country: CountryId; event: string; option: number; skipped: number };
 

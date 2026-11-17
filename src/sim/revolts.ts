@@ -62,32 +62,39 @@ export function startRevolt(state: GameState, parent: Country, g: GroupId, event
   const picked = owned.sort((a, b) => rooted(state, b.id, g) - rooted(state, a.id, g) || a.id - b.id).slice(0, k);
 
   const id = state.countries.length;
-  const capital = picked.reduce((best, s) => (s.population > best.population ? s : best), picked[0]).id;
-  const rebels = makeCountry(id, { tag: `R${id}`, name: `${parent.name} ${GROUPS[g].name} Revolt`, color: blend(parent.color, GROUPS[g].color), capital: '', population: 0, money: 0 },
-    capital, false, parent.difficulty);
-  rebels.rebel = { parent: parent.id, group: g, law };
-  rebels.techs = [...parent.techs];
-  rebels.laws = { ...parent.laws };
-  rebels.literacy = parent.literacy;
-  rebels.prices = { ...parent.prices };
-  rebels.sol = parent.sol;
   // Soldiers, money and goods defect in proportion to the group's clout.
   const share = Math.min(P.REVOLT_MAX_SHARE, clout + P.REVOLT_BASE_SHARE);
-  rebels.troops = Math.round(parent.troops * share); parent.troops -= rebels.troops;
-  rebels.money = Math.max(0, parent.money * share * 0.5); parent.money -= rebels.money;
-  for (const good of Object.keys(parent.stockpile) as (keyof typeof parent.stockpile)[]) {
-    rebels.stockpile[good] = parent.stockpile[good] * share; parent.stockpile[good] -= rebels.stockpile[good];
-  }
-  state.countries.push(rebels);
-  ensureRelations(state);
+  const rebels = splinter(state, parent, { tag: `R${id}`, name: `${parent.name} ${GROUPS[g].name} Revolt`, color: blend(parent.color, GROUPS[g].color) }, picked.map(s => s.id), share, changed);
+  rebels.rebel = { parent: parent.id, group: g, law };
   changeRelation(state, id, parent.id, -100);
-  for (const s of picked) for (const t of getStateTiles(state.map, s.id)) if (state.owner[t] === parent.id) setTile(state, t, id, id, changed);
-  for (const s of picked) rebels.population += s.population;
   parent.groups[g].radicalism = P.RADICAL_AFTER_REVOLT;
   // No treaties carry over: it's a brand-new country. Puppets of the parent join the parent (warStartHooks).
   startWar(state, [id], [parent.id], [{ kind: 'law', law }], events);
   events.push({ type: 'revolt', country: parent.id, rebels: id, group: g, law });
   return rebels;
+}
+
+/** A new country split off `parent`, holding `stateIds` (the parent's tiles in them), with a share of its troops,
+ *  money and goods, the same techs and laws, and no treaties. */
+export function splinter(state: GameState, parent: Country, who: { tag: string; name: string; color: number }, stateIds: number[], share: number, changed: number[]): Country {
+  const id = state.countries.length;
+  const capital = stateIds.reduce((best, s) => (state.states[s].population > state.states[best].population ? s : best), stateIds[0]);
+  const c = makeCountry(id, { tag: who.tag, name: who.name, color: who.color, capital: '', population: 0, money: 0 }, capital, false, parent.difficulty);
+  c.techs = [...parent.techs];
+  c.laws = { ...parent.laws };
+  c.literacy = parent.literacy;
+  c.prices = { ...parent.prices };
+  c.sol = parent.sol;
+  c.troops = Math.round(parent.troops * share); parent.troops -= c.troops;
+  c.money = Math.max(0, parent.money * share * 0.5); parent.money -= c.money;
+  for (const good of Object.keys(parent.stockpile) as (keyof typeof parent.stockpile)[]) {
+    c.stockpile[good] = parent.stockpile[good] * share; parent.stockpile[good] -= c.stockpile[good];
+  }
+  state.countries.push(c);
+  ensureRelations(state);
+  for (const s of stateIds) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === parent.id) setTile(state, t, id, id, changed);
+  for (const s of stateIds) c.population += state.states[s].population;
+  return c;
 }
 
 function endRevolt(state: GameState, rebels: Country, events: SimEvent[], changed: number[]): void {
@@ -98,7 +105,7 @@ function endRevolt(state: GameState, rebels: Country, events: SimEvent[], change
   parent.money += Math.max(0, rebels.money);
   // The normal elimination path: tiles they still occupy go back, other wars and attacks end.
   eliminate(state, rebels.id, events, changed, true);
-  const won = Object.values(parent.laws).includes(r.law);
+  const won = !r.independence && Object.values(parent.laws).includes(r.law);
   events.push({ type: 'revoltEnded', country: parent.id, rebels: rebels.id, won });
 }
 

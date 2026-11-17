@@ -38,6 +38,11 @@ export function applyDemands(state: GameState, winner: CountryId, loser: Country
     } else if (d.kind === 'openMarket') {
       if (hasTreaty(state, winner, loser, 'tradeAgreement')) continue;
       sign(state, winner, loser, 'tradeAgreement', events);
+    } else if (d.kind === 'independence') {
+      const w = state.countries[winner];
+      if (!w.rebel?.independence || w.rebel.parent !== loser) continue;
+      w.rebel = undefined;   // a country of its own now; it keeps its states
+      events.push({ type: 'revoltEnded', country: loser, rebels: winner, won: true, independence: true });
     } else if (d.kind === 'joinBloc') {
       if (!demandHooks.joinBloc(state, winner, loser, events)) continue;
     } else if (d.kind === 'law') {

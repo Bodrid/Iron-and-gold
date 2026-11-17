@@ -183,6 +183,16 @@ export const BALANCE = {
     /** Floor for "months of income" effects, so broke countries still pay or gain something. */
     MIN_MONTHLY_INCOME: 1000,
   },
+  nations: {
+    /** Independence rebels take troops = parent's × (BASE + their population share), at most MAX… */
+    INDEPENDENCE_BASE_SHARE: 0.1,
+    INDEPENDENCE_MAX_SHARE: 0.5,
+    /** …and at least this many times their own manpower. */
+    INDEPENDENCE_TROOPS: 1.5,
+    RELEASE_RELATION: 30,
+    /** A newly formed nation's lasting output bonus. */
+    FORM_OUTPUT_PCT: 5,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,
