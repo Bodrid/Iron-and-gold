@@ -38,7 +38,7 @@ export function findBeach(state: GameState, c: Country, target: CountryId, limit
   return best;
 }
 
-export function navalDecisions(state: GameState, c: Country, enemies: CountryId[], landNeighbours: Set<CountryId>, ratio: number, issue: (cmd: Command) => void, navyWeight: number): void {
+export function navalDecisions(state: GameState, c: Country, enemies: CountryId[], landNeighbours: Set<CountryId>, ratio: number, issue: (cmd: Command) => void, navyWeight: number, level = 1): void {
   const ports = portStates(state, c.id);
   if (!ports.length) return;
   const fleet = warshipsOf(state, c.id);
@@ -66,7 +66,9 @@ export function navalDecisions(state: GameState, c: Country, enemies: CountryId[
         if (!validOrder(state, w, order)) { issue({ type: 'orderShip', country: c.id, shipId: w.id, order }); continue; }
       }
     }
-    const r = routes.find(x => !state.ships.some(s => s.order.type === 'escort' && s.order.routeId === x.id));
+    // Very Hard and above guard their most valuable routes first.
+    const byValue = level >= 3 ? [...routes].sort((a, b) => b.amount * state.countries[b.exporter].prices[b.good] - a.amount * state.countries[a.exporter].prices[a.good] || a.id - b.id) : routes;
+    const r = byValue.find(x => !state.ships.some(s => s.order.type === 'escort' && s.order.routeId === x.id));
     if (r) {
       const order = { type: 'escort' as const, routeId: r.id };
       if (!validOrder(state, w, order)) issue({ type: 'orderShip', country: c.id, shipId: w.id, order });

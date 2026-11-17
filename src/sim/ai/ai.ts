@@ -21,6 +21,19 @@ import { politicsDecisions } from './politics';
 import { blocDecisions, companyDecisions } from './blocs';
 
 const YEAR = 365 * TICKS_PER_DAY;
+/** Easy AIs make demands of the player at most once in this many years. */
+const EASY_PLAYER_YEARS = 5;
+
+/** How good a moment it is to press a country (Hard and above): busy in another war, short of troops, allies tied up. */
+export function opportunity(state: GameState, target: CountryId): number {
+  const t = state.countries[target];
+  let m = 1;
+  if (warsOf(state, target).length) m *= 2;
+  if (t.troops < t.maxTroops * 0.4) m *= 2;
+  const allies = state.treaties.filter(x => (x.kind === 'alliance' || x.kind === 'defensivePact') && (x.a === target || x.b === target)).map(x => (x.a === target ? x.b : x.a));
+  if (allies.length && allies.every(a => warsOf(state, a).length > 0)) m *= 1.5;
+  return m;
+}
 /** Chance per 30 days that a fully aggressive AI looks for a war. */
 const WAR_CHANCE_PER_MONTH = 0.12;
 
@@ -75,7 +88,7 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   }
 
   // 4b. The sea: warships, raids, escorts, invasions.
-  navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1);
+  navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1, d.level);
 
   // 4c. Diplomacy: relations, treaties, plays in progress, puppets.
   if (!rebel) {
@@ -90,14 +103,16 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
     const chance = WAR_CHANCE_PER_MONTH * d.aggression * pers.aggression * (d.decisionDays / 30);
     if (nextRandom(state) < chance) {
       // A play isn't a war: the target may give in, so demand of anyone noticeably weaker.
-      const targets = [...neighbors].filter(n => n && state.countries[n].alive && !state.countries[n].overlord && state.countries[n].troops < c.troops * 0.9);
+      // Easy leaves the player alone for years after making demands of them.
+      const spare = (n: CountryId) => d.level === 0 && state.countries[n].isPlayer && state.tick - (state.countries[n].lastDemandedTick ?? -Infinity) < EASY_PLAYER_YEARS * YEAR;
+      const targets = [...neighbors].filter(n => n && state.countries[n].alive && !state.countries[n].overlord && state.countries[n].troops < c.troops * 0.9 && !spare(n));
       const weight = (n: CountryId) => {
         const t = state.countries[n];
         let w = c.troops / Math.max(1, t.troops);
         if (t.isPlayer) w *= d.playerFocus;
         if (anyTag(pers.rivals, t)) w *= 2;
         if (pers.interests.length && state.states.some(s => s.owner === n && pers.interests.some(p => state.map.states[s.id].key.startsWith(p)))) w *= 2;
-        if (d.level >= 2 && (warsOf(state, n).length > 0 || t.troops < t.maxTroops * 0.4)) w *= 2;
+        if (d.level >= 2) w *= opportunity(state, n);
         return w;
       };
       let target = pick(state, targets, weight, mistake());
@@ -144,7 +159,7 @@ function peaceTerms(state: GameState, w: War, me: CountryId, enemy: CountryId): 
   if (mine.winning && mine.score >= bar) {
     // Our goals first (if we have any), then the enemy's most valuable occupied states while points last.
     const demands: Demand[] = [...myGoals];
-    for (const st of occupiedBy(me, enemiesIn(w, me))) {
+    for (const st of DIFFICULTIES[state.countries[me].difficulty].level === 0 && myGoals.length ? [] : occupiedBy(me, enemiesIn(w, me))) {
       if (demands.some(d => d.kind === 'state' && d.state === st.id)) continue;
       const next: Demand[] = [...demands, { kind: 'state', state: st.id }];
       if (termsCost(state, w, me, next) <= mine.available) demands.push({ kind: 'state', state: st.id }); else break;

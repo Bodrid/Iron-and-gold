@@ -106,6 +106,7 @@ handlers.startPlay = (state, cmd: Extract<Command, { type: 'startPlay' }>, event
   const bad = playCheck(state, cmd);
   if (bad) return bad;
   startPlay(state, cmd.country, cmd.target, cmd.demands.map(d => ({ ...d })), events);
+  if (state.countries[cmd.target].isPlayer) state.countries[cmd.target].lastDemandedTick = state.tick;
   return null;
 };
 export function joinCheck(state: GameState, country: CountryId, playId: number): string | null {

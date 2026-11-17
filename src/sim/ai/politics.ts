@@ -8,6 +8,7 @@ import { nextRandom } from '../rng';
 import { availableTechs, techCost } from '../research';
 import { attitude, enactCheck, lawSupport, passChance } from '../politics';
 import { wantedLaw } from '../revolts';
+import { warsOf } from '../war';
 import type { Command, Country, GameState } from '../types';
 import type { DifficultyParams } from './difficulty';
 
@@ -15,14 +16,24 @@ const P = BALANCE.politics;
 const DEFAULT_TECH_WEIGHTS: Record<TechTree, number> = { production: 1.2, military: 1, society: 1 };
 
 /** The best tech to research now, or null if nothing is available. */
-export function chooseTech(state: GameState, c: Country, mistake: boolean): string | null {
+export function chooseTech(state: GameState, c: Country, mistake: boolean, level = 1): string | null {
   const options = availableTechs(state, c);
   if (!options.length) return null;
   if (mistake) return options[Math.floor(nextRandom(state) * options.length)];
   const w = { ...DEFAULT_TECH_WEIGHTS, ...(personalityOf(c.personality).techWeights ?? {}) };
+  // Hard and above value techs by what they own: farm techs for farm economies, military techs when threatened.
+  const levels = new Map<string, number>();
+  if (level >= 2) for (const s of state.states) if (s.id && s.owner === c.id) for (const b of s.buildings) levels.set(b.type, (levels.get(b.type) ?? 0) + b.level);
+  const threatened = warsOf(state, c.id).length > 0;
   let best = options[0], bestScore = -Infinity;
   for (const id of options) {
-    const score = w[TECH_BY_ID[id].tree] * 1000 / Math.max(1, techCost(state, c, id));
+    const t = TECH_BY_ID[id];
+    let fit = 1;
+    if (level >= 2) {
+      for (const [b, v] of Object.entries(t.effects.outputPct ?? {})) fit += (v ?? 0) / 100 * Math.min(3, (b === 'all' ? 30 : (levels.get(b) ?? 0)) / 10);
+      if (threatened && t.tree === 'military') fit *= 1.5;
+    }
+    const score = w[t.tree] * fit * 1000 / Math.max(1, techCost(state, c, id));
     if (score > bestScore) { best = id; bestScore = score; }
   }
   return best;
@@ -35,7 +46,7 @@ export function chooseLaw(state: GameState, c: Country, level = 1): string | nul
   const minClout = level <= 1 ? P.REVOLT_MIN_CLOUT * 0.8 : P.REVOLT_MIN_CLOUT * 1.5;
   for (const g of GROUP_IDS) {
     const gs = c.groups[g];
-    if (gs.radicalism < 50 || gs.clout < minClout) continue;
+    if (gs.radicalism < (level >= 3 ? 35 : 50) || gs.clout < minClout) continue;   // sharper AIs act sooner
     const law = wantedLaw(c, g);
     if (law && !enactCheck(state, c, law)) return law;
   }
@@ -75,7 +86,7 @@ function unrest(c: Country, current: string, law: string): number {
 
 export function politicsDecisions(state: GameState, c: Country, d: DifficultyParams, mistake: () => boolean, issue: (cmd: Command) => void): void {
   if (!c.researching) {
-    const tech = chooseTech(state, c, mistake());
+    const tech = chooseTech(state, c, mistake(), d.level);
     if (tech) issue({ type: 'research', country: c.id, tech });
   }
   // Laws are a slow business: look about once a month.
