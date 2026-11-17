@@ -33,7 +33,7 @@ export function ArmyTab({ send = defaultSend }: { send?: Send }) {
         return (
           <div class="row" key={w.id}>
             <span class="grow">{country(enemy)?.name} <small>war score {Math.round(mine)}</small></span>
-            <button disabled={offered(enemy)} onClick={() => send({ type: 'offerPeace', country: me, target: enemy })}>{offered(enemy) ? 'Peace offered' : 'Offer peace'}</button>
+            <button disabled={offered(enemy)} onClick={() => send({ type: 'proposePeace', country: me, warId: w.id, terms: { demands: [], white: true } })}>{offered(enemy) ? 'Peace offered' : 'Offer white peace'}</button>
           </div>
         );
       })}

@@ -28,10 +28,11 @@ it('war score rises with occupation', () => {
 
 it('peace transfers majority-occupied states and returns the rest', () => {
   const g = threeStates();
-  declareWarRaw(g, 1, 2);
+  const w = declareWarRaw(g, 1, 2);
+  w.goals = [{ kind: 'state', state: stateId(g, 'T-B') }];
   occupy(g, 1, stateTiles(g, 'T-B'));
   occupy(g, 1, stateTiles(g, 'T-C').slice(0, 1));
-  const r = step(g, [{ type: 'offerPeace', country: 1, target: 2 }]);
+  const r = step(g, [{ type: 'proposePeace', country: 1, warId: w.id, terms: { demands: [{ kind: 'state', state: stateId(g, 'T-B') }] } }]);
   expect(r.events).toContainEqual(expect.objectContaining({ type: 'peace', transferred: [stateId(g, 'T-B')] }));
   expect(g.states[stateId(g, 'T-B')].owner).toBe(1);
   expect(g.controller[stateTiles(g, 'T-C')[0]]).toBe(2);
@@ -40,10 +41,10 @@ it('peace transfers majority-occupied states and returns the rest', () => {
 
 it('a country that loses all land is eliminated cleanly', () => {
   const g = makeGame({ rows: ['AAAAABBBBB', 'AAAAABBBBB'], owners: { A: 'XXX', B: 'YYY' }, population: 20_000_000 });
-  declareWarRaw(g, 1, 2);
+  const w = declareWarRaw(g, 1, 2);
   g.countries[1].troops = 1e6; g.countries[2].troops = 0;
   runTicks(g, 100, [{ type: 'attack', country: 1, target: 2, ratio: 1 }]);
-  let events: SimEvent[] = step(g, [{ type: 'offerPeace', country: 1, target: 2 }]).events;
+  let events: SimEvent[] = step(g, [{ type: 'proposePeace', country: 1, warId: w.id, terms: { demands: [{ kind: 'state', state: stateId(g, 'T-B') }] } }]).events;
   events = events.concat(runTicks(g, TICKS_PER_DAY));
   expect(g.countries[2].alive).toBe(false);
   expect(events).toContainEqual({ type: 'eliminated', country: 2 });
@@ -68,8 +69,8 @@ it('eliminating a country mid-war ends its wars and attacks', () => {
 
 it('player receives peace offers as events and can refuse', () => {
   const g = makeGame();
-  declareWarRaw(g, 1, 2);
-  const r = step(g, [{ type: 'offerPeace', country: 2, target: 1 }]);
+  const w = declareWarRaw(g, 1, 2);
+  const r = step(g, [{ type: 'proposePeace', country: 2, warId: w.id, terms: { demands: [], white: true } }]);
   expect(r.events).toContainEqual({ type: 'peaceOffered', from: 2, to: 1 });
   const r2 = step(g, [{ type: 'respondPeace', country: 1, from: 2, accept: false }]);
   expect(r2.events).toContainEqual({ type: 'peaceRefused', from: 2, to: 1 });
@@ -79,8 +80,8 @@ it('player receives peace offers as events and can refuse', () => {
 
 it('player can accept a peace offer', () => {
   const g = makeGame();
-  declareWarRaw(g, 1, 2);
-  step(g, [{ type: 'offerPeace', country: 2, target: 1 }]);
+  const w = declareWarRaw(g, 1, 2);
+  step(g, [{ type: 'proposePeace', country: 2, warId: w.id, terms: { demands: [], white: true } }]);
   const r = step(g, [{ type: 'respondPeace', country: 1, from: 2, accept: true }]);
   expect(r.events.some(e => e.type === 'peace')).toBe(true);
   expect(g.wars).toHaveLength(0);
@@ -88,8 +89,8 @@ it('player can accept a peace offer', () => {
 
 it('peace offers expire after 30 days', () => {
   const g = makeGame();
-  declareWarRaw(g, 1, 2);
-  step(g, [{ type: 'offerPeace', country: 2, target: 1 }]);
+  const w = declareWarRaw(g, 1, 2);
+  step(g, [{ type: 'proposePeace', country: 2, warId: w.id, terms: { demands: [], white: true } }]);
   runDays(g, 31);
   expect(g.peaceOffers).toHaveLength(0);
 });

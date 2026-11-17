@@ -12,5 +12,6 @@ import './diplomacy/treaties';
 import './diplomacy/infamy';
 import './diplomacy/demands';
 import './diplomacy/plays';
+import './diplomacy/peace';
 import './ai/ai';
 import './victory';

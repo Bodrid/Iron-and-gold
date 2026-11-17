@@ -63,7 +63,8 @@ export interface ShipBuild { id: number; country: CountryId; state: number; kind
 export type TreatyKind = 'alliance' | 'defensivePact' | 'tradeAgreement' | 'guarantee' | 'embargo';
 /** a proposed it (guarantor for guarantees, embargoer for embargoes). */
 export interface Treaty { id: number; kind: TreatyKind; a: CountryId; b: CountryId; since: number }
-export interface PeaceOffer { from: CountryId; to: CountryId; tick: number }
+export interface PeaceTerms { demands: Demand[]; white?: boolean; /** The proposer hands these demands to the other side. */ give?: boolean }
+export interface PeaceOffer { from: CountryId; to: CountryId; tick: number; warId: number; terms: PeaceTerms }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
 export interface GameState {
@@ -102,7 +103,7 @@ export type Command =
   | { type: 'attack'; country: CountryId; target: CountryId; ratio: number }
   | { type: 'cancelAttack'; country: CountryId; attackId: number }
   | { type: 'build'; country: CountryId; state: number; building: BuildingType }
-  | { type: 'offerPeace'; country: CountryId; target: CountryId }
+  | { type: 'proposePeace'; country: CountryId; warId: number; terms: PeaceTerms }
   | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean }
   | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
   | { type: 'setTradeAuto'; country: CountryId; on: boolean }

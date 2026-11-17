@@ -7,9 +7,10 @@ import { buildCheck, buildCostHooks, researchHooks } from '../economy';
 import { applyCommand, systems } from '../registry';
 import { nextRandom } from '../rng';
 import { refillBonusHooks } from '../troops';
-import { atWar, enemiesIn, peacePolicy, warScore, warsOf } from '../war';
+import { enemiesIn, warsOf } from '../war';
+import { peacePoints, termsCost } from '../diplomacy/peace';
 import { playCheck } from '../diplomacy/plays';
-import type { Command, Country, CountryId, GameState } from '../types';
+import type { Command, Country, CountryId, GameState, PeaceTerms } from '../types';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
 import { navalDecisions } from './naval';
@@ -96,15 +97,28 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
     }
   }
 
-  // 6. Peace when clearly winning, or after a long losing war.
+  // 6. Peace: take the goals (and extras) when winning, concede when beaten, white peace when it drags on.
   for (const w of myWars) {
     if (!state.wars.includes(w) || (w.a !== c.id && w.b !== c.id)) continue;   // only war leaders negotiate
     const enemy = w.a === c.id ? w.b : w.a;
-    const mine = warScore(state, w, c.id);
+    if (state.peaceOffers.some(o => o.from === c.id && o.to === enemy)) continue;
+    const mine = peacePoints(state, w, c.id), theirs = peacePoints(state, w, enemy);
     const old = state.tick - w.startTick >= 2 * YEAR;
-    if ((mine >= 60 || (old && mine <= 20)) && !state.peaceOffers.some(o => o.from === c.id && o.to === enemy)) {
-      issue({ type: 'offerPeace', country: c.id, target: enemy });
-    }
+    const myGoals = w.a === c.id ? w.goals : [];
+    let terms: PeaceTerms | null = null;
+    if (mine.score >= 90 && myGoals.length) {
+      const demands = [...myGoals];
+      // Dominating: add the enemy's most valuable occupied states while points last.
+      const extras = state.states.filter(st => st.owner && enemiesIn(w, c.id).includes(st.owner) && st.controller === c.id && !demands.some(d => d.kind === 'state' && d.state === st.id))
+        .sort((a, b) => b.population - a.population || a.id - b.id);
+      for (const st of extras) {
+        const next = [...demands, { kind: 'state' as const, state: st.id }];
+        if (termsCost(state, w, c.id, next) <= mine.available) demands.push({ kind: 'state', state: st.id }); else break;
+      }
+      if (termsCost(state, w, c.id, demands) <= mine.available) terms = { demands };
+    } else if (theirs.score >= 100 && w.b === c.id) terms = { demands: w.goals, give: true };
+    else if (old && Math.abs(mine.score - theirs.score) < 30) terms = { demands: [], white: true };
+    if (terms) issue({ type: 'proposePeace', country: c.id, warId: w.id, terms });
   }
 }
 
@@ -115,17 +129,7 @@ export function aiCommands(state: GameState, c: Country): Command[] {
   return out;
 }
 
-export function aiAcceptsPeace(state: GameState, ai: CountryId, from: CountryId): boolean {
-  const w = atWar(state, ai, from);
-  if (!w) return false;
-  const mine = warScore(state, w, ai), theirs = warScore(state, w, from);
-  const age = state.tick - w.startTick;
-  if (mine >= 50 && mine > theirs) return false;
-  return theirs >= 50 || (mine < 25 && age >= YEAR) || age >= 3 * YEAR;
-}
-
 // ---- wiring ----
-peacePolicy.accepts = aiAcceptsPeace;
 const gm = (c: Country) => (c.isPlayer ? null : DIFFICULTIES[c.difficulty].bonuses);
 refillBonusHooks.push((_s, c) => gm(c)?.troopRefillPct ?? 0);
 buildCostHooks.push((_s, c) => 1 + (gm(c)?.buildCostPct ?? 0) / 100);

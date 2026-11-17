@@ -2,7 +2,6 @@
 // declare war, fight, then a peace deal hands over every state the winner occupies by majority.
 import { getStateTiles } from '../map/stateTiles';
 import { TICKS_PER_DAY } from './calendar';
-import { BALANCE } from './balance';
 import { setTile, stateControlShare, statesOwnedBy } from './control';
 import { handlers, systems } from './registry';
 import type { Command, CountryId, GameState, SimEvent, War } from './types';
@@ -85,14 +84,6 @@ export function separatePeace(state: GameState, war: War, c: CountryId, changed:
   war.sideB = war.sideB.filter(x => x !== c);
 }
 
-/** How an AI answers a peace offer. The AI module replaces this. */
-export const peacePolicy = {
-  accepts(state: GameState, ai: CountryId, from: CountryId): boolean {
-    const w = atWar(state, ai, from)!;
-    return warScore(state, w, from) >= 50 || warScore(state, w, ai) < 25;
-  },
-};
-
 /** Returns every tile occupied between the two sides to its owner. */
 export function returnOccupied(state: GameState, war: War, changed: number[]): void {
   for (const side of [war.sideA, war.sideB]) {
@@ -109,43 +100,9 @@ export function endWar(state: GameState, war: War): void {
   state.peaceOffers = state.peaceOffers.filter(o => !((war.sideA.includes(o.from) && war.sideB.includes(o.to)) || (war.sideB.includes(o.from) && war.sideA.includes(o.to))));
 }
 
-export function makePeace(state: GameState, war: War, events: SimEvent[], changed: number[]): void {
-  const sa = warScore(state, war, war.a), sb = warScore(state, war, war.b);
-  const winner = sa > sb ? war.a : sb > sa ? war.b : 0;
-  const losers = winner === war.a ? war.sideB : war.sideA;
-  const transferred: number[] = [];
-  if (winner) {
-    for (const loser of losers) for (const s of statesOwnedBy(state, loser)) {
-      if (stateControlShare(state, s, winner) > 0.5) {
-        transferred.push(s);
-        for (const t of getStateTiles(state.map, s)) if (state.owner[t] === loser) setTile(state, t, winner, winner, changed);
-      }
-    }
-  }
-  returnOccupied(state, war, changed);
-  if (winner && transferred.length) state.countries[winner].infamy += BALANCE.diplomacy.INFAMY_PER_STATE * transferred.length;
-  endWar(state, war);
-  events.push({ type: 'peace', a: war.a, b: war.b, transferred });
-}
-
 /** Attack cleanup lives in combat.ts; registered here to avoid an import cycle. */
 export const attackHooks = { endBetween: (_s: GameState, _a: CountryId, _b: CountryId, _ret: boolean) => {}, endAllOf: (_s: GameState, _c: CountryId) => {} };
 function endAttacksBetween(state: GameState, a: CountryId, b: CountryId, ret: boolean) { attackHooks.endBetween(state, a, b, ret); }
-
-export function offerPeace(state: GameState, from: CountryId, to: CountryId, events: SimEvent[], changed: number[]): string | null {
-  const war = atWar(state, from, to);
-  if (!war) return 'not at war';
-  const target = state.countries[to];
-  if (!target.isPlayer) {
-    if (peacePolicy.accepts(state, to, from)) makePeace(state, war, events, changed);
-    else events.push({ type: 'peaceRefused', from, to });
-    return null;
-  }
-  if (state.peaceOffers.some(o => o.from === from && o.to === to)) return 'already offered';
-  state.peaceOffers.push({ from, to, tick: state.tick });
-  events.push({ type: 'peaceOffered', from, to });
-  return null;
-}
 
 export function checkElimination(state: GameState, events: SimEvent[], changed: number[]): void {
   for (const c of state.countries) {
@@ -168,22 +125,11 @@ export function checkElimination(state: GameState, events: SimEvent[], changed: 
   }
 }
 
-handlers.offerPeace = (state, cmd: Extract<Command, { type: 'offerPeace' }>, events, changed) => offerPeace(state, cmd.country, cmd.target, events, changed);
 handlers.separatePeace = (state, cmd: Extract<Command, { type: 'separatePeace' }>, _events, changed) => {
   const w = state.wars.find(x => x.id === cmd.warId && sideOf(x, cmd.country));
   if (!w) return 'no such war';
   if (w.a === cmd.country || w.b === cmd.country) return 'leader';
   separatePeace(state, w, cmd.country, changed);
-  return null;
-};
-handlers.respondPeace = (state, cmd: Extract<Command, { type: 'respondPeace' }>, events, changed) => {
-  const offer = state.peaceOffers.find(o => o.from === cmd.from && o.to === cmd.country);
-  if (!offer) return 'no such offer';
-  state.peaceOffers = state.peaceOffers.filter(o => o !== offer);
-  const war = atWar(state, cmd.from, cmd.country);
-  if (!war) return null;
-  if (cmd.accept) makePeace(state, war, events, changed);
-  else events.push({ type: 'peaceRefused', from: cmd.from, to: cmd.country });
   return null;
 };
 systems.day.push((state, events, changed) => {
