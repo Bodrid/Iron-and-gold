@@ -2,6 +2,7 @@
 import { COAST_BIT, RIVER_BIT, Terrain, TERRAIN_MASK } from '../../src/map/format';
 import { drawPolyline, fillPolygon, projectLines, projectRings } from './rasterize';
 import { GRID, type Projection } from './project';
+import type { Strait } from './straits';
 
 export interface TerrainSources { land: any; lakes: any; regions: any; rivers: any }
 
@@ -21,7 +22,7 @@ function valueNoise(x: number, y: number, scale: number): number {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 }
 
-export function buildTerrain(src: TerrainSources, p: Projection = GRID): Uint8Array {
+export function buildTerrain(src: TerrainSources, p: Projection = GRID, straits: Strait[] = []): Uint8Array {
   const { width: w, height: h } = p;
   const t = new Uint8Array(w * h); // Sea = 0
   const mask = new Uint8Array(w * h);
@@ -81,7 +82,21 @@ export function buildTerrain(src: TerrainSources, p: Projection = GRID): Uint8Ar
     if (river[i] && k !== Terrain.Sea && k !== Terrain.Lake) t[i] |= RIVER_BIT;
   }
 
-  // Coast: land next to sea.
+  carveStraits(t, p, straits);
+  markCoast(t, w, h);
+  return t;
+}
+
+/** Cut straits open as sea (two tiles wide). */
+export function carveStraits(t: Uint8Array, p: Projection, straits: Strait[]): void {
+  const lane = new Uint8Array(t.length);
+  for (const s of straits) drawPolyline(lane, p.width, p.height, s.path.map(([lon, lat]) => p.toTileF(lon, lat)), 1);
+  for (let i = 0; i < t.length; i++) if (lane[i]) { t[i] = Terrain.Sea; if (i + 1 < t.length && (i + 1) % p.width) t[i + 1] = Terrain.Sea; }
+}
+
+/** Coast bit: land next to sea. */
+export function markCoast(t: Uint8Array, w: number, h: number): void {
+  for (let i = 0; i < t.length; i++) t[i] &= ~COAST_BIT;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
     const k = t[i] & TERRAIN_MASK;
@@ -89,5 +104,4 @@ export function buildTerrain(src: TerrainSources, p: Projection = GRID): Uint8Ar
     const sea = (nx: number, ny: number) => nx >= 0 && ny >= 0 && nx < w && ny < h && (t[ny * w + nx] & TERRAIN_MASK) === Terrain.Sea;
     if (sea(x - 1, y) || sea(x + 1, y) || sea(x, y - 1) || sea(x, y + 1)) t[i] |= COAST_BIT;
   }
-  return t;
 }

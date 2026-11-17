@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
 import { makeTestWorld } from '../../map/testWorld';
-import { getNavGrid, portCell, seaPath, NAV_CELL } from './nav';
+import { getNavGrid, portCell, seaPath, NAV_CELL, cellIndex, cellOfTile } from './nav';
 
 // 48×24: land west (A) and east (B) with an ocean between, a landlocked state C, and an enclosed sea pocket D-side.
 function world() {
@@ -83,4 +83,40 @@ it.skipIf(!existsSync('public/data/states.json'))('real map: grid plus 100 sea l
   const caspian = m.states.find(s => s.key === 'KAZ-Atyrau')!;
   const cc = portCell(m, caspian.id);
   if (cc >= 0) expect(g.region[cc]).not.toBe(g.region[london]);
+});
+
+it('a port prefers the big sea over a small enclosed pocket next to it', () => {
+  // State A's centroid is next to a 1-cell pocket, but it also has a long ocean coast.
+  const rows: string[] = [];
+  for (let y = 0; y < 32; y++) {
+    let r = '';
+    for (let x = 0; x < 64; x++) {
+      if (x >= 24 && x < 32 && y >= 12 && y < 20) r += '.';      // pocket inside A
+      else if (x < 40) r += 'A';
+      else r += '.';
+    }
+    rows.push(r);
+  }
+  const m = makeTestWorld(rows);
+  const g = getNavGrid(m);
+  const pc = portCell(m, 1);
+  const oceanCell = g.region.findIndex((v, i) => v !== 0 && i % g.w === g.w - 1);
+  expect(g.region[pc]).toBe(g.region[oceanCell]);
+});
+
+it.skipIf(!existsSync('public/data/states.json'))('real map: the Black Sea reaches the ocean and Newfoundland ports on the ocean', () => {
+  const states = JSON.parse(readFileSync('public/data/states.json', 'utf8'));
+  const m = assembleMap(decodeGrid(gunzipSync(readFileSync('public/data/world.igz'))), [placeholderState(), ...states]);
+  const g = getNavGrid(m);
+  const cell = (k: string) => portCell(m, m.states.find(s => s.key === k)!.id);
+  const london = cell('GBR-South East');
+  expect(g.region[cell('UKR-Odessa')]).toBe(g.region[london]);
+  expect(g.region[cell('RUS-Krasnodar')]).toBe(g.region[london]);
+  expect(g.region[cell('CAN-Newfoundland and Labrador')]).toBe(g.region[london]);
+  expect(g.region[cell('DNK-Midtjylland')]).toBe(g.region[london]);
+});
+
+it('cellIndex is plain arithmetic and matches cellOfTile', () => {
+  const m = world();
+  for (const t of [0, 47, 48 * 9 + 20, 48 * 23 + 47]) expect(cellIndex(t, m.width)).toBe(cellOfTile(t, m));
 });

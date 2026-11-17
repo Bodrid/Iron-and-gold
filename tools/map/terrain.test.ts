@@ -44,3 +44,11 @@ it('reads the region class from the uppercase FEATURECLA field used by Natural E
   const [x, y] = p.toTile(40, 20);
   expect(t[y * p.width + x] & TERRAIN_MASK).toBe(Terrain.Mountains);
 });
+
+it('cuts listed straits open as sea', () => {
+  const p = makeProjection(360);
+  const t = buildTerrain({ land: fc([poly(box(-60, -40, 60, 40))]), lakes: fc([]), regions: fc([]), rivers: fc([]) }, p, [{ name: 'Test', path: [[0, -45], [0, 45]] }]);
+  const [x, y] = p.toTile(0, 0);
+  expect(t[y * p.width + x] & TERRAIN_MASK).toBe(Terrain.Sea);
+  expect(t[y * p.width + x - 1] & COAST_BIT).toBeTruthy();
+});

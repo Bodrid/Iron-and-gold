@@ -1,6 +1,5 @@
 import { colourCss, country, fmtNum, ui } from '../store';
 import { session } from '../game';
-import { COAST_BIT } from '../../map/format';
 
 export function SelectionCard() {
   const id = ui.selectedState.value;
@@ -14,8 +13,8 @@ export function SelectionCard() {
   const atWar = !!owner && (country(me)?.atWarWith.includes(owner.id) ?? false);
   const confirm = ui.confirmWar.value === d.owner;
   const tile = ui.selectedTile.value;
-  const coastal = tile !== null && session.game.map.stateOf[tile] === d.id && (session.game.map.terrain[tile] & COAST_BIT) !== 0;
-  const boatable = coastal && !mine && (!d.owner || atWar) && ui.trade.value.capacity > 0;
+  const beach = tile !== null && d.coastal && !mine && (!d.owner || atWar) && ui.trade.value.capacity > 0 ? session.game.beachNear(tile, d.id, d.owner) : -1;
+  const boatable = beach >= 0;
   return (
     <div class="selection glass" data-ui="selection">
       <div class="sel-head">
@@ -28,7 +27,7 @@ export function SelectionCard() {
       <div class="sel-actions">
         {mine && <button onClick={() => { ui.tab.value = 'build'; ui.sheet.value = 'half'; }}>Build here</button>}
         {!d.owner && <button class="war" onClick={() => session.game!.attack(0)}>Attack</button>}
-        {boatable && <button onClick={() => session.game!.send({ type: 'navalInvasion', country: me, target: d.owner, tile: ui.selectedTile.value!, ratio: ui.attackRatio.value })}>Send boat</button>}
+        {boatable && <button onClick={() => session.game!.send({ type: 'navalInvasion', country: me, target: d.owner, tile: beach, ratio: ui.attackRatio.value })}>Send boat</button>}
         {owner && !mine && atWar && <button class="war" onClick={() => session.game!.attack(owner.id)}>Attack</button>}
         {owner && !mine && !atWar && !confirm && <button onClick={() => (ui.confirmWar.value = owner.id)}>Declare war</button>}
         {owner && !mine && !atWar && confirm && (

@@ -61,3 +61,12 @@ it('rapid duplicate invasions never spend more troops than the pool', () => {
   expect(boats).toHaveLength(1);
   expect(aboard).toBeLessThanOrEqual(1000);
 });
+
+it('the beach tile is reported as changed so the map redraws it', () => {
+  const g = islands();
+  const tile = eastCoastTile(g);
+  step(g, [{ type: 'navalInvasion', country: 1, target: 0, tile, ratio: 0.3 }]);
+  let seen = false;
+  for (let i = 0; i < 60 * 4 && !seen; i++) { const r = step(g, []); if (r.changedTiles.includes(tile)) seen = true; }
+  expect(seen).toBe(true);
+});

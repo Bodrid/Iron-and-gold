@@ -6,7 +6,7 @@ import { Heap } from '../heap';
 export const NAV_CELL = 8;
 const MIN_SEA_TILES = 4;
 
-export interface NavGrid { w: number; h: number; sea: Uint8Array; region: Int32Array /* sea body id per cell, 0 = not navigable */ }
+export interface NavGrid { w: number; h: number; sea: Uint8Array; region: Int32Array /* sea body id per cell, 0 = not navigable */; regionSize: Map<number, number> /* cells per body */; body: Int32Array /* sea body id per tile */ }
 
 const grids = new WeakMap<MapData, NavGrid>();
 const ports = new WeakMap<MapData, Map<number, number>>();
@@ -51,9 +51,17 @@ export function getNavGrid(map: MapData): NavGrid {
     for (const [b, n] of counts) if (n > bestN || (n === bestN && b < best)) { best = b; bestN = n; }
     if (bestN >= MIN_SEA_TILES) { sea[cy * w + cx] = 1; region[cy * w + cx] = best; }
   }
-  const g = { w, h, sea, region };
+  const regionSize = new Map<number, number>();
+  for (let i = 0; i < region.length; i++) if (region[i]) regionSize.set(region[i], (regionSize.get(region[i]) ?? 0) + 1);
+  const g = { w, h, sea, region, regionSize, body };
   grids.set(map, g);
   return g;
+}
+
+/** Navigation cell of a tile, by arithmetic only (safe on the main thread: never builds the grid). */
+export function cellIndex(tile: number, mapWidth: number): number {
+  const w = Math.ceil(mapWidth / NAV_CELL);
+  return Math.floor(Math.floor(tile / mapWidth) / NAV_CELL) * w + Math.floor((tile % mapWidth) / NAV_CELL);
 }
 
 export function cellOfTile(tile: number, map: MapData): number {
@@ -65,7 +73,7 @@ export function cellCentre(cell: number, grid: NavGrid): [number, number] {
   return [(cell % grid.w) * NAV_CELL + NAV_CELL / 2, Math.floor(cell / grid.w) * NAV_CELL + NAV_CELL / 2];
 }
 
-/** The navigable cell a state's ships use: next to its coast tile nearest the centroid. -1 if it has no sea coast. */
+/** The navigable cell a state's ships use: on the biggest sea it touches, next to the coast tile nearest the centroid. -1 if it has no sea coast. */
 export function portCell(map: MapData, stateId: number): number {
   let cache = ports.get(map);
   if (!cache) { cache = new Map(); ports.set(map, cache); }
@@ -74,7 +82,7 @@ export function portCell(map: MapData, stateId: number): number {
   const g = getNavGrid(map);
   const sd = map.states[stateId];
   const W = map.width;
-  let best = -1, bestD = Infinity;
+  let best = -1, bestD = Infinity, bestSize = -1;
   for (const t of getStateTiles(map, stateId)) {
     if (!(map.terrain[t] & COAST_BIT)) continue;
     const x = t % W, y = Math.floor(t / W);
@@ -88,10 +96,11 @@ export function portCell(map: MapData, stateId: number): number {
         const cx = c0x + dx, cy = c0y + dy;
         if (cx < 0 || cy < 0 || cx >= g.w || cy >= g.h) continue;
         const c = cy * g.w + cx;
-        if (!g.sea[c]) continue;
+        if (!g.sea[c] || g.region[c] !== g.body[n]) continue;
         const ddx = x - sd.centroid[0], ddy = y - sd.centroid[1];
         const d = ddx * ddx + ddy * ddy + r * 0.5;
-        if (d < bestD || (d === bestD && c < best)) { bestD = d; best = c; }
+        const size = g.regionSize.get(g.region[c]) ?? 0;
+        if (size > bestSize || (size === bestSize && (d < bestD || (d === bestD && c < best)))) { bestSize = size; bestD = d; best = c; }
       }
     }
   }

@@ -95,7 +95,9 @@ export const BALANCE = {
     IDLE_END_MONTHS: 3,
     /** Importers considered per new route (closest shortages first). */
     CANDIDATES: 5,
-    PATH_SEARCHES_PER_MONTH: 2,
+    PATH_SEARCHES_PER_MONTH: 3,
+    /** Days a cancelled route stays closed. */
+    CANCEL_BLOCK_DAYS: 365,
   },
   navy: {
     /** Battle losses: share of the loser's ships sunk per unit of strength advantage. */

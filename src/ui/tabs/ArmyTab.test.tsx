@@ -29,3 +29,12 @@ it('never pushes a sticky toast (like a peace offer) off the screen', () => {
   expect(ui.toasts.value.some(t => t.text === 'Austria offers peace.')).toBe(true);
   expect(ui.toasts.value.length).toBeLessThanOrEqual(4);
 });
+
+it('ships at sea can be sent back to port', () => {
+  ui.peaceOffers.value = [];
+  ui.fleet.value = { ships: [{ id: 9, kind: 'transport', order: 'Patrolling', cell: 3, troops: 0 }], builds: [] };
+  const sent: any[] = [];
+  render(<ArmyTab send={c => sent.push(c)} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Return to port' }));
+  expect(sent).toEqual([{ type: 'orderShip', country: 1, shipId: 9, order: { type: 'return' } }]);
+});

@@ -45,7 +45,9 @@ export type ShipOrder =
   | { type: 'raid'; cell: number }
   | { type: 'escort'; routeId: number }
   | { type: 'trade'; routeId: number }
-  | { type: 'invade'; tile: number; target: CountryId };
+  | { type: 'invade'; tile: number; target: CountryId }
+  /** Command-only: becomes idle at the nearest reachable own port. */
+  | { type: 'return' };
 export interface Ship {
   id: number; owner: CountryId; kind: ShipKind; cell: number;
   /** Lane endpoints; the lane itself comes from the sea-lane cache. */ fromCell: number; toCell: number;
@@ -73,6 +75,7 @@ export interface GameState {
   wars: War[];
   peaceOffers: PeaceOffer[];
   tradeRoutes: TradeRoute[];
+  /** Routes the player or AI cancelled: not reopened until `until`. */ tradeBlocks: { exporter: CountryId; importer: CountryId; good: Good; until: number }[];
   ships: Ship[];
   shipBuilds: ShipBuild[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];

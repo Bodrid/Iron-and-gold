@@ -76,6 +76,7 @@ function NavySection({ send }: { send: Send }) {
           {sea !== null && s.kind === 'warship' && <button onClick={() => order(s.id, { type: 'raid', cell: sea })}>Raid here</button>}
           {sea !== null && <button onClick={() => order(s.id, { type: 'patrol', cell: sea })}>Patrol here</button>}
           {s.kind === 'warship' && route && <button onClick={() => order(s.id, { type: 'escort', routeId: route.id })}>Escort trade</button>}
+          {s.order !== 'In port' && <button onClick={() => order(s.id, { type: 'return' })}>Return to port</button>}
         </div>
       ))}
     </>

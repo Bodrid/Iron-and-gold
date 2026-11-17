@@ -13,8 +13,8 @@ function effectText(def: BuildingDef): string {
   if (e.researchPoints) return `+${e.researchPoints} research /mo, literacy`;
   if (e.stateOutputPct) return `+${e.stateOutputPct}% state output (uses coal)`;
   if (e.taxPct) return `+${e.taxPct}% taxes from this state`;
-  if (e.tradeRoutes) return 'Trade routes (coming in a later update)';
-  if (e.shipBuilding) return 'Ships (coming in a later update)';
+  if (e.tradeRoutes) return `+${e.tradeRoutes} trade routes`;
+  if (e.shipBuilding) return 'Builds warships and transports';
   return '';
 }
 

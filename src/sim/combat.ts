@@ -121,11 +121,11 @@ export function launchAttack(state: GameState, cmd: Extract<Command, { type: 'at
 }
 
 /** Troops come ashore at a tile and fight on from there (naval invasions). Returns troops that could not land. */
-export function launchAttackFrom(state: GameState, attacker: CountryId, target: CountryId, troops: number, tile: number): number {
+export function launchAttackFrom(state: GameState, attacker: CountryId, target: CountryId, troops: number, tile: number, changed: number[] = []): number {
   const cost = tileCost(state, tile, target);
   if (troops < cost + C.MIN_ATTACK_TROOPS) return troops;
   troops -= cost;
-  setTile(state, tile, target === 0 ? attacker : state.owner[tile], attacker, []);
+  setTile(state, tile, target === 0 ? attacker : state.owner[tile], attacker, changed);
   const existing = state.attacks.find(a => a.attacker === attacker && a.target === target);
   if (existing) { existing.troops += troops; return 0; }
   const attack: Attack = { id: state.nextId++, attacker, target, troops };

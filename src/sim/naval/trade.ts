@@ -5,7 +5,7 @@ import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
 import { atWar } from '../war';
 import type { Command, Country, CountryId, GameState, Good, SimEvent, TradeRoute } from '../types';
-import { getNavGrid, portCell, seaPath, seaPathKnown } from './nav';
+import { getNavGrid, portCell, seaPath } from './nav';
 
 const T = BALANCE.trade;
 
@@ -73,6 +73,7 @@ export function closeRoute(state: GameState, r: TradeRoute): void {
 
 export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
   for (const c of state.countries) c.tradeIncome = 0;
+  state.tradeBlocks = state.tradeBlocks.filter(b => b.until > state.tick);
   // Deliver on existing routes.
   for (const r of state.tradeRoutes.slice()) {
     if (!routeValid(state, r)) { closeRoute(state, r); continue; }
@@ -104,7 +105,8 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
     const goods = GOODS.filter(g => surplus(state, e, g) > 0).sort((a, b) => surplus(state, e, b) * e.prices[b] - surplus(state, e, a) * e.prices[a]);
     for (const g of goods) {
       const candidates = state.countries.filter(i => i.alive && i.id && i.id !== e.id && !state.tradeOff.includes(i.id) && free(i.id) > 0
-        && shortage(state, i, g) > 0 && !atWar(state, e.id, i.id) && !state.tradeRoutes.some(r => r.exporter === e.id && r.importer === i.id && r.good === g))
+        && shortage(state, i, g) > 0 && !atWar(state, e.id, i.id) && !state.tradeRoutes.some(r => r.exporter === e.id && r.importer === i.id && r.good === g)
+        && !state.tradeBlocks.some(b => b.exporter === e.id && b.importer === i.id && b.good === g))
         .sort((a, b) => shortage(state, b, g) - shortage(state, a, g) || a.id - b.id)
         .slice(0, T.CANDIDATES);
       // Rank by shortage over straight-line distance; run the (expensive) sea-lane search only to confirm the choice.
@@ -116,7 +118,9 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
       let pick: { i: Country; pair: { from: number; to: number } } | null = null;
       for (const x of ranked.slice(0, 2)) {
         const tc = portCell(state.map, x.to);
-        if (!seaPathKnown(state.map, fc, tc)) { if (budget <= 0) break; budget--; }
+        // Every attempt costs budget, cached or not: the cache is a speed-up and must never change which routes open.
+        if (budget <= 0) break;
+        budget--;
         if (seaPath(state.map, fc, tc)) { pick = { i: x.i, pair: { from, to: x.to } }; break; }
       }
       if (!pick) continue;
@@ -134,6 +138,7 @@ handlers.cancelTradeRoute = (state, cmd: Extract<Command, { type: 'cancelTradeRo
   const r = state.tradeRoutes.find(x => x.id === cmd.routeId && (x.exporter === cmd.country || x.importer === cmd.country));
   if (!r) return 'no such route';
   closeRoute(state, r);
+  state.tradeBlocks.push({ exporter: r.exporter, importer: r.importer, good: r.good, until: state.tick + T.CANCEL_BLOCK_DAYS * 4 });
   return null;
 };
 handlers.setTradeAuto = (state, cmd: Extract<Command, { type: 'setTradeAuto' }>) => {

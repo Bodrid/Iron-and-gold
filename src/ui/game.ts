@@ -12,7 +12,7 @@ import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
 import { country, layoutFor, pushToast, ui, type Tab } from './store';
 import { BUILDING_NAMES } from '../worker/summaries';
-import { cellOfTile } from '../sim/naval/nav';
+import { cellIndex } from '../sim/naval/nav';
 
 export class GameController {
   private owner: Uint16Array;
@@ -178,7 +178,7 @@ export class GameController {
     const tile = y * this.map.width + x;
     const s = this.map.stateOf[tile];
     ui.selectedTile.value = tile;
-    ui.selectedSea.value = s ? null : cellOfTile(tile, this.map);
+    ui.selectedSea.value = s || (this.map.terrain[tile] & 0x0f) !== 0 ? null : cellIndex(tile, this.map.width);
     this.selectState(s || null);
   }
 
@@ -195,6 +195,21 @@ export class GameController {
     const [x, y] = this.map.states[id].centroid;
     this.cam.flyTo(x, y, Math.max(this.cam.zoom, 3));
     this.selectState(id);
+  }
+
+  /** The coast tile of a state, controlled by `target`, nearest a tapped tile (for Send boat). -1 if none. */
+  beachNear(tile: number, stateId: number, target: number): number {
+    const W = this.map.width;
+    const tx = tile % W, ty = Math.floor(tile / W);
+    let best = -1, bestD = Infinity;
+    const r = 40;
+    for (let y = Math.max(0, ty - r); y < Math.min(this.map.height, ty + r); y++) for (let x = Math.max(0, tx - r); x < Math.min(W, tx + r); x++) {
+      const t = y * W + x;
+      if (this.map.stateOf[t] !== stateId || !(this.map.terrain[t] & 0x40) || this.controller[t] !== target) continue;
+      const d = (x - tx) * (x - tx) + (y - ty) * (y - ty);
+      if (d < bestD) { bestD = d; best = t; }
+    }
+    return best;
   }
 
   /** Owner of most of a state's tiles as the main thread currently sees it. */

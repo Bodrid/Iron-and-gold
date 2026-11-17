@@ -67,3 +67,17 @@ it('ships whose home port is lost move to another port, or are lost if there is 
   expect(events).toContainEqual(expect.objectContaining({ type: 'shipLost', ship: w.id }));
   void setTile;
 });
+
+it('Return to port sends a ship to the nearest port it can reach', () => {
+  const g = seaWorld({ shipyards: true });
+  step(g, [{ type: 'buildShip', country: 1, state: stateId(g, 'T-A'), kind: 'transport' }]);
+  runDays(g, SHIPS.transport.buildDays + 1);
+  const t = g.ships.find(s => s.kind === 'transport')!;
+  step(g, [{ type: 'orderShip', country: 1, shipId: t.id, order: { type: 'patrol', cell: portCell(g.map, stateId(g, 'T-B')) } }]);
+  runDays(g, 20);
+  const r = step(g, [{ type: 'orderShip', country: 1, shipId: t.id, order: { type: 'return' } }]);
+  expect(r.events.filter(e => e.type === 'rejected')).toEqual([]);
+  expect(t.order.type).toBe('idle');
+  runDays(g, 20);
+  expect(t.cell).toBe(portCell(g.map, (t.order as { port: number }).port));
+});

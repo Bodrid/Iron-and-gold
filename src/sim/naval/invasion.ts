@@ -63,7 +63,7 @@ function goHome(state: GameState, s: Ship, events: SimEvent[]) {
   sailTo(state, s, portCell(state.map, port));
 }
 
-export function invasionArrivals(state: GameState, events: SimEvent[]): void {
+export function invasionArrivals(state: GameState, events: SimEvent[], changed: number[] = []): void {
   for (const s of state.ships.slice()) {
     if (s.order.type !== 'invade' || !state.ships.includes(s)) continue;
     const path = lane(state, s);
@@ -75,7 +75,7 @@ export function invasionArrivals(state: GameState, events: SimEvent[]): void {
       ({ tile, target } = alt);
       if (landingCell(state, tile) !== s.cell) { s.order = { type: 'invade', tile, target }; sailTo(state, s, landingCell(state, tile)); continue; }
     }
-    const left = launchAttackFrom(state, s.owner, target, s.troops ?? 0, tile);
+    const left = launchAttackFrom(state, s.owner, target, s.troops ?? 0, tile, changed);
     s.troops = left;
     goHome(state, s, events);
   }
@@ -115,4 +115,4 @@ handlers.navalInvasion = (state, cmd: Extract<Command, { type: 'navalInvasion' }
   return null;
 };
 
-systems.day.push((state, events) => invasionArrivals(state, events));
+systems.day.push((state, events, changed) => invasionArrivals(state, events, changed));

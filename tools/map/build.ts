@@ -7,6 +7,7 @@ import { GRID } from './project';
 import { assignResources } from './resources';
 import { finalizeStates, groupAdmin1, mergeSmall, rasterizeStates, splitLarge } from './states';
 import { buildTerrain } from './terrain';
+import { STRAITS } from './straits';
 
 const MIN_TILES = Number(process.env.MIN_TILES ?? 300);
 const MIN_TILES_EUROPE = Number(process.env.MIN_TILES_EUROPE ?? 40);
@@ -19,7 +20,7 @@ const t0 = Date.now();
 const terrain = buildTerrain({
   land: fetchNE('ne_50m_land'), lakes: fetchNE('ne_50m_lakes'),
   regions: fetchNE('ne_10m_geography_regions_polys'), rivers: fetchNE('ne_50m_rivers_lake_centerlines'),
-});
+}, GRID, STRAITS);
 console.log('terrain', Date.now() - t0, 'ms');
 const admin = fetchNE('ne_10m_admin_1_states_provinces').features.filter((f: any) => f.properties.adm0_a3 !== 'ATA');
 const r = rasterizeStates(groupAdmin1(admin), terrain, GRID);

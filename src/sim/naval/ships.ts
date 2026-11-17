@@ -45,8 +45,12 @@ function nearestOwnPort(state: GameState, c: CountryId, fromCell: number): numbe
   return best;
 }
 
+/** Ships removed during the current encounter pass (avoids O(n) membership checks in big battles). */
+let removedNow: Set<Ship> | null = null;
+
 export function removeShip(state: GameState, s: Ship, events: SimEvent[] | null): void {
-  state.ships = state.ships.filter(x => x !== s);
+  if (removedNow) { if (removedNow.has(s)) return; removedNow.add(s); }
+  else state.ships = state.ships.filter(x => x !== s);
   if (events && s.kind !== 'trade') events.push({ type: 'shipLost', country: s.owner, ship: s.id, kind: s.kind });
 }
 
@@ -132,7 +136,16 @@ export function navalEncounters(state: GameState, events: SimEvent[]): void {
   const buckets = new Map<number, Ship[]>();
   for (const s of state.ships) { const b = buckets.get(s.cell); if (b) b.push(s); else buckets.set(s.cell, [s]); }
   const fought = new Set<number>();
-  const alive = (s: Ship) => state.ships.includes(s);
+  removedNow = new Set();
+  const gone = removedNow;
+  const alive = (s: Ship) => !gone.has(s);
+  try { encounterLoop(state, events, buckets, fought, alive); } finally {
+    removedNow = null;
+    if (gone.size) state.ships = state.ships.filter(s => !gone.has(s));
+  }
+}
+
+function encounterLoop(state: GameState, events: SimEvent[], buckets: Map<number, Ship[]>, fought: Set<number>, alive: (s: Ship) => boolean): void {
   for (const w of state.ships.slice()) {
     if (w.kind !== 'warship' || fought.has(w.id) || !alive(w)) continue;
     const near = neighbourhood(state, w.cell, buckets).filter(alive);
@@ -227,6 +240,13 @@ handlers.buildShip = (state, cmd: Extract<Command, { type: 'buildShip' }>) => {
 handlers.orderShip = (state, cmd: Extract<Command, { type: 'orderShip' }>) => {
   const s = state.ships.find(x => x.id === cmd.shipId && x.owner === cmd.country);
   if (!s || s.kind === 'trade') return 'no such ship';
+  if (cmd.order.type === 'return') {
+    const port = nearestOwnPort(state, s.owner, s.cell);
+    if (!port) return 'no port on that sea';
+    s.order = { type: 'idle', port };
+    sailTo(state, s, portCell(state.map, port));
+    return null;
+  }
   const bad = validOrder(state, s, cmd.order);
   if (bad) return bad;
   s.order = cmd.order;

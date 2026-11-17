@@ -8,7 +8,7 @@ import type { GameState } from '../types';
 // Two coastal countries facing each other across 24 tiles of sea, each with one state.
 function tradeWorld(opts: { ports?: boolean; seaLink?: boolean } = {}): GameState {
   const rows: string[] = [];
-  for (let y = 0; y < 16; y++) rows.push('A'.repeat(8) + (opts.seaLink === false && y >= 0 ? '....AAAA....' : '.'.repeat(12)).padEnd(24, '.') + 'B'.repeat(8));
+  for (let y = 0; y < 16; y++) rows.push('A'.repeat(8) + (opts.seaLink === false && y >= 0 ? '....WWWW....' : '.'.repeat(12)).padEnd(24, '.') + 'B'.repeat(8));
   const g = makeGame({ rows, owners: { A: 'XXX', B: 'YYY' }, population: 2_000_000, money: 1e6 });
   if (opts.ports !== false) for (const k of ['T-A', 'T-B']) g.states[stateId(g, k)].buildings.push({ type: 'port', level: 1, tile: stateTiles(g, k)[0] });
   return g;
@@ -69,4 +69,14 @@ it('countries with a coast start with a port in their biggest coastal state', ()
   const g = makeGame({ rows, owners: { A: 'XXX', C: 'XXX' }, population: 1_000_000, seedEconomy: true });
   expect(g.states[stateId(g, 'T-A')].buildings.some(b => b.type === 'port')).toBe(true);
   expect(g.states[stateId(g, 'T-C')].buildings.some(b => b.type === 'port')).toBe(false);
+});
+
+it('a cancelled route stays cancelled for a year even with automatic trade on', () => {
+  const g = tradeWorld(); setUpSurplus(g); runDays(g, 62);
+  const id = g.tradeRoutes[0].id;
+  step(g, [{ type: 'cancelTradeRoute', country: 1, routeId: id }]);
+  runDays(g, 95);
+  expect(g.tradeRoutes).toHaveLength(0);
+  runDays(g, 300);
+  expect(g.tradeRoutes.length).toBeGreaterThan(0);
 });
