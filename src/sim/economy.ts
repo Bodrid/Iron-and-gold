@@ -185,7 +185,9 @@ function countryMonth(state: GameState, c: Country): void {
   c.money += c.income;
   let rm = 1;
   for (const h of researchHooks) rm *= h(state, c);
-  c.researchPoints += research * rm;
+  const R = BALANCE.research;
+  c.researchRate = (R.BASE + R.POP * Math.sqrt(c.population / 1e6) * (0.5 + c.literacy) + research) * rm;
+  c.researchPoints += c.researchRate;
 }
 
 function railwayFuel(b: Building, avail: Record<Good, number>): number {

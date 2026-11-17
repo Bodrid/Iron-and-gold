@@ -86,6 +86,17 @@ export const BALANCE = {
     LITERACY_OUTPUT: 1,
     RESEARCH_PER_LEVEL: 5,
   },
+  research: {
+    /** Points per month every country gets. */
+    BASE: 2,
+    /** Points per month per sqrt(millions of people), times (0.5 + literacy). */
+    POP: 3,
+    /** A tech every country knows costs this much less. */
+    SPREAD_DISCOUNT: 0.5,
+    /** Extra cost per era ahead of the current one. */
+    AHEAD_PENALTY: 0.3,
+    MAX_QUEUE: 12,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,

@@ -11,7 +11,9 @@ export interface GameDate { y: number; m: number; d: number }
 export interface CountryDef { tag: string; name: string; color: number; capital: string; population: number; money: number; personality?: string }
 export type OwnershipRule = { modern: string; owner: string } | { states: string[]; owner: string } | { states: string[]; unclaimed: true };
 export interface StartDef { id: string; name: string; startDate: GameDate; endYear: number; countries: CountryDef[]; ownership: OwnershipRule[]; /** Give countries starting farms, mines etc. Default true. */ seedEconomy?: boolean;
-  /** Historical population (people) by modern territory code, spread over that territory's states; overrides CountryDef.population there. */ regionPopulation?: Record<string, number> }
+  /** Historical population (people) by modern territory code, spread over that territory's states; overrides CountryDef.population there. */ regionPopulation?: Record<string, number>;
+  /** Every tech up to this era is known at the start (default: the era before the start year's). */ knownEra?: number;
+  /** Extra known techs by country tag. */ extraTechs?: Record<string, string[]> }
 export interface GameSetup { startId: string; playerTag: string; difficulty: Difficulty; rivalsHarder: boolean; seed: number; /** Tests/tools: AI countries do nothing. */ aiDisabled?: boolean }
 
 export interface StatSample { tick: number; gdp: number; population: number; sol: number; tiles: number; money: number }
@@ -23,7 +25,10 @@ export interface Country {
   stockpile: Record<Good, number>; prices: Record<Good, number>;
   /** Last month's production and demand per good (for prices and the UI). */
   produced: Record<Good, number>; demanded: Record<Good, number>;
-  gdp: number; income: number; sol: number; literacy: number; researchPoints: number;
+  gdp: number; income: number; sol: number; literacy: number;
+  /** Unspent research points (banked; spent on the current tech). */ researchPoints: number;
+  /** Research points earned last month. */ researchRate: number;
+  techs: string[]; researching: string | null; researchQueue: string[];
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
@@ -123,7 +128,10 @@ export type Command =
   | { type: 'backDown'; country: CountryId; playId: number }
   | { type: 'separatePeace'; country: CountryId; warId: number }
   | { type: 'annexPuppet'; country: CountryId; puppet: CountryId }
-  | { type: 'setPrivateers'; country: CountryId; target: CountryId; on: boolean };
+  | { type: 'setPrivateers'; country: CountryId; target: CountryId; on: boolean }
+  | { type: 'research'; country: CountryId; tech: string }
+  | { type: 'queueTech'; country: CountryId; tech: string }
+  | { type: 'unqueueTech'; country: CountryId; tech: string };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -150,7 +158,8 @@ export type SimEvent =
   | { type: 'playCancelled'; initiator: CountryId; target: CountryId }
   | { type: 'puppeted'; overlord: CountryId; puppet: CountryId }
   | { type: 'freed'; puppet: CountryId }
-  | { type: 'annexed'; overlord: CountryId; puppet: CountryId };
+  | { type: 'annexed'; overlord: CountryId; puppet: CountryId }
+  | { type: 'techResearched'; country: CountryId; tech: string };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 
