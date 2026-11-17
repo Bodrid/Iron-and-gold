@@ -68,15 +68,40 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     for (const t of getStateTiles(map, s)) { state.owner[t] = o; state.controller[t] = o; }
   }
 
-  // Population: each country's total spread over its states by weight; unclaimed land gets a little.
-  const weightSum = new Float64Array(state.countries.length);
-  for (let s = 1; s < map.states.length; s++) weightSum[stateOwner[s]] += map.states[s].popWeight;
+  // Population: fixed per-state figures and totals by modern territory where the start gives them (unclaimed land
+  // weighs a tenth); a country's other states get its average density, or its own total if nothing else applies.
+  const region = start.regionPopulation ?? {};
+  const effW = (s: number) => map.states[s].popWeight * (stateOwner[s] ? 1 : 0.1);
+  const pop = new Float64Array(map.states.length).fill(-1);
+  const fixedIn = new Map<string, number>();
+  for (let s = 1; s < map.states.length; s++) {
+    const v = region[map.states[s].key];
+    if (v !== undefined) { pop[s] = v; fixedIn.set(map.states[s].modern, (fixedIn.get(map.states[s].modern) ?? 0) + v); }
+  }
+  const regionW = new Map<string, number>();
+  for (let s = 1; s < map.states.length; s++) {
+    const m = map.states[s].modern;
+    if (pop[s] < 0 && region[m] !== undefined) regionW.set(m, (regionW.get(m) ?? 0) + effW(s));
+  }
+  for (let s = 1; s < map.states.length; s++) {
+    const m = map.states[s].modern;
+    if (pop[s] < 0 && region[m] !== undefined) pop[s] = Math.max(0, region[m] - (fixedIn.get(m) ?? 0)) * (regionW.get(m)! > 0 ? effW(s) / regionW.get(m)! : 0);
+  }
+  const coveredPop = new Float64Array(state.countries.length), coveredW = new Float64Array(state.countries.length), restW = new Float64Array(state.countries.length);
+  for (let s = 1; s < map.states.length; s++) {
+    const o = stateOwner[s];
+    if (!o) continue;
+    if (pop[s] >= 0) { coveredPop[o] += pop[s]; coveredW[o] += map.states[s].popWeight; } else restW[o] += map.states[s].popWeight;
+  }
   for (let s = 1; s < map.states.length; s++) {
     const o = stateOwner[s];
     const w = map.states[s].popWeight;
-    state.states[s].population = o
-      ? Math.round(start.countries[o - 1].population * (weightSum[o] ? w / weightSum[o] : 0))
-      : Math.round(w * BALANCE.population.UNCLAIMED_POP_PER_WEIGHT);
+    if (pop[s] < 0) {
+      if (!o) pop[s] = w * BALANCE.population.UNCLAIMED_POP_PER_WEIGHT;
+      else if (coveredW[o] > 0) pop[s] = w * (coveredPop[o] / coveredW[o]);
+      else pop[s] = restW[o] ? start.countries[o - 1].population * (w / restW[o]) : 0;
+    }
+    state.states[s].population = Math.round(pop[s]);
   }
 
   rebuildControl(state);

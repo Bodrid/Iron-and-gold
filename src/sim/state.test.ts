@@ -38,3 +38,15 @@ it('throws on unknown state keys and player tags', () => {
   expect(() => createGame(makeTestWorld(['AABB', 'CCDD']), { ...start, ownership: [{ states: ['T-Z'], owner: 'XXX' }] }, setup)).toThrow(/T-Z/);
   expect(() => createGame(makeTestWorld(['AABB', 'CCDD']), start, { ...setup, playerTag: 'QQQ' })).toThrow(/QQQ/);
 });
+
+it('territory populations: fixed state figures, territory totals, and density for uncovered states', () => {
+  const map = makeTestWorld(['AABBCC']);
+  map.states[3].modern = 'OTH';
+  const s2: StartDef = { ...start, countries: [{ ...start.countries[0], population: 999_999 }],
+    ownership: [{ modern: 'TST', owner: 'XXX' }, { modern: 'OTH', owner: 'XXX' }],
+    regionPopulation: { TST: 3000, 'T-B': 1000 } };
+  const g = createGame(map, s2, setup);
+  expect(g.states[2].population).toBe(1000);     // fixed
+  expect(g.states[1].population).toBe(2000);     // rest of TST
+  expect(g.states[3].population).toBe(1500);     // uncovered: the country's average density over covered states
+});
