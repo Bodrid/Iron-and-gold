@@ -17,5 +17,6 @@ import './diplomacy/plays';
 import './diplomacy/peace';
 import './diplomacy/subjects';
 import './diplomacy/privateers';
+import './revolts';
 import './ai/ai';
 import './victory';

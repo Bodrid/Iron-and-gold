@@ -36,6 +36,7 @@ export interface Country {
   /** A law being passed (months counted since it started). */ enacting: { law: string; startTick: number; months: number } | null;
   groups: Record<GroupId, { clout: number; approval: number; radicalism: number }>;
   /** Tick of the last war this country lost (0 = never). */ lastDefeat: number;
+  /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string };
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
@@ -49,7 +50,7 @@ export interface Building { type: BuildingType; level: number; tile: number }
 export interface StateRuntime { id: number; owner: CountryId; controller: CountryId; population: number; buildings: Building[] }
 export interface Construction { id: number; country: CountryId; state: number; type: BuildingType; doneTick: number }
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
-export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' };
+export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' } | { kind: 'law'; law: string };
 /** a/b are the side leaders (the play's initiator and target). casualties[0] is side A's, [1] side B's. */
 export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number];
   /** Refused peace proposals (the AI waits before proposing again). */ refusals?: { from: CountryId; tick: number }[] }
@@ -171,7 +172,9 @@ export type SimEvent =
   | { type: 'annexed'; overlord: CountryId; puppet: CountryId }
   | { type: 'techResearched'; country: CountryId; tech: string }
   | { type: 'lawPassed'; country: CountryId; law: string }
-  | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' };
+  | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' }
+  | { type: 'revolt'; country: CountryId; rebels: CountryId; group: GroupId; law: string }
+  | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

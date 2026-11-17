@@ -1,6 +1,5 @@
 import type { MapData } from '../map/format';
 import { getStateTiles } from '../map/stateTiles';
-import { BASE_PRICE, emptyGoods } from '../content/goods';
 import { BALANCE } from './balance';
 import { ticksUntil } from './calendar';
 import { rebuildControl } from './control';
@@ -9,23 +8,10 @@ import { systems } from './registry';
 import { seedEconomy } from './economy';
 import { eraOfYear } from './research';
 import { TECHS, TECH_BY_ID } from '../content/techs';
-import { DEFAULT_LAWS, LAW_BY_ID } from '../content/laws';
-import { emptyGroups } from './politics';
+import { LAW_BY_ID } from '../content/laws';
+import { makeCountry, placeholderCountry } from './country';
 import './systems';
-import type { Country, CountryDef, GameSetup, GameState, StartDef } from './types';
-
-function placeholderCountry(): Country {
-  return makeCountry(0, { tag: '---', name: 'Unclaimed', color: 0x808080, capital: '', population: 0, money: 0 }, 0, false, 'normal');
-}
-
-function makeCountry(id: number, def: CountryDef, capitalState: number, isPlayer: boolean, difficulty: Country['difficulty']): Country {
-  return {
-    id, tag: def.tag, name: def.name, color: def.color, alive: id !== 0, isPlayer, capitalState, difficulty,
-    personality: def.personality ?? 'default', troops: 0, maxTroops: 0, money: def.money,
-    stockpile: emptyGoods(), prices: { ...BASE_PRICE }, produced: emptyGoods(), demanded: emptyGoods(),
-    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, researchRate: 0, techs: [], researching: null, researchQueue: [], laws: { ...DEFAULT_LAWS }, enacting: null, groups: emptyGroups(), lastDefeat: 0, tradeIncome: 0, infamy: 0, overlord: 0, puppetSince: 0, tiles: 0, controlled: 0, population: 0, history: [],
-  };
-}
+import type { GameSetup, GameState, StartDef } from './types';
 
 export function createGame(map: MapData, start: StartDef, setup: GameSetup): GameState {
   const keyToState = new Map(map.states.slice(1).map(s => [s.key, s.id]));

@@ -1,3 +1,4 @@
+import { LAW_BY_ID } from '../content/laws';
 // The player's diplomatic picture, for the Diplomacy tab.
 import { DEMAND_NAMES } from '../content/diplomacy';
 import { TICKS_PER_DAY } from '../sim/calendar';
@@ -12,6 +13,7 @@ import type { CountryId, Demand, GameState, TreatyKind } from '../sim/types';
 import type { CountryDetail, DiploView } from './protocol';
 
 export function demandLabel(state: GameState, d: Demand): string {
+  if (d.kind === 'law') return `Enact ${LAW_BY_ID[d.law]?.name ?? 'a law'}`;
   return d.kind === 'state' ? `Take ${state.map.states[d.state]?.name ?? 'a state'}` : DEMAND_NAMES[d.kind];
 }
 

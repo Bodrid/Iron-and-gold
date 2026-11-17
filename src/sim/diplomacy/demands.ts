@@ -7,6 +7,7 @@ import { setTile } from '../control';
 import { systems } from '../registry';
 import type { CountryId, Demand, GameState, SimEvent } from '../types';
 import { addInfamy } from './infamy';
+import { setLaw } from '../politics';
 import { hasTreaty, sign } from './treaties';
 
 const D = BALANCE.diplomacy;
@@ -31,6 +32,9 @@ export function applyDemands(state: GameState, winner: CountryId, loser: Country
     } else if (d.kind === 'openMarket') {
       if (hasTreaty(state, winner, loser, 'tradeAgreement')) continue;
       sign(state, winner, loser, 'tradeAgreement', events);
+    } else if (d.kind === 'law') {
+      if (Object.values(state.countries[loser].laws).includes(d.law)) continue;
+      setLaw(state.countries[loser], d.law);
     } else if (d.kind === 'reparations') {
       state.reparations.push({ from: loser, to: winner, until: state.tick + D.REPARATIONS_YEARS * 365 * TICKS_PER_DAY });
     }

@@ -117,6 +117,17 @@ export const BALANCE = {
     PASS_BASE: 0.05,
     PASS_PER_SUPPORT: 0.2,
     PASS_MAX: 0.4,
+    /** A group revolts at this radicalism… */
+    REVOLT_AT: 100,
+    /** …if it has at least this much clout. */
+    REVOLT_MIN_CLOUT: 0.1,
+    /** Share of the country's states the rebels take, per unit of clout. */
+    REVOLT_STATE_SHARE: 1.5,
+    /** Troops, money and goods that defect: clout + BASE, at most MAX. */
+    REVOLT_BASE_SHARE: 0.15,
+    REVOLT_MAX_SHARE: 0.6,
+    RADICAL_AFTER_REVOLT: 40,
+    MAX_COUNTRIES: 4000,
   },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */

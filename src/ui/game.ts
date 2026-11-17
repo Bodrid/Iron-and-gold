@@ -9,6 +9,7 @@ import { keyAction } from '../input/keyboard';
 import type { BuildingIcon, Command, Label, PeaceTerms, SimEvent } from '../sim/types';
 import { BALANCE } from '../sim/balance';
 import { DIPLO_REASON } from './tabs/diploText';
+import { LAW_BY_ID } from '../content/laws';
 import type { GameHost } from '../worker/host';
 import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
@@ -259,7 +260,7 @@ export function rejectionText(reason: string): string {
 export function peaceTermsText(terms: PeaceTerms, map: MapData): string {
   if (terms.white || !terms.demands.length) return 'a white peace, nobody gives anything';
   const words = terms.give ? { puppet: 'becoming your puppet', openMarket: 'opening their market', reparations: 'reparations' } : { puppet: 'you become their puppet', openMarket: 'you open your market', reparations: 'reparations' };
-  const list = terms.demands.map(d => (d.kind === 'state' ? `${map.states[d.state]?.name ?? 'a state'}` : words[d.kind])).join(', ');
+  const list = terms.demands.map(d => (d.kind === 'state' ? `${map.states[d.state]?.name ?? 'a state'}` : d.kind === 'law' ? `the ${LAW_BY_ID[d.law]?.name ?? 'new'} law` : words[d.kind])).join(', ');
   return terms.give ? `they give you ${list}` : `they demand ${list}`;
 }
 

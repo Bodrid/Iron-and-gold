@@ -9,7 +9,7 @@ import { applyDemands } from './demands';
 const C = DEMAND_COST;
 
 function sameDemand(a: Demand, b: Demand): boolean {
-  return a.kind === b.kind && (a.kind !== 'state' || a.state === (b as { state: number }).state);
+  return a.kind === b.kind && (a.kind !== 'state' || a.state === (b as { state: number }).state) && (a.kind !== 'law' || a.law === (b as { law: string }).law);
 }
 
 export function demandCost(state: GameState, d: Demand): number {
@@ -19,7 +19,7 @@ export function demandCost(state: GameState, d: Demand): number {
     const share = owner && owner.population > 0 ? st.population / owner.population : 0;
     return Math.min(C.stateMax, C.stateBase + C.statePerShare * share);
   }
-  return C[d.kind];
+  return C[d.kind as Exclude<Demand['kind'], 'state'>];
 }
 
 /** Points the demands cost for the side `side` is on. The play's war goals share `goalTotal` points between them;
