@@ -1,4 +1,4 @@
-// npm run bench — 2 game years of the real 1836 world, every AI on Hard, headless.
+// npm run bench — 2 game years of the real 1836 world, every AI on Hard, headless. Args: [years] [start id].
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { assembleMap, decodeGrid, placeholderState } from '../src/map/format';
@@ -11,7 +11,8 @@ const BUDGET = { avg: 6, p95: 20, worstMonth: 60 };
 const states = JSON.parse(readFileSync('public/data/states.json', 'utf8'));
 const map = assembleMap(decodeGrid(gunzipSync(readFileSync('public/data/world.igz'))), [placeholderState(), ...states]);
 const t0 = performance.now();
-const g = createGame(map, getStart('1836'), { startId: '1836', playerTag: 'PRU', difficulty: 'hard', rivalsHarder: false, seed: 1 });
+const startId = process.argv[3] ?? '1836';
+const g = createGame(map, getStart(startId), { startId, playerTag: 'PRU', difficulty: 'hard', rivalsHarder: false, seed: 1 });
 const years = Number(process.argv[2] ?? 2);
 console.log(`created in ${(performance.now() - t0).toFixed(0)} ms (includes sea grid)`);
 const times: number[] = [];

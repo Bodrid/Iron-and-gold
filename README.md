@@ -1,6 +1,6 @@
 # Iron & Gold
 
-A single-player grand strategy game for iPhone and iPad (it runs on PC too): OpenFront-style borders that move tile by tile, with a Victoria 3-style economy on top. Start in 1836, build farms, mines, mills and factories, colonise, go to war, and see where your country stands in 1936.
+A single-player grand strategy game for iPhone and iPad (it runs on PC too): OpenFront-style borders that move tile by tile, with a Victoria 3-style economy on top. Start in 1776 or 1836, build farms, mines, mills and factories, colonise, go to war, live through the history of your century and see where your country stands a hundred years later.
 
 ## Play
 
@@ -9,7 +9,7 @@ A single-player grand strategy game for iPhone and iPad (it runs on PC too): Ope
 
 The game saves itself every 1 January and whenever you leave the app; **Continue** on the menu picks up where you left off.
 
-## What's in this version (stages 1–5)
+## What's in this version (stages 1–6)
 
 - The real world map with 958 named states and the 1836 borders (71 countries).
 - Tile-by-tile attacks with an attack slider, colonising unclaimed land, wars, occupation and a simple peace deal.
@@ -26,7 +26,10 @@ The game saves itself every 1 January and whenever you leave the app; **Continue
 - Power blocs: major powers found a trade league, empire, military alliance or ideological union with 2–3 of 10 principles (free trade, common defence, drill, shared science, tribute…); leaders get the full buffs, members half and protection. Invite countries, or force them in with a "Join our power bloc" demand (Diplomacy tab; its own Bloc tab on iPad).
 - Companies and charters: found historical companies (East India Company, Krupp, Mitsui…) or generic ones; each boosts its buildings more as you build them, and a charter (colonial, monopoly, investment) gives more at a price (Nation tab).
 
-Coming next, in order: history events, formable nations and the 1776 start; then deeper AI and balance. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
+- History events: event cards with 2–3 choices for the player and the AI alike — the Great Game, German and Italian unification, the opening of Japan, the Opium Wars, the Eastern Question, Manifest Destiny and the Civil War (1836); the American Revolution, the French Revolution, Napoleon and the partitions of Poland (1776). Independence wars can create new countries; Germany and Italy can be proclaimed (Nation tab → Decisions).
+- Two start dates: 1776 (Age of Revolution, to 1876) and 1836 (Victorian Era, to 1936).
+
+Coming next: deeper AI up to Grand Master, balance and polish. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
 
 ## Develop
 

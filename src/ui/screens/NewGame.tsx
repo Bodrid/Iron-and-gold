@@ -4,7 +4,11 @@ import { DIFFICULTIES, DIFFICULTY_ORDER, bonusText } from '../../sim/ai/difficul
 import type { Difficulty, GameSetup } from '../../sim/types';
 import { colourCss, fmtNum } from '../store';
 
-const GREAT = new Set(['GBR', 'FRA', 'PRU', 'AUS', 'RUS', 'TUR', 'USA', 'CHI', 'JAP']);
+const GREAT = new Set(['GBR', 'FRA', 'PRU', 'AUS', 'RUS', 'TUR', 'USA', 'CHI', 'JAP', 'SPA']);
+const START_TEXT: Record<string, string> = {
+  '1836': 'Victorian Era · 100 years: industry, unification and empire',
+  '1776': 'Age of Revolution · 100 years: the American and French revolutions, Napoleon',
+};
 const DIFF_TEXT: Record<Difficulty, string> = {
   easy: 'Slow, obvious choices. Rarely attacks you.',
   normal: 'Builds sensibly and picks fair fights.',
@@ -19,7 +23,8 @@ function tier(tag: string, pop: number): string {
 }
 
 export function NewGame({ onStart, onBack }: { onStart: (s: GameSetup) => void; onBack?: () => void }) {
-  const start = STARTS[0];
+  const [startId, setStartId] = useState(STARTS[0].id);
+  const start = STARTS.find(s => s.id === startId) ?? STARTS[0];
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [rivals, setRivals] = useState(false);
   const [query, setQuery] = useState('');
@@ -36,8 +41,11 @@ export function NewGame({ onStart, onBack }: { onStart: (s: GameSetup) => void; 
       <section>
         <h3>Start date</h3>
         <div class="choices">
-          <button class="choice on" aria-pressed="true">1836 <small>Victorian Era · 100 years</small></button>
-          <button class="choice" disabled>1776 <small>Coming in a later update</small></button>
+          {STARTS.map(s => (
+            <button key={s.id} class={`choice ${s.id === start.id ? 'on' : ''}`} aria-pressed={s.id === start.id} onClick={() => { setStartId(s.id); setTag(null); }}>
+              {s.id} <small>{START_TEXT[s.id] ?? s.name}</small>
+            </button>
+          ))}
         </div>
       </section>
       <section>

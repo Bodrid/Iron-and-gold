@@ -8,8 +8,9 @@ import './styles.css';
 
 export function App() {
   useEffect(() => {
-    const q = new URLSearchParams(location.search).get('quickstart');
-    if (q) void startNewGame({ startId: '1836', playerTag: q.toUpperCase(), difficulty: 'normal', rivalsHarder: false, seed: Date.now() % 100000 });
+    const params = new URLSearchParams(location.search);
+    const q = params.get('quickstart');
+    if (q) void startNewGame({ startId: params.get('start') ?? '1836', playerTag: q.toUpperCase(), difficulty: 'normal', rivalsHarder: false, seed: Date.now() % 100000 });
   }, []);
   const s = ui.screen.value;
   if (s === 'game') return <GameScreen />;

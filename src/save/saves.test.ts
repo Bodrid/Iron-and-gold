@@ -71,7 +71,7 @@ it('save and load mid-voyage replays identically (ships, routes, invasions)', as
   expect(hashState(loaded)).toBe(hashState(g));
 }, 60_000);
 
-it('the save format is version 5', () => { expect(SAVE_VERSION).toBe(5); });
+it('the save format is version 6', () => { expect(SAVE_VERSION).toBe(6); });
 
 it('save and load in the middle of a diplomatic play replays identically', async () => {
   const { makeGame } = await import('../sim/testing');
