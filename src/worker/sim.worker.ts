@@ -3,7 +3,7 @@ import { loadMap } from '../map/format';
 import { getStart } from '../content/starts';
 import { createWorkerHandler } from './handler';
 import { buildingIcons, computeLabels } from '../sim/labels';
-import { deserialize, loadGame, LOAD_ERROR_TEXT, saveGame, type SaveSlot } from '../save/saves';
+import { checkSave, deserialize, loadGame, LOAD_ERROR_TEXT, saveGame, type SaveSlot } from '../save/saves';
 import type { ToWorker } from './protocol';
 
 const handler = createWorkerHandler({
@@ -17,7 +17,9 @@ const handler = createWorkerHandler({
     save: async (slot, state) => { await saveGame(slot as SaveSlot, state); },
     load: async (slot, map) => {
       const r = await loadGame(slot as SaveSlot);
-      return 'error' in r ? { error: LOAD_ERROR_TEXT[r.error] } : deserialize(r, map);
+      if ('error' in r) return { error: LOAD_ERROR_TEXT[r.error] };
+      const bad = checkSave(r, map);
+      return bad ? { error: LOAD_ERROR_TEXT[bad] } : deserialize(r, map);
     },
   },
 });

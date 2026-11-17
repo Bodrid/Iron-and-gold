@@ -50,6 +50,7 @@ export type FromWorker =
   | { type: 'events'; events: SimEvent[] }
   | { type: 'gameOver'; kind: 'victory' | 'defeat' | 'endDate'; scores: ScoreRow[] }
   | { type: 'saved'; slot: SaveSlot }
+  | { type: 'saveFailed'; slot: SaveSlot; message: string }
   | { type: 'error'; message: string };
 
 let mark = new Uint8Array(0);

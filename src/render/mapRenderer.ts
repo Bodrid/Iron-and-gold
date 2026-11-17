@@ -28,18 +28,31 @@ export function terrainColours(map: MapData): Uint8Array {
 
 export class MapRenderer {
   private gl: WebGL2RenderingContext;
-  private prog: WebGLProgram;
+  private prog!: WebGLProgram;
   private ownerData: Uint8Array;
-  private ownerTex: WebGLTexture;
-  private paletteTex: WebGLTexture;
+  private paletteData = new Uint8Array(PALETTE_SIZE * 4);
+  private ownerTex!: WebGLTexture;
+  private paletteTex!: WebGLTexture;
   private u: Record<string, WebGLUniformLocation | null> = {};
   private selected = -1;
   private dpr = 1;
+  private lost = false;
+  /** Called after the GPU context comes back, so the owner can redraw. */
+  onRestored: (() => void) | null = null;
 
   constructor(private canvas: HTMLCanvasElement, private map: MapData) {
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
     if (!gl) throw new Error('This device does not support WebGL2.');
     this.gl = gl;
+    this.ownerData = new Uint8Array(map.width * map.height * 4);
+    // iOS drops GPU contexts of backgrounded apps under memory pressure: rebuild everything when it comes back.
+    canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; });
+    canvas.addEventListener('webglcontextrestored', () => { this.lost = false; this.init(); this.onRestored?.(); });
+    this.init();
+  }
+
+  private init(): void {
+    const gl = this.gl, map = this.map;
     this.prog = compile(gl, VERT, FRAG);
     gl.useProgram(this.prog);
     const buf = gl.createBuffer();
@@ -51,19 +64,31 @@ export class MapRenderer {
     for (const n of ['uTerrain', 'uOwner', 'uStates', 'uPalette', 'uCenter', 'uView', 'uZoom', 'uMap', 'uSelected']) this.u[n] = gl.getUniformLocation(this.prog, n);
     const { width: w, height: h } = map;
     texture(gl, 0, w, h, gl.RGBA, gl.RGBA8, terrainColours(map));
-    this.ownerData = new Uint8Array(w * h * 4);
     this.ownerTex = texture(gl, 1, w, h, gl.RGBA, gl.RGBA8, this.ownerData);
     const st = new Uint8Array(w * h * 2);
     for (let i = 0; i < map.stateOf.length; i++) { st[i * 2] = map.stateOf[i] & 255; st[i * 2 + 1] = map.stateOf[i] >> 8; }
     texture(gl, 2, w, h, gl.RG, gl.RG8, st);
-    this.paletteTex = texture(gl, 3, PALETTE_SIZE, 1, gl.RGBA, gl.RGBA8, new Uint8Array(PALETTE_SIZE * 4));
+    this.paletteTex = texture(gl, 3, PALETTE_SIZE, 1, gl.RGBA, gl.RGBA8, this.paletteData);
     gl.uniform1i(this.u.uTerrain, 0); gl.uniform1i(this.u.uOwner, 1); gl.uniform1i(this.u.uStates, 2); gl.uniform1i(this.u.uPalette, 3);
     gl.uniform2i(this.u.uMap, w, h);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  /** Tests: lose the GPU context, restore it, resolve true once redrawn (false if the browser can't simulate it). */
+  testContextLoss(): Promise<boolean> {
+    const ext = this.gl.getExtension('WEBGL_lose_context');
+    if (!ext) return Promise.resolve(false);
+    return new Promise(resolve => {
+      this.canvas.addEventListener('webglcontextrestored', () => setTimeout(() => resolve(true), 0), { once: true });
+      ext.loseContext();
+      setTimeout(() => ext.restoreContext(), 50);
+    });
   }
 
   setOwnership(owner: Uint16Array, controller: Uint16Array): void {
     const d = this.ownerData;
     for (let i = 0; i < owner.length; i++) { d[i * 4] = owner[i] & 255; d[i * 4 + 1] = owner[i] >> 8; d[i * 4 + 2] = controller[i] & 255; d[i * 4 + 3] = controller[i] >> 8; }
+    if (this.lost) return;
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.ownerTex);
@@ -78,6 +103,7 @@ export class MapRenderer {
       const i = idx[k], v = val[k], o = v & 0xffff, c = v >>> 16;
       d[i * 4] = o & 255; d[i * 4 + 1] = o >> 8; d[i * 4 + 2] = c & 255; d[i * 4 + 3] = c >> 8;
     }
+    if (this.lost) return;
     const gl = this.gl;
     const w = this.map.width;
     gl.activeTexture(gl.TEXTURE1);
@@ -86,6 +112,8 @@ export class MapRenderer {
   }
 
   setPalette(p: Uint8Array): void {
+    this.paletteData.set(p);
+    if (this.lost) return;
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTex);
@@ -98,10 +126,11 @@ export class MapRenderer {
     this.dpr = Math.min(2, dpr);
     this.canvas.width = Math.round(w * this.dpr);
     this.canvas.height = Math.round(h * this.dpr);
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    if (!this.lost) this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
   }
 
   render(cam: Camera): void {
+    if (this.lost) return;
     const gl = this.gl;
     gl.useProgram(this.prog);
     gl.uniform2f(this.u.uCenter, cam.x, cam.y);

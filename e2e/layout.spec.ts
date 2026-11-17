@@ -1,6 +1,14 @@
 import { test, expect, type Page } from '@playwright/test';
 
+const SCREENS: Record<string, [number, number]> = { iphone17pro: [874, 402], ipadAir5: [1180, 820], desktop: [1920, 1080] };
+
 async function boot(page: Page) {
+  // Real devices keep their screen size when a window is resized (split view); the emulator doesn't, so pin it.
+  const [sw, sh] = SCREENS[test.info().project.name];
+  await page.addInitScript(([w, h]) => {
+    Object.defineProperty(Screen.prototype, 'width', { get: () => w });
+    Object.defineProperty(Screen.prototype, 'height', { get: () => h });
+  }, [sw, sh]);
   await page.goto('./?e2e=1&quickstart=PRU');
   await page.waitForFunction(() => (window as any).__gameReady === true, null, { timeout: 60_000 });
 }
@@ -26,10 +34,11 @@ test('every visible button is at least 44px', async ({ page }) => {
   expect(small).toEqual([]);
 });
 
-test('rotating and resizing adapt the layout', async ({ page }) => {
+test('rotating and resizing adapt the layout', async ({ page }, info) => {
   await boot(page);
   await page.setViewportSize({ width: 402, height: 874 });
-  await expect(page.getByText('Turn your phone sideways')).toBeVisible();
+  if (info.project.name === 'iphone17pro') await expect(page.getByText('Turn your phone sideways')).toBeVisible();
+  else await expect(page.getByText('Turn your phone sideways')).toHaveCount(0);
   await page.setViewportSize({ width: 1180, height: 820 });
   await page.getByRole('button', { name: 'Build' }).click();
   await expect(page.locator('[data-ui=dock]')).toBeVisible();
@@ -46,4 +55,24 @@ test('top bar shows the country, date and speed controls', async ({ page }) => {
   await page.getByRole('button', { name: 'Speed 3' }).click();
   await page.waitForTimeout(1500);
   await expect(page.locator('[data-ui=date]')).not.toHaveText('1 Jan 1836');
+});
+
+test('iPad split view and Slide Over widths stay playable', async ({ page }, info) => {
+  test.skip(info.project.name !== 'ipadAir5');
+  await boot(page);
+  for (const [w, h] of [[585, 820], [375, 820], [500, 1180]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await expect(page.getByText('Turn your phone sideways')).toHaveCount(0);
+    await expect(page.locator('[data-ui=tabbar]')).toBeVisible();
+  }
+});
+
+test('turning the phone upright pauses the game', async ({ page }, info) => {
+  test.skip(info.project.name !== 'iphone17pro');
+  await boot(page);
+  await page.getByRole('button', { name: 'Speed 3' }).click();
+  await page.setViewportSize({ width: 402, height: 874 });
+  await expect(page.getByText('Turn your phone sideways')).toBeVisible();
+  await page.setViewportSize({ width: 874, height: 402 });
+  await expect(page.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-pressed', 'true');
 });

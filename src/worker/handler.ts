@@ -75,6 +75,17 @@ export function createWorkerHandler(deps: HandlerDeps) {
 
   function pump() {
     if (!state) return;
+    try { pumpInner(); } catch (err) {
+      // Never leave a frozen, silent game: stop time and tell the player.
+      sched.setSpeed(0);
+      queue = [];
+      deps.post({ type: 'error', message: `The simulation hit a problem and was paused: ${err instanceof Error ? err.message : String(err)}` });
+      frame(true);
+    }
+  }
+
+  function pumpInner() {
+    if (!state) return;
     const n = sched.dueTicks();
     const events: SimEvent[] = [];
     const hadCommands = queue.length > 0;
@@ -102,7 +113,8 @@ export function createWorkerHandler(deps: HandlerDeps) {
       if (!events.length) { frame(true); return; }
     }
     if (events.length) {
-      if (events.some(e => e.type === 'built' || e.type === 'peace' || e.type === 'eliminated')) { buildingsDirty = true; lastLabelsDay = -Infinity; }
+      if (events.some(e => e.type === 'built' || e.type === 'peace' || e.type === 'eliminated')) buildingsDirty = true;
+      if (events.some(e => e.type === 'peace' || e.type === 'eliminated')) lastLabelsDay = -Infinity;
       if (events.some(e => e.type !== 'rejected' || (e.command as any).country === player())) selectionDirty = selected !== null;
       deps.post({ type: 'events', events });
       const over = events.find(e => e.type === 'gameOver');
@@ -135,7 +147,12 @@ export function createWorkerHandler(deps: HandlerDeps) {
         case 'command': queue.push(msg.command); break;
         case 'setSpeed': sched.setSpeed(msg.speed); if (state) frame(true); break;
         case 'select': selected = msg.stateId; selectionDirty = true; if (state) frame(true); break;
-        case 'save': if (state && deps.hooks?.save) { await deps.hooks.save(msg.slot, state); deps.post({ type: 'saved', slot: msg.slot }); } break;
+        case 'save':
+          if (state && deps.hooks?.save) {
+            try { await deps.hooks.save(msg.slot, state); deps.post({ type: 'saved', slot: msg.slot }); }
+            catch (err) { deps.post({ type: 'saveFailed', slot: msg.slot, message: err instanceof Error ? err.message : String(err) }); }
+          }
+          break;
         case 'debug': if (state && msg.action === 'eliminatePlayer') debugEliminate(state, dirty); break;
       }
     } catch (err) {

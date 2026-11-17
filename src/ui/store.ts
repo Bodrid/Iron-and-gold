@@ -42,14 +42,22 @@ export function country(id: number): CountrySummary | undefined {
 let toastId = 1;
 export function pushToast(t: Omit<Toast, 'id'>): number {
   const id = toastId++;
-  ui.toasts.value = [...ui.toasts.value.slice(-3), { ...t, id }];
+  const all = [...ui.toasts.value, { ...t, id }];
+  const sticky = all.filter(x => x.sticky);
+  const rest = all.filter(x => !x.sticky).slice(-Math.max(1, 4 - sticky.length));
+  ui.toasts.value = all.filter(x => x.sticky || rest.includes(x));
   if (!t.sticky) setTimeout(() => dismissToast(id), 6000);
   return id;
 }
 export function dismissToast(id: number) { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); }
 
-export function layoutFor(w: number, h: number): 'phone' | 'dock' | 'rotate' {
-  if (w < h && w < 600) return 'rotate';
+/** The device's screen, not the window: an iPad in split view has a narrow window but is not a phone. */
+export interface DeviceScreen { screenW: number; screenH: number }
+const deviceScreen = (): DeviceScreen => (typeof screen === 'undefined' ? { screenW: 1024, screenH: 768 } : { screenW: screen.width, screenH: screen.height });
+
+export function layoutFor(w: number, h: number, dev: DeviceScreen = deviceScreen()): 'phone' | 'dock' | 'rotate' {
+  const isPhone = Math.min(dev.screenW, dev.screenH) < 600;
+  if (isPhone && w < h) return 'rotate';
   if (w >= 1000 && h >= 600) return 'dock';
   return 'phone';
 }

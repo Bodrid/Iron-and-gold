@@ -4,6 +4,7 @@ import { createWorkerHandler } from './handler';
 import { makeTestWorld } from '../map/testWorld';
 import type { FromWorker, ToWorker } from './protocol';
 import type { StartDef } from '../sim/types';
+import { systems } from '../sim/registry';
 
 const start: StartDef = { id: 'test', name: 'Test', startDate: { y: 1836, m: 1, d: 1 }, endYear: 1936, seedEconomy: false,
   countries: [{ tag: 'XXX', name: 'X', color: 0xff0000, capital: 'T-A', population: 100_000, money: 100_000 }, { tag: 'YYY', name: 'Y', color: 0x0000ff, capital: 'T-B', population: 100_000, money: 1000 }],
@@ -98,4 +99,68 @@ it('autosaves on 1 January', async () => {
   host.setSpeed(3);
   for (let i = 0; i < 400 * 4 / 8 + 10; i++) { t += 1000 / 3; handler.pump(); }
   expect(saves).toContain('auto');
+});
+
+it('finishing a building refreshes icons but not country labels', async () => {
+  let t = 0;
+  let labelCalls = 0, iconCalls = 0;
+  const rich: StartDef = { ...start, countries: start.countries.map(c => ({ ...c, money: 1e6 })) };
+  const fake: any = { onmessage: null, terminate() {} };
+  const handler = createWorkerHandler({
+    post: msg => fake.onmessage?.({ data: msg }), loadMap: async () => makeTestWorld(['ABBB', 'ABBB']), getStart: () => rich, now: () => t,
+    hooks: { labels: () => { labelCalls++; return []; }, buildings: () => { iconCalls++; return []; } },
+  });
+  fake.postMessage = (m: any) => handler.onMessage(m);
+  const host = new GameHost(fake);
+  await host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
+  host.setSpeed(3);
+  for (let i = 0; i < 2; i++) { t += 1000 / 3; handler.pump(); }   // day 4: the barracks will finish between label refreshes
+  host.send({ type: 'build', country: 1, state: 1, building: 'barracks' });
+  let atBuilt = -1, iconsAtBuilt = -1;
+  host.onEvents(evs => { if (evs.some(e => e.type === 'built')) { atBuilt = labelCalls; iconsAtBuilt = iconCalls; } });
+  for (let i = 0; i < 60 && atBuilt < 0; i++) { t += 1000 / 3; handler.pump(); }
+  expect(atBuilt).toBeGreaterThanOrEqual(0);
+  expect(iconCalls).toBeGreaterThan(iconsAtBuilt);
+  expect(labelCalls).toBe(atBuilt);
+});
+
+it('a crash inside the simulation pauses the game and reports an error instead of freezing silently', async () => {
+  const { fake, handler, advance } = shim();
+  const host = new GameHost(fake);
+  await host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
+  const errors: string[] = [];
+  host.onMessage(m => { if (m.type === 'error') errors.push(m.message); });
+  const boom = () => { throw new Error('boom'); };
+  systems.tick.push(boom);
+  host.setSpeed(2);
+  expect(() => advance(200)).not.toThrow();
+  systems.tick.splice(systems.tick.indexOf(boom), 1);
+  expect(errors.some(e => e.includes('boom'))).toBe(true);
+  const ticks = handler.getState()!.tick;
+  advance(500);
+  expect(handler.getState()!.tick).toBe(ticks);   // paused
+});
+
+it('saves resolve by slot and reject when the write fails', async () => {
+  const msgs: any[] = [];
+  const fake: any = { onmessage: null, terminate() {}, postMessage: (m: any) => msgs.push(m) };
+  const host = new GameHost(fake);
+  let one = 'pending', two = 'pending';
+  host.save('1').then(() => (one = 'ok'), () => (one = 'failed'));
+  host.save('2').then(() => (two = 'ok'), () => (two = 'failed'));
+  fake.onmessage({ data: { type: 'saved', slot: 'auto' } });
+  await Promise.resolve();
+  expect([one, two]).toEqual(['pending', 'pending']);
+  fake.onmessage({ data: { type: 'saved', slot: '2' } });
+  fake.onmessage({ data: { type: 'saveFailed', slot: '1', message: 'quota' } });
+  await new Promise(r => setTimeout(r, 0));
+  expect([one, two]).toEqual(['failed', 'ok']);
+});
+
+it('a worker that fails to load rejects the pending game start', async () => {
+  const fake: any = { onmessage: null, onerror: null, terminate() {}, postMessage() {} };
+  const host = new GameHost(fake);
+  const p = host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
+  fake.onerror({ message: '404' });
+  await expect(p).rejects.toThrow(/reload/i);
 });

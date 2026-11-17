@@ -20,5 +20,7 @@ export async function startDebugMap(root: HTMLElement): Promise<void> {
   cam.flyTo(1290, 210, 3);
   r.render(cam);
   (window as any).__sampleColours = (n: number) => r.sampleColours(n, cam);
+  (window as any).__loseAndRestoreContext = () => r.testContextLoss();
+  r.onRestored = () => r.render(cam);
   (window as any).__mapReady = true;
 }

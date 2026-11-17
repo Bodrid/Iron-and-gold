@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { it, expect, beforeEach } from 'vitest';
-import { saveGame, loadGame, listSaves, deserialize, SAVE_VERSION, DB_NAME, type SavedGame } from './saves';
+import { saveGame, loadGame, listSaves, deserialize, checkSave, LOAD_ERROR_TEXT, SAVE_VERSION, DB_NAME, type SavedGame } from './saves';
 import { makeSmallWorldGame, runYears } from '../sim/testing';
 import { hashState } from '../sim/hash';
 
@@ -46,4 +46,15 @@ it('lists saves newest first with readable metadata', async () => {
   expect(list.map(s => s.slot)).toEqual(['auto', '1']);
   expect(list[0].countryName).toBe('Country PLR');
   expect(list[0].date).toBe('1 Jan 1836');
+});
+
+it('refuses a save made with a different world map', async () => {
+  const g = makeSmallWorldGame({ seed: 6 });
+  await saveGame('3', g);
+  const saved = (await loadGame('3')) as SavedGame;
+  expect(checkSave(saved, g.map)).toBeNull();
+  const other = makeSmallWorldGame({ seed: 6, countries: 4 }).map;
+  other.states[1].key = 'T-renamed';
+  expect(checkSave(saved, other)).toBe('otherMap');
+  expect(LOAD_ERROR_TEXT.otherMap).toMatch(/different version of the world map/);
 });

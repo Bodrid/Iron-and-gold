@@ -9,3 +9,12 @@ test('map renders the 1836 world with many colours', async ({ page }) => {
   expect(colours).toBeGreaterThan(5);
   expect(errors).toEqual([]);
 });
+
+test('the map comes back after the graphics context is lost and restored', async ({ page }) => {
+  await page.goto('./?e2e=1&debugMap=1');
+  await page.waitForFunction(() => (window as any).__mapReady === true, null, { timeout: 60_000 });
+  const ok = await page.evaluate(() => (window as any).__loseAndRestoreContext());
+  expect(ok).toBe(true);
+  const colours = await page.evaluate(() => (window as any).__sampleColours(40));
+  expect(colours).toBeGreaterThan(5);
+});

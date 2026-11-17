@@ -1,9 +1,15 @@
 import { session } from '../game';
 import { fmtMoney, fmtNum, player, ui } from '../store';
 
-export function backToMenu() {
-  session.game?.destroy();
-  session.game = null;
+/** Leaves the game for the menu, saving first (unless the player has been defeated) so Continue resumes here. */
+export async function backToMenu(): Promise<void> {
+  const g = session.game;
+  if (g && ui.outcome.value?.kind !== 'defeat') {
+    const timeout = new Promise<void>(res => setTimeout(res, 4000));
+    await Promise.race([g.host.save('background').catch(() => {}), timeout]);
+  }
+  g?.destroy();
+  if (session.game === g) session.game = null;
   ui.screen.value = 'menu';
 }
 

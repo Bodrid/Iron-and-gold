@@ -42,6 +42,7 @@ export class GameController {
     ui.tab.value = null;
     this.cleanups.push(host.onFrame(f => this.onFrame(f)), host.onEvents(e => this.onEvents(e)), host.onMessage(m => {
       if (m.type === 'gameOver') { ui.outcome.value = { kind: m.kind, scores: m.scores }; ui.outcomeDismissed.value = false; }
+      else if (m.type === 'error') { ui.speed.value = 0; pushToast({ kind: 'war', sticky: true, text: m.message }); }
     }));
     const cap = ready.countries.find(c => c.id === ready.player)?.capitalState;
     if (cap) { const [x, y] = map.states[cap].centroid; this.cam.flyTo(x, y, 3); }
@@ -55,6 +56,7 @@ export class GameController {
     this.renderer = new MapRenderer(canvas, this.map);
     this.overlay = new Overlay(over, this.map.width);
     this.renderer.setOwnership(this.owner, this.controller);
+    this.renderer.onRestored = () => { this.dirty = true; };
     this.updatePalette();
     const resize = () => {
       const w = container.clientWidth, h = container.clientHeight;
@@ -64,7 +66,10 @@ export class GameController {
       this.cam.flyTo(cx, cy);
       this.renderer!.resize(w, h, devicePixelRatio);
       this.overlay!.resize(w, h, devicePixelRatio);
-      ui.layout.value = layoutFor(innerWidth, innerHeight);
+      const layout = layoutFor(innerWidth, innerHeight);
+      // Holding the phone upright hides the map: pause so nothing happens unseen.
+      if (layout === 'rotate' && ui.layout.value !== 'rotate' && ui.speed.value > 0) this.setSpeed(0);
+      ui.layout.value = layout;
       this.dirty = true;
     };
     const ro = new ResizeObserver(resize);

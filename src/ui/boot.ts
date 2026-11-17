@@ -46,7 +46,7 @@ function hookVisibility() {
   visibilityHooked = true;
   // iOS may kill a Home Screen app in the background: save whenever it is hidden.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && session.game) void session.game.host.save('background');
+    if (document.visibilityState === 'hidden' && session.game && ui.outcome.value?.kind !== 'defeat') void session.game.host.save('background');
   });
 }
 

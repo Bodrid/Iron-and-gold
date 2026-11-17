@@ -15,7 +15,10 @@ export function TabContent({ tab }: { tab: Tab }) {
 }
 
 function SaveRow() {
-  const save = async (slot: '1' | '2' | '3') => { await session.game?.host.save(slot); pushToast({ kind: 'good', text: `Saved to slot ${slot}.` }); };
+  const save = async (slot: '1' | '2' | '3') => {
+    try { await session.game?.host.save(slot); pushToast({ kind: 'good', text: `Saved to slot ${slot}.` }); }
+    catch (err) { pushToast({ kind: 'war', text: `Couldn't save: ${err instanceof Error ? err.message : String(err)}` }); }
+  };
   return (
     <div class="row nation-actions">
       <button onClick={() => save('1')}>Save 1</button>
