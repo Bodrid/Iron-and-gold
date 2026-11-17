@@ -2,6 +2,8 @@ import { useEffect } from 'preact/hooks';
 import { ui } from './store';
 import { GameScreen } from './GameScreen';
 import { startNewGame } from './boot';
+import { MainMenu } from './screens/MainMenu';
+import { NewGame } from './screens/NewGame';
 import './styles.css';
 
 export function App() {
@@ -12,10 +14,6 @@ export function App() {
   const s = ui.screen.value;
   if (s === 'game') return <GameScreen />;
   if (s === 'loading') return <div class="screen loading"><div class="spinner" /><p>{ui.loadingText.value}</p></div>;
-  return (
-    <div class="screen boot">
-      <h1>Iron &amp; Gold</h1>
-      {ui.error.value && <p class="error">{ui.error.value}</p>}
-    </div>
-  );
+  if (s === 'newGame') return <NewGame onStart={setup => void startNewGame(setup)} onBack={() => (ui.screen.value = 'menu')} />;
+  return <MainMenu />;
 }

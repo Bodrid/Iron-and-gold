@@ -133,3 +133,32 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .goods th { text-align: right; color: var(--dim); font-weight: 500; font-size: 11px; padding: 4px; }
 .goods td { text-align: right; padding: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
 .goods th:first-child, .goods td:first-child { text-align: left; }
+
+/* menus */
+.menu { display: grid; place-items: center; }
+.menu-box { display: grid; gap: 10px; width: min(420px, 100%); text-align: center; }
+.menu-box .tag { color: var(--dim); margin: 0 0 12px; }
+button.big { min-height: 56px; font-size: 17px; font-weight: 600; display: grid; place-content: center; }
+button.big small { font-weight: 400; font-size: 12px; opacity: 0.8; }
+.saves { display: grid; text-align: left; }
+.newgame { display: grid; gap: 14px; align-content: start; max-width: 900px; margin: 0 auto; padding-bottom: calc(var(--safe-b) + 90px); }
+.ng-head { display: flex; align-items: center; gap: 8px; }
+.ng-head h2 { margin: 0; }
+.newgame section { display: grid; gap: 8px; }
+.newgame h3 { margin: 0; }
+.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.choice { display: grid; text-align: left; padding: 8px 12px; font-weight: 600; background: rgba(255, 255, 255, 0.06); border: 1px solid transparent; }
+.choice small { font-weight: 400; color: var(--dim); font-size: 12px; }
+.choice.on, .crow.on { border: 1px solid var(--gold); background: rgba(229, 181, 74, 0.12); }
+.toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--gold); }
+.toggle small { color: var(--dim); }
+.search { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-line); border-radius: 10px; min-height: 44px; padding: 0 12px; -webkit-user-select: text; user-select: text; }
+.country-list { display: grid; max-height: 40vh; overflow: auto; border-radius: 10px; background: rgba(0, 0, 0, 0.2); }
+.ng-foot { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px calc(var(--safe-r) + 20px) calc(var(--safe-b) + 10px) calc(var(--safe-l) + 20px); background: linear-gradient(transparent, var(--bg) 35%); display: flex; justify-content: flex-end; }
+.ng-foot .primary { min-width: 240px; min-height: 52px; }
+.overlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(5, 9, 14, 0.55); padding: 20px; }
+.overlay-box { padding: 18px 20px; width: min(560px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 10px; }
+.overlay-box h2 { margin: 0; }
+.scores tr.me td { color: var(--gold); font-weight: 600; }
+.nation-actions { margin-top: 12px; justify-content: flex-end; }

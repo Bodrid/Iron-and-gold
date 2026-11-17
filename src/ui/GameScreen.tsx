@@ -10,6 +10,7 @@ import { SelectionCard } from './components/SelectionCard';
 import { Toasts } from './components/Toasts';
 import { RotatePrompt } from './components/RotatePrompt';
 import { TabContent } from './tabs/TabContent';
+import { ScoreScreen } from './screens/ScoreScreen';
 
 export function GameScreen() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -27,6 +28,7 @@ export function GameScreen() {
       {tab && <Panel title={title}><TabContent tab={tab} /></Panel>}
       <TabBar />
       <Toasts />
+      <ScoreScreen />
       {layout === 'rotate' && <RotatePrompt />}
     </div>
   );

@@ -47,6 +47,6 @@ function installDebugHooks() {
   w.__setSpeed = (s: 0 | 1 | 2 | 3) => g.setSpeed(s);
   w.__selectCapital = () => { const p = ui.countries.value.find(c => c.id === ui.playerId.value)!; g.flyToState(p.capitalState); };
   w.__selectStateByKey = (key: string) => { const s = g.map.states.find(x => x.key === key); if (s) g.flyToState(s.id); return !!s; };
-  w.__debugEliminatePlayer = () => g.host.debug('eliminatePlayer');
+  w.__debugEliminatePlayer = () => { g.host.debug('eliminatePlayer'); g.setSpeed(3); };
   w.__playerTiles = () => ui.countries.value.find(c => c.id === ui.playerId.value)?.tiles ?? 0;
 }
