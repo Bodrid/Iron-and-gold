@@ -11,6 +11,7 @@ import { atWar, peacePolicy, warScore } from '../war';
 import type { Command, Country, CountryId, GameState } from '../types';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
+import { navalDecisions } from './naval';
 
 const YEAR = 365 * TICKS_PER_DAY;
 /** Chance per 30 days that a fully aggressive AI looks for a war. */
@@ -63,6 +64,9 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   if (neighbors.has(0) && c.troops >= c.maxTroops * 0.5 && !state.attacks.some(a => a.attacker === c.id && a.target === 0)) {
     attack(0, Math.max(0.2, d.attackRatio - 0.15));
   }
+
+  // 4b. The sea: warships, raids, escorts, invasions.
+  navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1);
 
   // 5. Start a war against a weaker neighbour.
   if (!enemies.length && c.troops >= c.maxTroops * 0.6) {

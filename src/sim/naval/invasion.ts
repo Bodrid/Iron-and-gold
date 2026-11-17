@@ -5,7 +5,7 @@ import { BALANCE } from '../balance';
 import { canAttack, launchAttackFrom } from '../combat';
 import { handlers, systems } from '../registry';
 import type { Command, CountryId, GameState, Ship, SimEvent } from '../types';
-import { getNavGrid, NAV_CELL, portCell } from './nav';
+import { getNavGrid, NAV_CELL, portCell, seaPath } from './nav';
 import { canReach, lane, removeShip, sailTo } from './ships';
 import { portStates } from './trade';
 
@@ -81,24 +81,37 @@ export function invasionArrivals(state: GameState, events: SimEvent[]): void {
   }
 }
 
-handlers.navalInvasion = (state, cmd: Extract<Command, { type: 'navalInvasion' }>) => {
+/** What an invasion would use, or why it can't happen. Shared by the command handler and the AI. */
+export function invasionPlan(state: GameState, cmd: Extract<Command, { type: 'navalInvasion' }>): { error: string } | { port: number; transport: Ship | undefined; troops: number; landing: number } {
   const c = state.countries[cmd.country];
-  if (!(cmd.ratio >= 0.01 && cmd.ratio <= 1)) return 'bad ratio';
-  if (!(cmd.tile >= 0 && cmd.tile < state.owner.length) || !attackableBeach(state, cmd.country, cmd.target, cmd.tile)) return cmd.target && !canAttack(state, cmd.country, cmd.target) ? 'not at war' : 'bad landing';
+  if (!(cmd.ratio >= 0.01 && cmd.ratio <= 1)) return { error: 'bad ratio' };
+  if (!(cmd.tile >= 0 && cmd.tile < state.owner.length) || !attackableBeach(state, cmd.country, cmd.target, cmd.tile)) return { error: cmd.target && !canAttack(state, cmd.country, cmd.target) ? 'not at war' : 'bad landing' };
   const lc = landingCell(state, cmd.tile);
   const port = portStates(state, cmd.country).find(p => canReach(state, portCell(state.map, p), lc));
-  if (!port) return 'no port on that sea';
+  if (!port) return { error: 'no port on that sea' };
   const transport = state.ships.find(s => s.owner === cmd.country && s.kind === 'transport' && !s.temp && s.order.type === 'idle' && canReach(state, s.cell, lc));
   const capacity = transport ? SHIPS.transport.capacity : N.BOAT_TROOPS_MAX;
   const troops = Math.min(capacity, Math.floor(c.troops * cmd.ratio));
-  if (troops < BALANCE.combat.MIN_ATTACK_TROOPS * 2) return 'not enough troops';
-  c.troops -= troops;
+  if (troops < BALANCE.combat.MIN_ATTACK_TROOPS * 2) return { error: 'not enough troops' };
+  if (!seaPathOk(state, transport ? transport.cell : portCell(state.map, port), lc)) return { error: 'unreachable' };
+  return { port, transport, troops, landing: lc };
+}
+
+function seaPathOk(state: GameState, from: number, to: number): boolean {
+  return from === to || seaPath(state.map, from, to) !== null;
+}
+
+handlers.navalInvasion = (state, cmd: Extract<Command, { type: 'navalInvasion' }>) => {
+  const plan = invasionPlan(state, cmd);
+  if ('error' in plan) return plan.error;
+  const { port, transport, troops, landing } = plan;
+  state.countries[cmd.country].troops -= troops;
   const pc = portCell(state.map, port);
   const ship: Ship = transport ?? { id: state.nextId++, owner: cmd.country, kind: 'transport', cell: pc, fromCell: pc, toCell: pc, pathPos: 0, dir: 1, order: { type: 'idle', port }, hp: 1, temp: true };
   if (!transport) state.ships.push(ship);
   ship.troops = troops;
   ship.order = { type: 'invade', tile: cmd.tile, target: cmd.target };
-  if (!sailTo(state, ship, lc)) { c.troops += troops; if (!transport) removeShip(state, ship, null); else ship.order = { type: 'idle', port }; return 'unreachable'; }
+  sailTo(state, ship, landing);
   return null;
 };
 

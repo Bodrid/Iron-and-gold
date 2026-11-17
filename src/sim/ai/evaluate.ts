@@ -4,6 +4,7 @@ import { GOODS } from '../../content/goods';
 import { BALANCE } from '../balance';
 import { controllersOf, statesControlledBy } from '../control';
 import { buildCost, levelOf, maxConstructions, stateSlots } from '../economy';
+import { routeCapacity, routesOf, shortage, surplus } from '../naval/trade';
 import type { Country, CountryId, GameState } from '../types';
 import type { Personality } from './personality';
 
@@ -67,7 +68,16 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
       if (ef.troopRefillPct) score = (atWar ? 0.06 : 0.02) * (0.5 + pers.aggression);
       if (ef.defenseMult) score = threatened ? 0.05 : 0.002;
       if (ef.researchPoints) score = 0.03;
-      if (ef.tradeRoutes || ef.shipBuilding) score = 0.003;
+      if (ef.tradeRoutes) {
+        // Ports pay when trade is waiting: our routes are full, or we have goods to sell or need goods.
+        const cap = routeCapacity(state, c.id), used = routesOf(state, c.id).length;
+        const wantsTrade = GOODS.some(g => surplus(state, c, g) > 0 || shortage(state, c, g) > 0);
+        score = sd.coastal && wantsTrade && used >= cap ? 0.05 : 0.002;
+      }
+      if (ef.shipBuilding) {
+        const hasYard = state.states.some(s => s.owner === c.id && s.buildings.some(b => b.type === 'shipyard'));
+        score = !hasYard && sd.coastal && (atWar || routesOf(state, c.id).length >= 2) && state.states[st.id].buildings.some(b => b.type === 'port') ? 0.04 : 0.001;
+      }
       score *= pers.buildWeights[type] ?? 1;
       if (score > 0) out.push({ state: st.id, type, cost, score });
     }
