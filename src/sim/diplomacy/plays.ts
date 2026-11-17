@@ -45,7 +45,8 @@ function joiners(state: GameState, initiator: CountryId, target: CountryId) {
   for (const t of state.treaties) {
     const other = t.a === target ? t.b : t.b === target ? t.a : 0;
     if (!other || other === initiator) continue;
-    if ((t.kind === 'alliance' || t.kind === 'defensivePact') && !sideB.includes(other)) sideB.push(other);
+    // A country bound to both sides stays out.
+    if ((t.kind === 'alliance' || t.kind === 'defensivePact') && !sideB.includes(other) && !allies(other).includes(initiator)) sideB.push(other);
     if (t.kind === 'guarantee' && t.b === target && !sideB.includes(t.a)) sideB.push(t.a);
   }
   for (const m of coalitionDefenders(state, initiator, target)) if (!sideB.includes(m)) sideB.push(m);

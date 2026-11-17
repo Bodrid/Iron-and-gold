@@ -23,7 +23,7 @@ it('war score rises with occupation', () => {
   const before = warScore(g, w, 1);
   occupy(g, 1, stateTiles(g, 'T-B'));
   expect(warScore(g, w, 1)).toBeGreaterThan(before);
-  expect(warScore(g, w, 1)).toBeLessThanOrEqual(100);
+  expect(warScore(g, w, 1)).toBeLessThanOrEqual(160);
 });
 
 it('peace transfers majority-occupied states and returns the rest', () => {

@@ -47,7 +47,10 @@ export function addCasualties(state: GameState, country: CountryId, enemy: Count
   if (w) w.casualties[sideOf(w, country) === 'A' ? 0 : 1] += n;
 }
 
-/** 0..100 for the side `side` is on: mostly how much of the other side's land it occupies, partly the casualty balance. */
+/**
+ * War score for the side `side` is on. About 100 means the war goals are in hand (goal states held); dominating —
+ * occupying much of the enemy and bleeding them — goes beyond 100. The defending side's "goal" is to occupy back.
+ */
 export function warScore(state: GameState, war: War, side: CountryId): number {
   const mine = sideOf(war, side) === 'A';
   const mySide = mine ? war.sideA : war.sideB;
@@ -61,7 +64,25 @@ export function warScore(state: GameState, war: War, side: CountryId): number {
   }
   const occ = occupied / Math.max(1, total);
   const cas = own + theirs > 0 ? theirs / (own + theirs) : 0.5;
-  return Math.min(100, occ * 150) * 0.75 + cas * 25;
+  const goalStates = mine ? war.goals.filter(g => g.kind === 'state').map(g => (g as { state: number }).state) : [];
+  const goal = goalStates.length
+    ? goalStates.filter(s => mySide.some(c => stateControlShare(state, s, c) > 0.5)).length / goalStates.length
+    : Math.min(1, occ * 2);
+  return goal * W.GOAL + occ * W.OCCUPATION + cas * W.CASUALTIES;
+}
+
+const W = { GOAL: 70, OCCUPATION: 60, CASUALTIES: 30 };
+
+/** A war member other than the leaders leaves with a white peace. */
+export function separatePeace(state: GameState, war: War, c: CountryId, changed: number[]): void {
+  const enemies = enemiesIn(war, c);
+  for (const e of enemies) {
+    for (const s of statesOwnedBy(state, c)) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === c && state.controller[t] === e) setTile(state, t, c, c, changed);
+    for (const s of statesOwnedBy(state, e)) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === e && state.controller[t] === c) setTile(state, t, e, e, changed);
+    endAttacksBetween(state, c, e, true);
+  }
+  war.sideA = war.sideA.filter(x => x !== c);
+  war.sideB = war.sideB.filter(x => x !== c);
 }
 
 /** How an AI answers a peace offer. The AI module replaces this. */
@@ -148,6 +169,13 @@ export function checkElimination(state: GameState, events: SimEvent[], changed: 
 }
 
 handlers.offerPeace = (state, cmd: Extract<Command, { type: 'offerPeace' }>, events, changed) => offerPeace(state, cmd.country, cmd.target, events, changed);
+handlers.separatePeace = (state, cmd: Extract<Command, { type: 'separatePeace' }>, _events, changed) => {
+  const w = state.wars.find(x => x.id === cmd.warId && sideOf(x, cmd.country));
+  if (!w) return 'no such war';
+  if (w.a === cmd.country || w.b === cmd.country) return 'leader';
+  separatePeace(state, w, cmd.country, changed);
+  return null;
+};
 handlers.respondPeace = (state, cmd: Extract<Command, { type: 'respondPeace' }>, events, changed) => {
   const offer = state.peaceOffers.find(o => o.from === cmd.from && o.to === cmd.country);
   if (!offer) return 'no such offer';

@@ -117,7 +117,8 @@ export type Command =
   | { type: 'cancelTreaty'; country: CountryId; treatyId: number }
   | { type: 'startPlay'; country: CountryId; target: CountryId; demands: Demand[] }
   | { type: 'joinPlay'; country: CountryId; playId: number; side: 'A' | 'B' }
-  | { type: 'backDown'; country: CountryId; playId: number };
+  | { type: 'backDown'; country: CountryId; playId: number }
+  | { type: 'separatePeace'; country: CountryId; warId: number };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
