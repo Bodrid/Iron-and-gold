@@ -13,6 +13,9 @@ import { relation, relationBaselineHooks } from './relations';
 
 const D = BALANCE.diplomacy;
 
+/** Extra tribute share a puppet pays (investment charters). */
+export const tributeHooks: ((state: GameState, puppet: CountryId) => number)[] = [];
+
 export function puppetsOf(state: GameState, c: CountryId): CountryId[] {
   return state.countries.filter(x => x.alive && x.overlord === c).map(x => x.id);
 }
@@ -73,7 +76,9 @@ systems.day.push((state, events) => {
 systems.month.push(state => {
   for (const c of state.countries) {
     if (!c.alive || !c.overlord) continue;
-    const pay = Math.max(0, c.income) * D.PUPPET_TRIBUTE;
+    let share: number = D.PUPPET_TRIBUTE;
+    for (const h of tributeHooks) share += h(state, c.id);
+    const pay = Math.max(0, c.income) * share;
     const o = state.countries[c.overlord];
     c.money -= pay; c.income -= pay; o.money += pay; o.income += pay;
   }

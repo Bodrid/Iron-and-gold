@@ -19,5 +19,6 @@ import './diplomacy/subjects';
 import './diplomacy/privateers';
 import './revolts';
 import './blocs';
+import './companies';
 import './ai/ai';
 import './victory';

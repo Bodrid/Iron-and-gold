@@ -71,8 +71,12 @@ export function computeClout(c: Country, w: Workforce | undefined): Record<Group
 }
 
 // ---- approval ----
+/** Other sources of approval for one group (company monopolies…). */
+export const approvalHooks: ((state: GameState, c: Country, g: GroupId) => number)[] = [];
+
 export function approvalTarget(state: GameState, c: Country, g: GroupId): number {
   let v = 0;
+  for (const h of approvalHooks) v += h(state, c, g);
   for (const a of LAW_AREAS) v += attitude(g, c.laws[a.id]);
   v += ((c.sol - P.SOL_NEUTRAL) / 2) * (g === 'workers' ? 1 : 0.4);
   const longWar = warsOf(state, c.id).some(w => state.tick - w.startTick > 2 * YEAR);

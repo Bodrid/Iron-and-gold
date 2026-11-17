@@ -152,6 +152,22 @@ export const BALANCE = {
     FREE_TRADE_BONUS: 0.3,
     TRIBUTE: 0.05,
   },
+  companies: {
+    MAX: 4,
+    /** One extra company per this many levels of industry and mines. */
+    LEVELS_PER_EXTRA: 25,
+    FOUND_COST: 50_000,
+    /** Output bonus: +BONUS_PER_STEP% per LEVELS_PER_STEP levels of its buildings, up to BONUS_CAP%. */
+    LEVELS_PER_STEP: 10,
+    BONUS_PER_STEP: 5,
+    BONUS_CAP: 25,
+    TRADE_PCT: 3,
+    MONOPOLY_PCT: 15,
+    COLONIAL_PCT: 25,
+    COLONIAL_TAX_PCT: 5,
+    INVESTMENT_TRIBUTE: 0.05,
+    INVESTMENT_RELATION: -10,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,

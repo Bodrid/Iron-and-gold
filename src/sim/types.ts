@@ -4,6 +4,7 @@ import type { ShipKind } from '../content/ships';
 import type { GroupId } from '../content/groups';
 import type { LawArea } from '../content/laws';
 import type { BlocType, PrincipleId } from '../content/blocs';
+import type { CharterKind } from '../content/companies';
 
 export type { BuildingType, ShipKind };
 export type CountryId = number; // 1..4095; 0 = nobody (unclaimed)
@@ -37,6 +38,7 @@ export interface Country {
   /** A law being passed (months counted since it started). */ enacting: { law: string; startTick: number; months: number } | null;
   groups: Record<GroupId, { clout: number; approval: number; radicalism: number }>;
   /** Tick of the last war this country lost (0 = never). */ lastDefeat: number;
+  companies: { id: string; founded: number; charter: CharterKind | null; /** Output bonus %, recomputed monthly. */ bonus: number }[];
   /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string };
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
@@ -153,7 +155,10 @@ export type Command =
   | { type: 'askToJoinBloc'; country: CountryId; leader: CountryId }
   | { type: 'leaveBloc'; country: CountryId }
   | { type: 'expelFromBloc'; country: CountryId; target: CountryId }
-  | { type: 'setPrinciples'; country: CountryId; principles: PrincipleId[] };
+  | { type: 'setPrinciples'; country: CountryId; principles: PrincipleId[] }
+  | { type: 'foundCompany'; country: CountryId; company: string }
+  | { type: 'grantCharter'; country: CountryId; company: string; charter: CharterKind }
+  | { type: 'revokeCharter'; country: CountryId; company: string };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -192,7 +197,9 @@ export type SimEvent =
   | { type: 'blocRefused'; from: CountryId; to: CountryId }
   | { type: 'blocLeft'; country: CountryId; leader: CountryId }
   | { type: 'blocLeaderChanged'; from: CountryId; to: CountryId }
-  | { type: 'blocDissolved'; leader: CountryId };
+  | { type: 'blocDissolved'; leader: CountryId }
+  | { type: 'companyFounded'; country: CountryId; company: string }
+  | { type: 'charterEnded'; country: CountryId; company: string };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

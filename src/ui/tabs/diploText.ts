@@ -9,7 +9,9 @@ export const DIPLO_REASON: Record<string, string> = {
   notTheirState: 'That state isn’t theirs', noBloc: 'You need to lead a power bloc', targetInBloc: 'They are already in a power bloc',
   inBloc: 'You are already in a power bloc', notMajor: 'Only major powers can found a bloc', notLeader: 'Only the bloc leader can do that',
   badPrinciples: 'Pick up to two different principles', cantAfford: 'Not enough money', notInBloc: 'You aren’t in a power bloc', notMember: 'Not a member',
-  askThePlayer: 'They decide who joins: wait for an invitation', 'no such play': 'That play is over', notYourPuppet: 'Not your puppet', 'no such country': 'Not possible',
+  askThePlayer: 'They decide who joins: wait for an invitation',
+  notYours: 'A historical company of another country', alreadyFounded: 'Already founded', tooMany: 'Build more industry to run another company',
+  noCompany: 'Found the company first', alreadyGranted: 'Already granted', noPuppets: 'Needs at least one puppet', noCharter: 'No charter to revoke', 'no such play': 'That play is over', notYourPuppet: 'Not your puppet', 'no such country': 'Not possible',
 };
 
 export const TREATY_NAMES: Record<TreatyKind, string> = { alliance: 'Alliance', defensivePact: 'Defensive pact', tradeAgreement: 'Trade agreement', guarantee: 'Guarantee independence', embargo: 'Embargo' };
