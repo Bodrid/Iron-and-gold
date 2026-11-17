@@ -37,3 +37,22 @@ it('a landlocked AI never issues naval commands', () => {
   expect(g.ships.filter(s => s.owner === land)).toEqual([]);
   expect(g.states[stateId(g, 'T-L')].buildings.some(b => b.type === 'shipyard' || b.type === 'port')).toBe(false);
 }, 120_000);
+
+it('a raider gets new orders once nobody is prey, and ships mend in port', async () => {
+  const { navalDecisions } = await import('./naval');
+  const { runDays } = await import('../testing');
+  const g = seaWorld({ shipyards: true });
+  g.countries[1].stockpile.grain = 1e7; g.countries[2].stockpile.grain = 0;
+  runDays(g, 32);
+  const t = g.ships.find(s => s.kind === 'trade')!;
+  const w = { id: g.nextId++, owner: 1, kind: 'warship' as const, cell: t.cell, fromCell: t.cell, toCell: t.cell, pathPos: 0, dir: 1 as const, order: { type: 'raid' as const, cell: t.cell }, hp: 1 };
+  g.ships.push(w);
+  const cmds: any[] = [];
+  navalDecisions(g, g.countries[1], [], new Set(), 1, c => cmds.push(c), 1);
+  expect(cmds).toContainEqual(expect.objectContaining({ type: 'orderShip', shipId: w.id }));
+  const harbour = g.states.find(s => s.owner === 1 && s.buildings.some(b => b.type === 'port'))!.id;
+  const port = { ...w, id: g.nextId++, order: { type: 'idle' as const, port: harbour }, hp: 0.5 };
+  g.ships.push(port);
+  runDays(g, 10);
+  expect(port.hp).toBeGreaterThan(0.65);
+});

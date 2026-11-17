@@ -2,6 +2,7 @@ import { playCheck } from '../sim/diplomacy/plays';
 // Plain-data views of the game for the main thread.
 import { BUILDINGS, BUILDING_TYPES } from '../content/buildings';
 import { TICKS_PER_DAY } from '../sim/calendar';
+import { BALANCE } from '../sim/balance';
 import { buildCheck, stateSlots } from '../sim/economy';
 import { warScore } from '../sim/war';
 import type { Country, GameState } from '../sim/types';
@@ -64,7 +65,8 @@ export function packShips(state: GameState): Int32Array {
 export function tradeView(state: GameState, me: number): TradeView {
   const routes = routesOf(state, me);
   return {
-    routes: routes.map(r => ({ id: r.id, exporter: r.exporter, importer: r.importer, good: r.good, amount: Math.round(r.amount) })),
+    routes: routes.map(r => ({ id: r.id, exporter: r.exporter, importer: r.importer, good: r.good, amount: Math.round(r.amount),
+      earns: Math.round(r.amount * (r.exporter === me ? state.countries[r.exporter].prices[r.good] * BALANCE.trade.EXPORT_EARN : state.countries[r.importer].prices[r.good] * BALANCE.trade.IMPORT_EARN)) })),
     capacity: routeCapacity(state, me), used: routes.length, auto: !state.tradeOff.includes(me), income: state.countries[me].tradeIncome,
   };
 }

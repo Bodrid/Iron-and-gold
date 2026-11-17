@@ -5,6 +5,7 @@ const MAP: Record<string, KeyAction> = {
   w: 'panUp', s: 'panDown', arrowup: 'panUp', arrowdown: 'panDown', arrowleft: 'panLeft', arrowright: 'panRight',
 };
 
-export function keyAction(e: { key: string; shiftKey: boolean }): KeyAction | null {
+export function keyAction(e: { key: string; shiftKey: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): KeyAction | null {
+  if (e.ctrlKey || e.metaKey || e.altKey) return null;   // leave browser and system shortcuts alone
   return MAP[e.key.toLowerCase()] ?? null;
 }

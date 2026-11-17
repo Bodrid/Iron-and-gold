@@ -315,6 +315,10 @@ export function rejectionText(reason: string): string {
     'queue full': 'The research queue is full.', 'cannot queue': 'That tech can’t be queued yet: queue what it needs first.', 'needs earlier techs': 'Research the techs it needs first.',
     'already known': 'You already know that tech.', 'not queued': 'That tech isn’t queued.', notEnacting: 'No law is being passed.', noSupport: 'Not enough support for that law.',
     alreadyEnacting: 'You are already passing another law.', rebels: 'Not possible with rebels.',
+    maxLevel: 'That building is fully built in this state.', occupied: 'The enemy holds that state.', notYours: 'That state isn’t yours.', needsCoast: 'That building needs a coast.',
+    needsCoal: 'That building needs coal in the state.', needsIron: 'That building needs iron in the state.', needsFarmland: 'That state has no farmland for it.',
+    needsForest: 'That state has no forest for it.', needsTech: 'Research the tech that unlocks it first.', 'bad option': 'That choice isn’t available.', 'no such event': 'That event has passed.',
+    'unknown nation': 'No such nation.', 'no such play': 'That play is over.', 'no such war': 'That war is over.', 'no such treaty': 'That treaty has ended.',
   };
   return map[reason] ?? (DIPLO_REASON[reason] ? `${DIPLO_REASON[reason]}.` : `That didn't work (${reason}).`);
 }

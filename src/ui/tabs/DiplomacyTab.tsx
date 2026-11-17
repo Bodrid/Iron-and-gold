@@ -1,4 +1,5 @@
 import { effect } from '@preact/signals';
+import { BALANCE } from '../../sim/balance';
 import { session } from '../game';
 import { colourCss, country, fmtMoney, fmtNum, player, ui } from '../store';
 import { defaultSend, type Send } from './common';
@@ -132,8 +133,8 @@ function CountryPanel({ send }: { send: Send }) {
       <p class="hint">Relations {v} ({rel.label}){action ? ` · you are ${action.kind === 'improve' ? 'improving' : 'worsening'} them` : ''}</p>
       <div class="row">
         {action ? <button onClick={() => send({ type: 'stopDiploAction', country: me, target: id })}>Stop</button> : <>
-          <button disabled={full} onClick={() => send({ type: 'improveRelations', country: me, target: id })}>Improve relations</button>
-          <button disabled={full} onClick={() => send({ type: 'worsenRelations', country: me, target: id })}>Worsen</button>
+          <button disabled={full} onClick={() => send({ type: 'improveRelations', country: me, target: id })}>Improve relations <small>{fmtMoney(BALANCE.diplomacy.RELATION_ACTION_COST)}/mo</small></button>
+          <button disabled={full} onClick={() => send({ type: 'worsenRelations', country: me, target: id })}>Worsen <small>{fmtMoney(BALANCE.diplomacy.RELATION_ACTION_COST)}/mo</small></button>
         </>}
         {full && <small>{DIPLO_REASON.noCapacity}</small>}
       </div>

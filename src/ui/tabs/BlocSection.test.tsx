@@ -59,3 +59,13 @@ it('companies: founds one, grants a charter, and greys out what isn’t possible
   expect(found[1].disabled).toBe(true);
   expect(sent).toEqual([{ type: 'grantCharter', country: 1, company: 'textileCombine', charter: 'monopoly' }, { type: 'foundCompany', country: 1, company: 'coalCompany' }]);
 });
+
+it('a leader can change principles once a year', () => {
+  ui.diplo.value = diplo({ mine: { leader: 1, type: 'tradeLeague', principles: ['freeTradeArea', 'sharedScience'], members: [], puppets: [], isLeader: true, canSetPrinciples: true } });
+  const sent: any[] = [];
+  render(<BlocSection send={x => sent.push(x)} />);
+  fireEvent.click(screen.getByText('Change principles'));
+  fireEvent.click(screen.getAllByRole('button', { name: /Military Drill/ })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'Set principles' }));
+  expect(sent).toEqual([{ type: 'setPrinciples', country: 1, principles: ['sharedScience', 'militaryDrill'] }]);
+});

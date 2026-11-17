@@ -58,7 +58,7 @@ export function navalDecisions(state: GameState, c: Country, enemies: CountryId[
   // Orders: raid enemy trade at war (or under a privateer licence), otherwise escort our routes.
   const preyOn = [...enemies, ...state.privateers.filter(p => p.from === c.id).map(p => p.target)];
   for (const w of fleet) {
-    if (w.order.type === 'raid' || w.order.type === 'escort') continue;
+    if (w.order.type === 'escort' || (w.order.type === 'raid' && preyOn.length)) continue;   // raiders find new work once nobody is prey
     if (preyOn.length) {
       const prey = state.ships.find(s => s.kind === 'trade' && state.tradeRoutes.some(r => r.id === s.routeId && r.exporter !== c.id && r.importer !== c.id && (preyOn.includes(r.exporter) || preyOn.includes(r.importer))) && canReach(state, w.cell, s.cell));
       if (prey) {

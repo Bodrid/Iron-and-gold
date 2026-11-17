@@ -36,7 +36,7 @@ export interface StateDetail {
   /** Why the player can't demand this state from its owner (null = can; undefined for own/unclaimed states). */ play?: string | null;
 }
 
-export interface TradeView { routes: { id: number; exporter: CountryId; importer: CountryId; good: Good; amount: number }[]; capacity: number; used: number; auto: boolean; income: number }
+export interface TradeView { routes: { id: number; exporter: CountryId; importer: CountryId; good: Good; amount: number; /** Your money from it per month, roughly. */ earns?: number }[]; capacity: number; used: number; auto: boolean; income: number }
 export interface FleetView {
   ships: { id: number; kind: 'warship' | 'transport'; order: string; cell: number; troops: number }[];
   builds: { kind: string; state: number; daysLeft: number }[];

@@ -65,6 +65,8 @@ routeHooks.closed = (state: GameState, r: TradeRoute) => {
 };
 
 export function moveShips(state: GameState, events: SimEvent[]): void {
+  // Ships lying in port mend their damage.
+  for (const s of state.ships) if (s.order.type === 'idle' && s.hp < 1) s.hp = Math.min(1, s.hp + BALANCE.navy.REPAIR_PER_DAY);   // moveShips runs once a day
   for (const s of state.ships.slice()) {
     if (!state.countries[s.owner].alive) { removeShip(state, s, null); continue; }
     // Home port lost: go to another port, or the ship is lost.

@@ -232,6 +232,8 @@ export const BALANCE = {
     BOAT_TROOPS_MAX: 5000,
     /** How far (in navigation cells) troops look for another beach if theirs is lost. */
     REROUTE_CELLS: 10,
+    /** Hit points a ship in port mends per day. */
+    REPAIR_PER_DAY: 0.02,
   },
   diplomacy: {
     BORDER: -10, RIVAL: -25, SHARED_ENEMY: 15, TRADE_ROUTE: 10,

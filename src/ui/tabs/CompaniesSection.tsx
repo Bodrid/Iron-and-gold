@@ -1,8 +1,11 @@
 import { BUILDINGS } from '../../content/buildings';
 import { CHARTERS, COMPANY_BY_ID, type CharterKind } from '../../content/companies';
 import { fmtMoney, ui } from '../store';
+import { BALANCE } from '../../sim/balance';
 import { defaultSend, type Send } from './common';
 import { DIPLO_REASON } from './diploText';
+
+const K = BALANCE.companies;
 
 const buildings = (id: string) => COMPANY_BY_ID[id].buildings.map(b => BUILDINGS[b].name).join(' and ');
 const KINDS: CharterKind[] = ['colonial', 'monopoly', 'investment'];
@@ -18,7 +21,7 @@ export function CompaniesSection({ send = defaultSend }: { send?: Send }) {
       {k.mine.map(c => (
         <div class="card" key={c.id}>
           <b>{COMPANY_BY_ID[c.id].name}</b>
-          <small>+{c.bonus}% {buildings(c.id)} output{c.charter === 'monopoly' ? ' (+15% monopoly)' : ' · +3% trade income'} — grows with every 10 levels you own, up to +25%.</small>
+          <small>+{c.bonus}% {buildings(c.id)} output{c.charter === 'monopoly' ? ` (+${K.MONOPOLY_PCT}% monopoly)` : ` · +${K.TRADE_PCT}% trade income`} — grows with every {K.LEVELS_PER_STEP} levels you own, up to +{K.BONUS_CAP}%.</small>
           {c.charter ? (
             <div class="row"><small>{CHARTERS[c.charter].name}: {CHARTERS[c.charter].description}</small><button class="ghost" onClick={() => send({ type: 'revokeCharter', country: me, company: c.id })}>Revoke</button></div>
           ) : KINDS.map(x => (

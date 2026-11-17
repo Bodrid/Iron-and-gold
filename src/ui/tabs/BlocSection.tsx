@@ -8,6 +8,7 @@ import { DIPLO_REASON } from './diploText';
 const name = (id: number) => country(id)?.name ?? '…';
 const draftType = signal<BlocType>('tradeLeague');
 const draftPicks = signal<PrincipleId[]>([]);
+const changePicks = signal<PrincipleId[] | null>(null);
 
 function PrincipleLine({ id, leader }: { id: PrincipleId; leader: boolean }) {
   const p = PRINCIPLES[id];
@@ -60,6 +61,7 @@ function MyBloc({ send }: { send: Send }) {
         <div class="crow" key={m}><span>{name(m)}</span><span class="grow" />{b.isLeader && <button class="ghost" onClick={() => send({ type: 'expelFromBloc', country: me, target: m })}>Expel</button>}</div>
       ))}
       {b.puppets.map(m => <div class="crow" key={m}><span>{name(m)}</span><small>puppet</small></div>)}
+      {b.isLeader && (b.canSetPrinciples ? <ChangePrinciples send={send} /> : <small class="dim">Principles can be changed once a year.</small>)}
       <div class="row">
         <button class="ghost" onClick={() => send({ type: 'leaveBloc', country: me })}>{b.isLeader ? 'Dissolve the bloc' : 'Leave the bloc'}</button>
       </div>
@@ -93,5 +95,26 @@ function FoundForm({ send }: { send: Send }) {
       </div>
       <div class="row"><button disabled={!ready} onClick={() => send({ type: 'foundBloc', country: me, blocType: type, principles: picks })}>Found the {BLOC_TYPES[type].name}</button>{!ready && <small>Pick at least one more principle</small>}</div>
     </div>
+  );
+}
+
+function ChangePrinciples({ send }: { send: Send }) {
+  const b = ui.diplo.value!.bloc.mine!;
+  const me = ui.playerId.value;
+  const fixed = BLOC_TYPES[b.type].fixed;
+  const picks = changePicks.value ?? b.principles.filter(p => p !== fixed);
+  const toggle = (p: PrincipleId) => { changePicks.value = picks.includes(p) ? picks.filter(x => x !== p) : picks.length < 2 ? [...picks, p] : picks; };
+  return (
+    <details class="law-area">
+      <summary><span>Change principles</span><b>once a year</b></summary>
+      <div class="principles">
+        {PRINCIPLE_IDS.filter(p => p !== fixed).map(p => (
+          <button key={p} class={picks.includes(p) ? 'on' : ''} aria-pressed={picks.includes(p)} disabled={!picks.includes(p) && picks.length >= 2} onClick={() => toggle(p)}>
+            <b>{PRINCIPLES[p].name}</b><small>{PRINCIPLES[p].description}</small>
+          </button>
+        ))}
+      </div>
+      <div class="row"><button disabled={!picks.length} onClick={() => { send({ type: 'setPrinciples', country: me, principles: picks }); changePicks.value = null; }}>Set principles</button></div>
+    </details>
   );
 }
