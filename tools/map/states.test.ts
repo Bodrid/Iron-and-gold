@@ -75,3 +75,13 @@ it('accepts a per-country minimum size', () => {
   const names = r.meta.filter(m => m.alive).map(m => m.key).sort();
   expect(names).toEqual(['EUR-Big', 'EUR-Small', 'OTH-Big']);
 });
+
+it('never merges into a state that is itself merged away in the same pass', () => {
+  const p = makeProjection(360);
+  const terrain = landGrid(p);
+  // A chain of small same-country states: each one's best neighbour is the next.
+  const feats = [adm('AAA', 'S1', null, box(-180, 0, -179, 1)), adm('AAA', 'S2', null, box(-179, 0, -177, 1)), adm('AAA', 'S3', null, box(-177, 0, -174, 1)), adm('AAA', 'Big', null, box(-174, -56, 180, 80))];
+  const r = rasterizeStates(groupAdmin1(feats), terrain, p);
+  mergeSmall(r.stateOf, r.meta, terrain, p.width, 10);
+  for (let i = 0; i < r.stateOf.length; i++) if (r.stateOf[i]) expect(r.meta[r.stateOf[i] - 1].alive).toBe(true);
+});

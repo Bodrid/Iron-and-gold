@@ -8,7 +8,7 @@ import { assignResources } from './resources';
 import { finalizeStates, groupAdmin1, mergeSmall, rasterizeStates, splitLarge } from './states';
 import { buildTerrain } from './terrain';
 
-const MIN_TILES = Number(process.env.MIN_TILES ?? 240);
+const MIN_TILES = Number(process.env.MIN_TILES ?? 300);
 const MIN_TILES_EUROPE = Number(process.env.MIN_TILES_EUROPE ?? 40);
 /** Europe gets finer states: unification, partitions and most early wars happen there. */
 const EUROPE = new Set(['DEU', 'POL', 'ITA', 'FRA', 'AUT', 'CZE', 'SVK', 'HUN', 'SVN', 'HRV', 'BIH', 'SRB', 'MNE', 'KOS', 'MKD', 'ALB', 'GRC', 'BGR', 'ROU', 'MDA',

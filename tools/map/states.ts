@@ -86,13 +86,15 @@ function centroids(stateOf: Uint16Array, w: number, size: number): Float64Array 
 export function mergeSmall(stateOf: Uint16Array, meta: StateMeta[], _terrain: Uint8Array, w: number, minTiles: number | ((modern: string) => number)): void {
   const n = stateOf.length;
   const minFor = typeof minTiles === 'number' ? () => minTiles : minTiles;
-  for (let pass = 0; pass < 6; pass++) {
+  for (let pass = 0; pass < 20; pass++) {
     const counts = tileCounts(stateOf, meta.length);
     const order = meta.map((_, k) => k + 1).filter(s => meta[s - 1].alive && counts[s] < minFor(meta[s - 1].modern)).sort((a, b) => counts[a] - counts[b] || a - b);
     if (!order.length) return;
     const cent = centroids(stateOf, w, meta.length);
     const target = new Map<number, number>();
+    const receivers = new Set<number>();
     for (const s of order) {
+      if (receivers.has(s)) continue;
       // Longest shared border with a same-country state.
       const border = new Map<number, number>();
       for (let i = 0; i < n; i++) {
@@ -110,7 +112,7 @@ export function mergeSmall(stateOf: Uint16Array, meta: StateMeta[], _terrain: Ui
           if (dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = t; }
         }
       }
-      if (best && !target.has(best)) target.set(s, best);
+      if (best && !target.has(best)) { target.set(s, best); receivers.add(best); }
     }
     if (!target.size) return;
     for (let i = 0; i < n; i++) { const t = target.get(stateOf[i]); if (t) stateOf[i] = t; }
