@@ -27,6 +27,7 @@ export interface Country {
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
+  puppetSince: number;
   /** Owned tiles. */ tiles: number;
   /** Controlled tiles (owned and not occupied, plus occupied enemy tiles). */ controlled: number;
   population: number; history: StatSample[];
@@ -119,7 +120,8 @@ export type Command =
   | { type: 'startPlay'; country: CountryId; target: CountryId; demands: Demand[] }
   | { type: 'joinPlay'; country: CountryId; playId: number; side: 'A' | 'B' }
   | { type: 'backDown'; country: CountryId; playId: number }
-  | { type: 'separatePeace'; country: CountryId; warId: number };
+  | { type: 'separatePeace'; country: CountryId; warId: number }
+  | { type: 'annexPuppet'; country: CountryId; puppet: CountryId };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -143,7 +145,10 @@ export type SimEvent =
   | { type: 'playStarted'; initiator: CountryId; target: CountryId; playId: number }
   | { type: 'playJoined'; country: CountryId; playId: number; side: 'A' | 'B' }
   | { type: 'playYielded'; initiator: CountryId; target: CountryId; demands: Demand[] }
-  | { type: 'playCancelled'; initiator: CountryId; target: CountryId };
+  | { type: 'playCancelled'; initiator: CountryId; target: CountryId }
+  | { type: 'puppeted'; overlord: CountryId; puppet: CountryId }
+  | { type: 'freed'; puppet: CountryId }
+  | { type: 'annexed'; overlord: CountryId; puppet: CountryId };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

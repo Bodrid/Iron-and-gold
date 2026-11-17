@@ -27,6 +27,7 @@ export function playCheck(state: GameState, cmd: Extract<Command, { type: 'start
   if (!t?.alive || cmd.target <= 0 || cmd.target === cmd.country) return 'no such country';
   if (c.overlord) return 'puppet';
   if (t.overlord === cmd.country) return 'alreadyPuppet';
+  if (t.overlord) return 'targetIsPuppet';
   if (atWar(state, cmd.country, cmd.target)) return 'atWar';
   if (state.plays.some(p => p.target === cmd.target || p.initiator === cmd.country || p.initiator === cmd.target)) return 'playUnderWay';
   if (hasTreaty(state, cmd.country, cmd.target, 'alliance')) return 'allied';
