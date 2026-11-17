@@ -232,7 +232,7 @@ Calls I made on my own while building Iron & Gold, and small issues left for lat
 **Decisions**
 
 - 12 new formables: Austria-Hungary, Scandinavia, India, Roman Empire, Byzantine Empire, Romania, Yugoslavia, Gran Colombia, Peru-Bolivian Confederation, Río de la Plata, Iberia and Arabia. Austria-Hungary is `eventOnly`: Austria owns its lands from day one, so only the Compromise event proclaims it. Commands get `byEvent`, the monthly AI check skips it and Decisions hides it.
-- 34 new events in `events/unifications.ts`, for one start or both:
+- 35 new events in `events/unifications.ts`, for one start or both:
   - 1848 and the Ausgleich; Scandinavism and the union of the crowns; Finland and Kiel (1776).
   - Maratha Delhi, Tipu and Ranjit Singh (1776); the 1857 rebellion (1836).
   - Mare Nostrum, Roman legacy and the Balkan Wars.
