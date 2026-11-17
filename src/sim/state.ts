@@ -6,6 +6,7 @@ import { ticksUntil } from './calendar';
 import { rebuildControl } from './control';
 import { seedRng } from './rng';
 import { systems } from './registry';
+import { seedEconomy } from './economy';
 import './systems';
 import type { Country, CountryDef, GameSetup, GameState, StartDef } from './types';
 
@@ -88,6 +89,7 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     c.stockpile.textiles = Math.round((c.population / 4000) * BALANCE.economy.START_STOCK_MONTHS);
     if (!c.tiles) c.alive = false;
   }
-  if (start.seedEconomy !== false) for (const s of systems.init) s(state, [], []);
+  if (start.seedEconomy !== false) seedEconomy(state);
+  for (const s of systems.init) s(state, [], []);
   return state;
 }

@@ -50,6 +50,11 @@ export function statesControlledBy(state: GameState, country: CountryId): number
   return out;
 }
 
+/** Countries controlling tiles in a state (0 = unclaimed), in first-seen order. */
+export function controllersOf(state: GameState, stateId: number): CountryId[] {
+  return [...counts(state).controlled[stateId].keys()];
+}
+
 /** States where `country` owns at least one tile, ascending. */
 export function statesOwnedBy(state: GameState, country: CountryId): number[] {
   const c = counts(state);

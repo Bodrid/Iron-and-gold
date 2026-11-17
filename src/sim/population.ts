@@ -18,7 +18,7 @@ export function monthlyPopulation(state: GameState): void {
     if (!c.alive) continue;
     let uni = 0;
     for (const st of state.states) if (st.owner === c.id) for (const b of st.buildings) if (b.type === 'university') uni += b.level;
-    c.literacy = Math.min(1, c.literacy + (G.UNIVERSITY_LITERACY * uni) / Math.max(1, c.population / 1e6));
+    c.literacy = Math.min(1, c.literacy + G.BASE_LITERACY_GROWTH + (G.UNIVERSITY_LITERACY * uni) / Math.max(1, c.population / 1e6));
     c.history.push({ tick: state.tick, gdp: c.gdp, population: c.population, sol: c.sol, tiles: c.tiles, money: c.money });
     if (c.history.length > BALANCE.economy.HISTORY_MAX) c.history.shift();
   }

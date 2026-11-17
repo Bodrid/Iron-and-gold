@@ -15,6 +15,8 @@ export type BuildCheck = { ok: true; cost: number } | { ok: false; reason: Build
 
 /** Multipliers on building cost (Grand Master AI uses this). */
 export const buildCostHooks: ((state: GameState, c: Country) => number)[] = [];
+/** Multipliers on research (Grand Master AI uses this). */
+export const researchHooks: ((state: GameState, c: Country) => number)[] = [];
 
 export function buildCost(state: GameState, country: CountryId, type: BuildingType): number {
   let m = 1;
@@ -148,7 +150,7 @@ function countryMonth(state: GameState, c: Country): void {
       for (const g of GOODS) if (def.inputs[g]) used[g] += def.inputs[g]! * b.level * eff;
       const local = b.type === 'farm' ? sd.resources.fertility : b.type === 'loggingCamp' ? Math.max(0.3, sd.resources.forest) : 1;
       for (const g of GOODS) {
-        const out = (def.outputs[g] ?? 0) * b.level * eff * local * (1 + outputPct / 100);
+        const out = (def.outputs[g] ?? 0) * b.level * eff * local * (1 + outputPct / 100) * (1 + c.literacy * BALANCE.growth.LITERACY_OUTPUT);
         produced[g] += out;
         stateValue += out * c.prices[g];
       }
@@ -181,7 +183,9 @@ function countryMonth(state: GameState, c: Country): void {
   c.demanded = demand;
   c.income = (taxBase + taxBonus) * E.TAX_RATE - upkeep - c.troops * E.ARMY_UPKEEP;
   c.money += c.income;
-  c.researchPoints += research;
+  let rm = 1;
+  for (const h of researchHooks) rm *= h(state, c);
+  c.researchPoints += research * rm;
 }
 
 function railwayFuel(b: Building, avail: Record<Good, number>): number {
@@ -223,6 +227,5 @@ handlers.build = (state, cmd: Extract<Command, { type: 'build' }>) => {
   state.constructions.push({ id: state.nextId++, country: cmd.country, state: cmd.state, type: cmd.building, doneTick: state.tick + BUILDINGS[cmd.building].buildDays * TICKS_PER_DAY });
   return null;
 };
-systems.init.push(state => seedEconomy(state));
 systems.day.push((state, events) => constructionTick(state, events));
 systems.month.push(state => monthlyEconomy(state));

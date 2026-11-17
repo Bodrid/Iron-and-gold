@@ -59,9 +59,9 @@ export const BALANCE = {
     SOL_GRAIN: 8,
     SOL_TEXTILES: 6,
     SOL_LUXURIES: 6,
-    TAX_RATE: 0.15,
+    TAX_RATE: 0.2,
     /** Pounds per soldier per month. */
-    ARMY_UPKEEP: 0.5,
+    ARMY_UPKEEP: 0.1,
     PRICE_MIN: 0.5,
     PRICE_MAX: 2,
     HISTORY_MAX: 1200,
@@ -77,6 +77,10 @@ export const BALANCE = {
     /** Extra monthly growth per 10 SoL above 10 (negative below). */
     SOL_GROWTH: 0.0006,
     UNIVERSITY_LITERACY: 0.002,
+    /** Literacy gained per month everywhere. */
+    BASE_LITERACY_GROWTH: 0.0003,
+    /** Output bonus per point of literacy (1.0 = +100% at full literacy). */
+    LITERACY_OUTPUT: 1,
     RESEARCH_PER_LEVEL: 5,
   },
 } as const;
