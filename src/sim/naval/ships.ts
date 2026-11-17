@@ -104,6 +104,9 @@ function hostile(state: GameState, a: CountryId, b: CountryId): boolean {
   return a !== b && atWar(state, a, b) !== undefined;
 }
 
+/** Diplomacy plugs in privateer licences: `a` may raid `b`'s trade without a war. */
+export const piracyHooks = { licensed: (_s: GameState, _a: CountryId, _b: CountryId) => false };
+
 function neighbourhood(state: GameState, cell: number, buckets: Map<number, Ship[]>): Ship[] {
   const g = getNavGrid(state.map);
   const out: Ship[] = [];
@@ -166,7 +169,8 @@ function encounterLoop(state: GameState, events: SimEvent[], buckets: Map<number
         if (!guarded) removeShip(state, t, events);
       } else if (t.kind === 'trade') {
         const r = state.tradeRoutes.find(x => x.id === t.routeId);
-        if (!r || r.captured || !(hostile(state, w.owner, r.exporter) || hostile(state, w.owner, r.importer))) continue;
+        const prey = (x: CountryId) => hostile(state, w.owner, x) || piracyHooks.licensed(state, w.owner, x);
+        if (!r || r.captured || !(prey(r.exporter) || prey(r.importer))) continue;
         const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.order.type === 'escort' && (x.order as { routeId: number }).routeId === r.id && hostile(state, w.owner, x.owner));
         if (guarded) continue;
         const value = r.amount * state.countries[r.exporter].prices[r.good];

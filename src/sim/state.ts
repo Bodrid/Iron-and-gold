@@ -57,7 +57,7 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     map, owner: new Uint16Array(n), controller: new Uint16Array(n),
     countries: [placeholderCountry()],
     states: map.states.map(s => ({ id: s.id, owner: s.id ? stateOwner[s.id] : 0, controller: s.id ? stateOwner[s.id] : 0, population: 0, buildings: [] })),
-    constructions: [], attacks: [], wars: [], plays: [], reparations: [], peaceOffers: [], tradeRoutes: [], tradeBlocks: [], tradeOff: [], ships: [], shipBuilds: [], relations: new Int16Array(0), diploActions: [], treaties: [], treatyOffers: [], coalitions: [], nextId: 1, outcome: null,
+    constructions: [], attacks: [], wars: [], plays: [], reparations: [], peaceOffers: [], tradeRoutes: [], tradeBlocks: [], tradeOff: [], ships: [], shipBuilds: [], relations: new Int16Array(0), diploActions: [], treaties: [], treatyOffers: [], coalitions: [], privateers: [], nextId: 1, outcome: null,
   };
   start.countries.forEach((def, i) => {
     state.countries.push(makeCountry(i + 1, def, stateId(def.capital), def.tag === setup.playerTag, setup.difficulty));

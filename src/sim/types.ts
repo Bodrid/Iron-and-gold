@@ -94,6 +94,7 @@ export interface GameState {
   diploActions: { from: CountryId; to: CountryId; kind: 'improve' | 'worsen' }[];
   treaties: Treaty[];
   coalitions: { id: number; target: CountryId; members: CountryId[] }[];
+  privateers: { from: CountryId; target: CountryId }[];
   treatyOffers: { from: CountryId; to: CountryId; kind: TreatyKind; tick: number }[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
@@ -121,7 +122,8 @@ export type Command =
   | { type: 'joinPlay'; country: CountryId; playId: number; side: 'A' | 'B' }
   | { type: 'backDown'; country: CountryId; playId: number }
   | { type: 'separatePeace'; country: CountryId; warId: number }
-  | { type: 'annexPuppet'; country: CountryId; puppet: CountryId };
+  | { type: 'annexPuppet'; country: CountryId; puppet: CountryId }
+  | { type: 'setPrivateers'; country: CountryId; target: CountryId; on: boolean };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }

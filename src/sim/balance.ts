@@ -140,6 +140,8 @@ export const BALANCE = {
     ANNEX_YEARS: 10,
     PUPPET_RELATION: 20,
     ANNEX_INFAMY: 10,
+    PRIVATEER_INFAMY: 5,
+    PRIVATEER_RELATION: -10,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;
