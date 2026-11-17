@@ -58,3 +58,17 @@ it('refuses a save made with a different world map', async () => {
   expect(checkSave(saved, other)).toBe('otherMap');
   expect(LOAD_ERROR_TEXT.otherMap).toMatch(/different version of the world map/);
 });
+
+it('save and load mid-voyage replays identically (ships, routes, invasions)', async () => {
+  const { seaWorld } = await import('../sim/naval/testWorlds');
+  const g = seaWorld({ shipyards: true, ai: true });
+  g.countries[1].stockpile.grain = 1e7; g.countries[2].stockpile.grain = 0;
+  runYears(g, 1);
+  expect(g.ships.length).toBeGreaterThan(0);
+  await saveGame('1', g);
+  const loaded = deserialize((await loadGame('1')) as SavedGame, g.map);
+  runYears(g, 1); runYears(loaded, 1);
+  expect(hashState(loaded)).toBe(hashState(g));
+}, 60_000);
+
+it('the save format is version 2', () => { expect(SAVE_VERSION).toBe(2); });

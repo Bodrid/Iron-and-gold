@@ -30,7 +30,7 @@ const labelMs = performance.now() - lt;
 times.sort((a, b) => a - b);
 const avg = times.reduce((a, b) => a + b, 0) / times.length, p95 = times[Math.floor(times.length * 0.95)];
 console.log(`ticks ${ticks}: avg ${avg.toFixed(2)} ms, p95 ${p95.toFixed(2)} ms, worst month ${worstMonth.toFixed(1)} ms, labels ${labelMs.toFixed(0)} ms`);
-console.log(`world: ${g.wars.length} wars, ${g.attacks.length} attacks, ${g.countries.filter(c => c.alive).length} countries alive`);
+console.log(`world: ${g.wars.length} wars, ${g.attacks.length} attacks, ${g.countries.filter(c => c.alive).length} countries alive, ${g.tradeRoutes.length} trade routes, ${g.ships.length} ships (${g.ships.filter(s => s.kind === 'warship').length} warships)`);
 const ok = avg <= BUDGET.avg && p95 <= BUDGET.p95 && worstMonth <= BUDGET.worstMonth;
 console.log(ok ? 'within budget' : `OVER BUDGET (avg ≤ ${BUDGET.avg}, p95 ≤ ${BUDGET.p95}, month ≤ ${BUDGET.worstMonth})`);
 process.exit(ok ? 0 : 1);
