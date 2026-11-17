@@ -72,7 +72,7 @@ export interface BlocView {
   /** Why the player can't found a bloc (null = can). */ found: string | null;
   cost: number;
   all: { leader: CountryId; type: BlocType; members: number }[];
-  invites: CountryId[];
+  invites: { from: CountryId; type: BlocType; principles: PrincipleId[]; members: number }[];
 }
 export interface CompanyView {
   limit: number; cost: number;

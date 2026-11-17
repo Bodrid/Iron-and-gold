@@ -4,6 +4,7 @@ import { BUILDINGS } from '../content/buildings';
 import { CHARTERS, COMPANY_BY_ID, type CharterKind } from '../content/companies';
 import type { Effects } from '../content/effects';
 import { BALANCE } from './balance';
+import { TICKS_PER_DAY } from './calendar';
 import { effectSources } from './mods';
 import { approvalHooks } from './politics';
 import { handlers, systems } from './registry';
@@ -30,6 +31,7 @@ export function foundCompanyCheck(state: GameState, c: CountryId, id: string): s
   const def = COMPANY_BY_ID[id];
   const x = state.countries[c];
   if (!def) return 'unknown company';
+  if (x.rebel) return 'rebels';
   if (def.tag && def.tag !== x.tag) return 'notYours';
   if (x.companies.some(k => k.id === id)) return 'alreadyFounded';
   if (x.companies.length >= companyLimit(state, c)) return 'tooMany';
@@ -41,7 +43,8 @@ export function charterCheck(state: GameState, c: CountryId, id: string, charter
   const x = state.countries[c];
   const k = x.companies.find(y => y.id === id);
   if (!k) return 'noCompany';
-  if (!CHARTERS[charter]) return 'unknown charter';
+  if (!Object.hasOwn(CHARTERS, charter)) return 'unknown charter';
+  if (k.charterSet !== undefined && state.tick - k.charterSet < K.CHARTER_DAYS * TICKS_PER_DAY) return 'tooSoon';
   if (k.charter === charter) return 'alreadyGranted';
   if (charter === 'investment' && !state.countries.some(p => p.alive && p.overlord === c)) return 'noPuppets';
   return null;
@@ -61,8 +64,12 @@ function companyLevels(state: GameState, c: CountryId, id: string, withPuppets: 
 }
 
 export function companiesMonth(state: GameState, events: SimEvent[]): void {
-  for (const x of state.countries) {
-    if (!x.alive) continue;
+  for (const x of state.countries) if (x.alive) countryCompanies(state, x.id, events);
+}
+
+function countryCompanies(state: GameState, id: CountryId, events: SimEvent[]): void {
+  const x = state.countries[id];
+  {
     for (const k of x.companies) {
       if (k.charter === 'investment' && !state.countries.some(p => p.alive && p.overlord === x.id)) {
         k.charter = null;
@@ -109,21 +116,23 @@ handlers.foundCompany = (state, cmd: Extract<Command, { type: 'foundCompany' }>,
   const x = state.countries[cmd.country];
   x.money -= K.FOUND_COST;
   x.companies.push({ id: cmd.company, founded: state.tick, charter: null, bonus: 0 });
-  companiesMonth(state, []);   // the bonus shows at once
+  countryCompanies(state, cmd.country, events);   // the bonus shows at once
   events.push({ type: 'companyFounded', country: cmd.country, company: cmd.company });
   return null;
 };
 handlers.grantCharter = (state, cmd: Extract<Command, { type: 'grantCharter' }>) => {
   const bad = charterCheck(state, cmd.country, cmd.company, cmd.charter);
   if (bad) return bad;
-  state.countries[cmd.country].companies.find(k => k.id === cmd.company)!.charter = cmd.charter;
+  const k = state.countries[cmd.country].companies.find(y => y.id === cmd.company)!;
+  k.charter = cmd.charter; k.charterSet = state.tick;
   return null;
 };
 handlers.revokeCharter = (state, cmd: Extract<Command, { type: 'revokeCharter' }>) => {
   const k = state.countries[cmd.country].companies.find(y => y.id === cmd.company);
   if (!k) return 'noCompany';
   if (!k.charter) return 'noCharter';
-  k.charter = null;
+  if (k.charterSet !== undefined && state.tick - k.charterSet < K.CHARTER_DAYS * TICKS_PER_DAY) return 'tooSoon';
+  k.charter = null; k.charterSet = state.tick;
   return null;
 };
 

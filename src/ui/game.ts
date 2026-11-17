@@ -111,6 +111,8 @@ export class GameController {
     this.renderer.setPalette(buildPalette(ui.countries.value));
   }
 
+  private inviteToasts: Record<number, number> = {};
+
   private onFrame(f: FrameMsg) {
     if (f.tiles.idx.length) {
       for (let k = 0; k < f.tiles.idx.length; k++) { const i = f.tiles.idx[k], v = f.tiles.val[k]; this.owner[i] = v & 0xffff; this.controller[i] = v >>> 16; }
@@ -130,7 +132,11 @@ export class GameController {
     if (f.ships) { ui.ships.value = f.ships; this.dirty = true; }
     if (f.trade) ui.trade.value = f.trade;
     if (f.fleet) ui.fleet.value = f.fleet;
-    if (f.diplo) ui.diplo.value = f.diplo;
+    if (f.diplo) {
+      ui.diplo.value = f.diplo;
+      // Invitations that lapsed or were answered elsewhere lose their toast.
+      for (const [from, id] of Object.entries(this.inviteToasts)) if (!f.diplo.bloc.invites.some(i => i.from === Number(from))) { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); delete this.inviteToasts[Number(from)]; }
+    }
     if (f.politics) ui.politics.value = f.politics;
     if (f.events) { ui.events.value = f.events; if (ui.openEvent.value !== null && !f.events.pending.some(p => p.id === ui.openEvent.value)) ui.openEvent.value = null; }
     if (f.countryDetail !== undefined) ui.countryDetail.value = f.countryDetail;
@@ -164,7 +170,7 @@ export class GameController {
       else if (e.type === 'revoltEnded') continue;
       else if (e.type === 'blocInvited' && e.to === me) {
         const from = e.from;
-        const id = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} invites you into its power bloc.`, actions: [
+        const id = this.inviteToasts[from] = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} invites you into its power bloc.`, actions: [
           { label: 'Join', run: () => { this.send({ type: 'respondBlocInvite', country: me, from, accept: true }); dismiss(); } },
           { label: 'Refuse', run: () => { this.send({ type: 'respondBlocInvite', country: me, from, accept: false }); dismiss(); } },
         ] });
@@ -286,7 +292,7 @@ export function rejectionText(reason: string): string {
     'not at war': 'You need to be at war to attack them.', 'no border': 'You have no border there to attack across.',
     'not enough troops': 'Not enough troops for that attack.', cantAfford: 'Not enough money.', noSlots: 'No free building slots in that state.',
     tooManyConstructions: 'Your builders are busy. Wait for a construction to finish.', 'already at war': 'You are already at war with them.',
-    'already offered': 'You already offered them peace.', leader: 'Only the war leaders can make peace for everyone.', notTheirState: 'That state isn’t theirs.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
+    'already offered': 'You already offered them peace.', 'no such offer': 'That offer has lapsed.', leader: 'Only the war leaders can make peace for everyone.', notTheirState: 'That state isn’t theirs.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
     needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
     unreachable: 'Your ships can’t reach there.',
     'queue full': 'The research queue is full.', 'cannot queue': 'That tech can’t be queued yet: queue what it needs first.', 'needs earlier techs': 'Research the techs it needs first.',

@@ -87,6 +87,7 @@ export const TECHS: TechDef[] = [
   t('consumerism', 'Consumer Society', 'society', 5, ['massMedia'], { sol: 2 }, 'Radios, cars and department stores.'),
 ];
 
-export const TECH_BY_ID: Record<string, TechDef> = Object.fromEntries(TECHS.map(x => [x.id, x]));
+/** No prototype: a bad id from a command is simply undefined. */
+export const TECH_BY_ID: Record<string, TechDef> = Object.assign(Object.create(null), Object.fromEntries(TECHS.map(x => [x.id, x])));
 /** Base cost in research points by era. */
 export const ERA_COST = [0, 150, 300, 550, 900, 1400] as const;

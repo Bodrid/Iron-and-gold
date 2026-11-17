@@ -7,7 +7,7 @@ import { personalityOf } from '../../content/personalities';
 import { BALANCE } from '../balance';
 import { TICKS_PER_DAY } from '../calendar';
 import { nextRandom } from '../rng';
-import { blocOf, blocPolicy, foundCheck, inviteCheck } from '../blocs';
+import { blocOf, blocPolicy, foundCheck, inviteCheck, isMajor } from '../blocs';
 import { charterCheck, foundCompanyCheck } from '../companies';
 import { relation } from '../diplomacy/relations';
 import type { Command, Country, GameState } from '../types';
@@ -35,14 +35,11 @@ export function blocDecisions(state: GameState, c: Country, d: DifficultyParams,
     for (const x of warm.slice(0, B.AI_INVITE_CANDIDATES)) {
       if (inviteCheck(state, c.id, x.id)) continue;
       const ok = x.isPlayer
-        ? relation(state, c.id, x.id) >= B.AI_INVITE_PLAYER_RELATION && state.tick - (mine.lastPlayerInvite ?? -Infinity) >= B.PLAYER_INVITE_DAYS * TICKS_PER_DAY
+        ? relation(state, c.id, x.id) >= (isMajor(state, x.id) ? B.AI_MAJOR_JOIN_RELATION : B.AI_INVITE_PLAYER_RELATION) && state.tick - (mine.lastPlayerInvite ?? -Infinity) >= B.PLAYER_INVITE_DAYS * TICKS_PER_DAY
         : blocPolicy.accepts(state, x.id, mine);
       if (ok) { pick = x; break; }
     }
-    if (pick) {
-      if (pick.isPlayer) mine.lastPlayerInvite = state.tick;
-      issue({ type: 'inviteToBloc', country: c.id, target: pick.id });
-    }
+    if (pick) issue({ type: 'inviteToBloc', country: c.id, target: pick.id });
   } else if (mine.members.includes(c.id) && relation(state, c.id, mine.leader) <= B.AI_LEAVE_RELATION) {
     issue({ type: 'leaveBloc', country: c.id });
   }

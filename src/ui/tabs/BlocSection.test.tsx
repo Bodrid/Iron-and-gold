@@ -16,6 +16,7 @@ it('founds a bloc with the type’s fixed principle and up to two picks', () => 
   ui.diplo.value = diplo({});
   const sent: any[] = [];
   render(<BlocSection send={x => sent.push(x)} />);
+  fireEvent.click(document.querySelector('.bloc details summary')!);
   fireEvent.click(screen.getByRole('radio', { name: 'Trade League' }));
   fireEvent.click(screen.getByRole('button', { name: /Mercantile Navy/ }));
   fireEvent.click(screen.getByRole('button', { name: /Shared Science/ }));
@@ -25,10 +26,13 @@ it('founds a bloc with the type’s fixed principle and up to two picks', () => 
 });
 
 it('explains why a minor can’t found one, and answers an invitation', () => {
-  ui.diplo.value = diplo({ found: 'notMajor', invites: [2] });
+  ui.diplo.value = diplo({ found: 'notMajor', invites: [{ from: 2, type: 'empire', principles: ['imperialTribute', 'militaryDrill'], members: 3 }] });
+  ui.countries.value = [c(1, 'Denmark'), c(2, 'Russia')];
   const sent: any[] = [];
   render(<BlocSection send={x => sent.push(x)} />);
   expect(screen.getByText(/Only major powers can found/)).toBeTruthy();
+  expect(screen.getByText(/Russia invites you into its Empire/)).toBeTruthy();
+  expect(screen.getByText(/pay 5% of your income/)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Join' }));
   expect(sent).toEqual([{ type: 'respondBlocInvite', country: 1, from: 2, accept: true }]);
 });

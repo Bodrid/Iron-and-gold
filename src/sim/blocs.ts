@@ -7,7 +7,8 @@ import { effectSources } from './mods';
 import { handlers, systems } from './registry';
 import { atWar } from './war';
 import { sharesBorder } from './combat';
-import { joinerHooks } from './diplomacy/plays';
+import { joinerHooks, playCheckHooks } from './diplomacy/plays';
+import { treatyCheckHooks } from './diplomacy/treaties';
 import { demandHooks } from './diplomacy/demands';
 import { changeRelation, relation, relationPairHooks } from './diplomacy/relations';
 import { tradeHooks } from './naval/trade';
@@ -54,9 +55,9 @@ export function foundCheck(state: GameState, c: CountryId, type: BlocType, picks
   return null;
 }
 
-/** The type's fixed principle plus 1–2 different picks (0 picks allowed: just the fixed one). */
+/** The type's fixed principle plus 1–2 different picks: 2–3 principles in all. */
 function principlesFor(type: BlocType, picks: PrincipleId[]): PrincipleId[] | null {
-  if (!Array.isArray(picks) || picks.length > B.MAX_PICKS) return null;
+  if (!Array.isArray(picks) || picks.length < 1 || picks.length > B.MAX_PICKS) return null;
   const fixed = BLOC_TYPES[type].fixed;
   const out: PrincipleId[] = [fixed];
   for (const p of picks) {
@@ -77,6 +78,8 @@ export function inviteCheck(state: GameState, leader: CountryId, target: Country
   if (atWar(state, leader, target)) return 'atWar';
   if (relation(state, leader, target) < B.INVITE_MIN_RELATION) return 'needsNeutral';
   if (state.blocOffers.some(o => o.from === leader && o.to === target)) return 'alreadyOffered';
+  // The player is asked rarely: at most once in a while across all blocs, less after saying no.
+  if (t.isPlayer && state.tick < (t.blocInvitesUntil ?? 0)) return 'invitedRecently';
   return null;
 }
 
@@ -92,6 +95,13 @@ export const blocPolicy = {
     const sharedRival = rivals.some(t => personalityOf(lead.personality).rivals.includes(t));
     // Or: a much stronger neighbour that shares our enemies.
     return rel >= B.AI_JOIN_RELATION || (rel >= 0 && lead.troops >= me.troops * 3 && sharedRival && sharesBorder(state, ai, b.leader));
+  },
+  /** Whether an AI leader lets `applicant` in when it asks. */
+  admits(state: GameState, b: Bloc, applicant: CountryId): boolean {
+    const lead = state.countries[b.leader], app = state.countries[applicant];
+    const rivals = personalityOf(lead.personality).rivals;
+    if (rivals.includes(app.tag) || personalityOf(app.personality).rivals.includes(lead.tag)) return false;
+    return relation(state, b.leader, applicant) >= B.AI_JOIN_RELATION;
   },
 };
 
@@ -152,6 +162,10 @@ demandHooks.joinBlocCheck = (state, initiator, target) => {
 };
 demandHooks.joinBloc = (state, leader, c, events) => addToBloc(state, leader, c, events);
 
+// No embargoes or plays inside a bloc with a free market / common defence: members settle things otherwise.
+treatyCheckHooks.push((state, from, to, kind) => (kind === 'embargo' && sameBloc(state, from, to) && hasPrinciple(blocOf(state, from), 'freeTradeArea') ? 'sameBloc' : null));
+playCheckHooks.push((state, initiator, target) => (sameBloc(state, initiator, target) ? 'sameBloc' : null));
+
 // ---- wiring ----
 effectSources.push({
   sig: (state, c) => { const b = blocOf(state, c.id); return b ? `${b.id}:${b.leader === c.id ? 'L' : 'M'}:${b.principles.join(',')}` : ''; },
@@ -202,7 +216,10 @@ handlers.inviteToBloc = (state, cmd: Extract<Command, { type: 'inviteToBloc' }>,
   const bad = inviteCheck(state, cmd.country, cmd.target);
   if (bad) return bad;
   const b = state.blocs.find(x => x.leader === cmd.country)!;
-  if (state.countries[cmd.target].isPlayer) {
+  const target = state.countries[cmd.target];
+  if (target.isPlayer) {
+    target.blocInvitesUntil = state.tick + B.PLAYER_INVITE_DAYS * TICKS_PER_DAY;
+    b.lastPlayerInvite = state.tick;
     state.blocOffers.push({ from: cmd.country, to: cmd.target, tick: state.tick });
     events.push({ type: 'blocInvited', from: cmd.country, to: cmd.target });
   } else if (blocPolicy.accepts(state, cmd.target, b)) join(state, b, cmd.target, events);
@@ -215,7 +232,11 @@ handlers.respondBlocInvite = (state, cmd: Extract<Command, { type: 'respondBlocI
   state.blocOffers = state.blocOffers.filter(o => o !== offer);
   const b = state.blocs.find(x => x.leader === cmd.from);
   if (!b) return 'no such bloc';
-  if (!cmd.accept) { events.push({ type: 'blocRefused', from: cmd.from, to: cmd.country }); return null; }
+  if (!cmd.accept) {
+    state.countries[cmd.country].blocInvitesUntil = state.tick + B.REFUSED_QUIET_DAYS * TICKS_PER_DAY;
+    events.push({ type: 'blocRefused', from: cmd.from, to: cmd.country });
+    return null;
+  }
   if (blocOf(state, cmd.country)) return 'inBloc';
   if (state.countries[cmd.country].overlord) return 'puppet';
   join(state, b, cmd.country, events);
@@ -230,7 +251,8 @@ handlers.askToJoinBloc = (state, cmd: Extract<Command, { type: 'askToJoinBloc' }
   if (atWar(state, cmd.country, cmd.leader)) return 'atWar';
   const leader = state.countries[cmd.leader];
   if (leader.isPlayer) return 'askThePlayer';   // the player invites; AI requests to the player aren't modelled
-  if (relation(state, cmd.leader, cmd.country) < B.INVITE_MIN_RELATION) return 'needsNeutral';
+  if (me.rebel) return 'rebels';
+  if (!blocPolicy.admits(state, b, cmd.country)) return 'theyRefuse';
   join(state, b, cmd.country, events);
   return null;
 };

@@ -39,9 +39,10 @@ export interface Country {
   /** A law being passed (months counted since it started). */ enacting: { law: string; startTick: number; months: number } | null;
   groups: Record<GroupId, { clout: number; approval: number; radicalism: number }>;
   /** Tick of the last war this country lost (0 = never). */ lastDefeat: number;
-  companies: { id: string; founded: number; charter: CharterKind | null; /** Output bonus %, recomputed monthly. */ bonus: number }[];
+  companies: { id: string; founded: number; charter: CharterKind | null; /** Output bonus %, recomputed monthly. */ bonus: number; /** When a charter was last granted or revoked. */ charterSet?: number }[];
   flags: string[];
   /** Temporary modifiers from events. */ modifiers: { name: string; effects: Effects; until: number }[];
+  /** No bloc invites this (player) country before this tick. */ blocInvitesUntil?: number;
   /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string; /** Fighting to be a country of its own. */ independence?: boolean };
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;

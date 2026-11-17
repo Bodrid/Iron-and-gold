@@ -5,6 +5,7 @@ test('found a trade league as Britain and invite Portugal', async ({ page }) => 
   await page.waitForFunction(() => (window as any).__gameReady === true, null, { timeout: 60_000 });
   const dock = await page.evaluate(() => document.querySelector('[data-ui=tabbar]')!.textContent!.includes('Bloc'));
   await page.getByRole('button', { name: dock ? 'Bloc' : 'Diplomacy', exact: true }).click();
+  await page.locator('.bloc details summary', { hasText: 'Found a power bloc' }).click();
   await page.getByRole('radio', { name: 'Trade League' }).click();
   await page.getByRole('button', { name: /Mercantile Navy/ }).click();
   await page.getByRole('button', { name: /Found the Trade League/ }).click();

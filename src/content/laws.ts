@@ -48,7 +48,7 @@ export const LAWS: LawDef[] = [
   l('socialSecurity', 'welfare', 'Social Security', { sol: 2.5, growthPct: 5, taxPct: -15 }, { workers: 2, intellectuals: 1, industrialists: -2, landowners: -1 }, 'Pensions and insurance paid by the state.'),
 ];
 
-export const LAW_BY_ID: Record<string, LawDef> = Object.fromEntries(LAWS.map(x => [x.id, x]));
+export const LAW_BY_ID: Record<string, LawDef> = Object.assign(Object.create(null), Object.fromEntries(LAWS.map(x => [x.id, x])));
 export const lawsIn = (area: LawArea) => LAWS.filter(x => x.area === area);
 
 export const DEFAULT_LAWS: Record<LawArea, string> = {

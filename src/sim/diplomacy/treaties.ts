@@ -23,12 +23,16 @@ export function embargoed(state: GameState, a: CountryId, b: CountryId): boolean
 }
 
 /** Why a treaty can't be made right now, or null. */
+/** Other systems that can forbid a treaty (power blocs). */
+export const treatyCheckHooks: ((state: GameState, from: CountryId, to: CountryId, kind: TreatyKind) => string | null)[] = [];
+
 export function treatyCheck(state: GameState, from: CountryId, to: CountryId, kind: TreatyKind): string | null {
   if (from === to || !state.countries[to]?.alive || to <= 0) return 'no such country';
   if (hasTreaty(state, from, to, kind)) return 'alreadySigned';
   if (atWar(state, from, to)) return 'atWar';
   if (state.countries[from].rebel || state.countries[to].rebel) return 'rebels';
   if ((state.countries[from].overlord || state.countries[to].overlord) && kind !== 'tradeAgreement') return 'puppet';
+  for (const h of treatyCheckHooks) { const r = h(state, from, to, kind); if (r) return r; }
   const rel = relation(state, from, to);
   switch (kind) {
     case 'alliance': case 'defensivePact': return rel >= 15 ? null : 'needsCordial';

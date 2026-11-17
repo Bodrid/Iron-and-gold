@@ -41,6 +41,9 @@ export function diploView(state: GameState, me: CountryId): DiploView {
       const sameGoal = (d: Demand) => goals.some(g => g.kind === d.kind && (d.kind !== 'state' || (g as { state: number }).state === d.state));
       const states = state.states.filter(s => s.id && enemySide.includes(s.owner)).sort((a, b) => (sameGoal({ kind: 'state', state: b.id }) ? 1 : 0) - (sameGoal({ kind: 'state', state: a.id }) ? 1 : 0) || b.population - a.population).slice(0, 25);
       const demands: Demand[] = [...states.map(s => ({ kind: 'state' as const, state: s.id })), { kind: 'puppet' }, { kind: 'openMarket' }, { kind: 'reparations' }];
+      // War goals of other kinds (join our bloc, a law, independence), and joining our bloc whenever we lead one.
+      for (const g of goals) if (g.kind !== 'state' && !demands.some(d => d.kind === g.kind)) demands.push({ ...g });
+      if (state.blocs.some(b => b.leader === me) && !demands.some(d => d.kind === 'joinBloc')) demands.push({ kind: 'joinBloc' });
       return {
         id: w.id, leader: w.a === me || w.b === me, mySide: mineA ? [...w.sideA] : [...w.sideB], enemySide: [...enemySide],
         myScore: warScore(state, w, me), enemyScore: warScore(state, w, enemyLeader), available: peacePoints(state, w, me).available, goals: goals.map(d => demandLabel(state, d)),
@@ -75,9 +78,12 @@ export function blocView(state: GameState, me: CountryId): BlocView {
   return {
     mine: b ? { leader: b.leader, type: b.type, principles: [...b.principles], members: [...b.members], puppets: blocCountries(state, b).filter(c => c !== b.leader && !b.members.includes(c)),
       isLeader: b.leader === me, canSetPrinciples: b.leader === me && state.tick - b.principlesSet >= 365 * TICKS_PER_DAY } : null,
-    found: foundCheck(state, me, 'tradeLeague', []),
+    found: foundCheck(state, me, 'tradeLeague', ['sharedScience']),   // eligibility; the form picks the real principles
     cost: BALANCE.blocs.FOUND_COST,
     all: state.blocs.map(x => ({ leader: x.leader, type: x.type, members: blocCountries(state, x).length })),
-    invites: state.blocOffers.filter(o => o.to === me).map(o => o.from),
+    invites: state.blocOffers.filter(o => o.to === me).flatMap(o => {
+      const x = state.blocs.find(b => b.leader === o.from);
+      return x ? [{ from: o.from, type: x.type, principles: [...x.principles], members: blocCountries(state, x).length }] : [];
+    }),
   };
 }

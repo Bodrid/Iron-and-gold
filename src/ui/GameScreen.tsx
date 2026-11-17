@@ -17,6 +17,8 @@ export function GameScreen() {
   const mapRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (mapRef.current && session.game) session.game.mount(mapRef.current); }, []);
   const layout = ui.layout.value;
+  // The Bloc tab exists only with the docked panel; on the phone layout it lives in Diplomacy.
+  if (layout !== 'dock' && ui.tab.value === 'bloc') ui.tab.value = 'diplomacy';
   const tab = ui.tab.value;
   const title = TABS.find(t => t.id === tab)?.label ?? '';
   const Panel = layout === 'dock' ? Dock : Sheet;

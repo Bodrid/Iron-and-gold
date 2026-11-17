@@ -106,7 +106,7 @@ function applyEffect(state: GameState, c: Country, e: EventEffect, events: SimEv
       return moved > 0;
     }
     case 'revolt': return !!startRevolt(state, c, e.group, events, changed);
-    case 'foundBloc': return !handlers.foundBloc!(state, { type: 'foundBloc', country: c.id, blocType: e.blocType, principles: [] }, events, changed);
+    case 'foundBloc': return !handlers.foundBloc!(state, { type: 'foundBloc', country: c.id, blocType: e.blocType, principles: [e.blocType === 'tradeLeague' ? 'marketIntegration' : 'freeTradeArea'] }, events, changed);
     case 'inviteToBloc': { const t = byTag(state, e.tag); return !!t && !handlers.inviteToBloc!(state, { type: 'inviteToBloc', country: c.id, target: t.id }, events, changed); }
     case 'independence': case 'release': case 'formNation': return effectHooks[e.kind](state, c, e as never, events, changed);
   }

@@ -21,10 +21,10 @@ export const COMPANIES: CompanyDef[] = [
   { id: 'railwayCompany', name: 'Railway Company', buildings: ['railway'], description: 'Lines to every corner of the country.' },
   { id: 'agriculturalSociety', name: 'Agricultural Society', buildings: ['farm'], description: 'Better seed and bigger harvests.' },
 ];
-export const COMPANY_BY_ID: Record<string, CompanyDef> = Object.fromEntries(COMPANIES.map(c => [c.id, c]));
+export const COMPANY_BY_ID: Record<string, CompanyDef> = Object.assign(Object.create(null), Object.fromEntries(COMPANIES.map(c => [c.id, c])));
 
 export const CHARTERS: Record<CharterKind, { name: string; description: string }> = {
-  colonial: { name: 'Colonial charter', description: 'Expeditions into unclaimed land cost 25% fewer troops; the company keeps 5% of your taxes.' },
+  colonial: { name: 'Colonial charter', description: 'Expeditions into unclaimed land are 25% stronger; the company keeps 5% of your taxes.' },
   monopoly: { name: 'Monopoly', description: '+15% more output from its buildings, but no trade bonus. Industrialists like having monopolies, workers don’t.' },
   investment: { name: 'Investment charter', description: 'Its buildings in your puppets count too and they pay 5% more tribute, but puppets resent it (−10 relations).' },
 };

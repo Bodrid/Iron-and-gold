@@ -63,8 +63,11 @@ it('charters: a monopoly adds output but splits the interest groups; colonial co
   expect(mods(g, c).output.textileMill - base).toBe(25);
   expect(approvalTarget(g, c, 'industrialists')).toBeGreaterThan(ind);
   expect(approvalTarget(g, c, 'workers')).toBeLessThan(work);
+  expect(step(g, [{ type: 'revokeCharter', country: 1, company: 'textileCombine' }]).events[0]).toMatchObject({ type: 'rejected', reason: 'tooSoon' });
+  g.tick += 366 * 4;   // charters change at most once a year
   step(g, [{ type: 'revokeCharter', country: 1, company: 'textileCombine' }]);
   expect(mods(g, c).output.textileMill - base).toBe(10);
+  g.tick += 366 * 4;
   const tax = mods(g, c).taxPct;
   step(g, [{ type: 'grantCharter', country: 1, company: 'textileCombine', charter: 'colonial' }]);
   expect(mods(g, c).taxPct).toBe(tax - 5);

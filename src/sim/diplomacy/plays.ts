@@ -19,6 +19,9 @@ export function sideStrength(state: GameState, side: CountryId[]): number {
   return side.reduce((n, c) => n + state.countries[c].troops + state.countries[c].maxTroops * 0.5, 0);
 }
 
+/** Other systems that can forbid a play (power blocs). */
+export const playCheckHooks: ((state: GameState, initiator: CountryId, target: CountryId) => string | null)[] = [];
+
 /** Other systems that bring defenders into a play (power blocs). */
 export const joinerHooks: ((state: GameState, initiator: CountryId, target: CountryId) => CountryId[])[] = [];
 
@@ -35,6 +38,7 @@ export function playCheck(state: GameState, cmd: Extract<Command, { type: 'start
   if (atWar(state, cmd.country, cmd.target)) return 'atWar';
   if (state.plays.some(p => p.target === cmd.target || p.initiator === cmd.country || p.initiator === cmd.target)) return 'playUnderWay';
   if (hasTreaty(state, cmd.country, cmd.target, 'alliance')) return 'allied';
+  for (const h of playCheckHooks) { const r = h(state, cmd.country, cmd.target); if (r) return r; }
   if (!Array.isArray(cmd.demands) || !cmd.demands.length || cmd.demands.length > D.MAX_DEMANDS) return 'badDemands';
   for (const d of cmd.demands) {
     if (d.kind === 'state' && state.states[d.state]?.owner !== cmd.target) return 'notTheirState';

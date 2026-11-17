@@ -155,6 +155,8 @@ export const BALANCE = {
     AI_INVITE_PLAYER_RELATION: 15,
     /** An AI bloc invites the player at most this often. */
     PLAYER_INVITE_DAYS: 180,
+    /** After the player turns down an invitation, no bloc asks again for this long. */
+    REFUSED_QUIET_DAYS: 365,
     AI_LEAVE_RELATION: -20,
     /** How many of its warmest contacts an AI bloc leader considers inviting per decision. */
     AI_INVITE_CANDIDATES: 6,
@@ -174,6 +176,8 @@ export const BALANCE = {
     COLONIAL_TAX_PCT: 5,
     INVESTMENT_TRIBUTE: 0.05,
     INVESTMENT_RELATION: -10,
+    /** Days between granting or revoking a company's charter. */
+    CHARTER_DAYS: 365,
   },
   events: {
     /** The player has at most this many event cards open; more wait. */
