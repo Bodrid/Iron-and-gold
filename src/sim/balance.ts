@@ -83,4 +83,5 @@ export const BALANCE = {
     LITERACY_OUTPUT: 1,
     RESEARCH_PER_LEVEL: 5,
   },
+  score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;
