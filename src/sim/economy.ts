@@ -133,7 +133,7 @@ function countryMonth(state: GameState, c: Country): void {
 
   const produced = emptyRecord();
   const used = emptyRecord();
-  let upkeep = 0, taxBonus = 0, taxBase = 0, research = 0;
+  let upkeep = 0, taxBonus = 0, taxBase = 0, uniLevels = 0;
   for (const s of states) for (const b of state.states[s].buildings) upkeep += BUILDINGS[b.type].upkeep * b.level;
   for (const s of producing) {
     const st = state.states[s];
@@ -144,7 +144,7 @@ function countryMonth(state: GameState, c: Country): void {
       if (!ef) continue;
       if (ef.stateOutputPct) outputPct += ef.stateOutputPct * b.level * railwayFuel(b, inputAvail);
       if (ef.taxPct) stateTax += ef.taxPct * b.level;
-      if (ef.researchPoints) research += BALANCE.growth.RESEARCH_PER_LEVEL * b.level * (0.5 + c.literacy);
+      if (ef.researchPoints) uniLevels += b.level;
     }
     let stateValue = 0;
     for (const b of st.buildings) {
@@ -191,6 +191,8 @@ function countryMonth(state: GameState, c: Country): void {
   let rm = pctMult(md.researchPct);
   for (const h of researchHooks) rm *= h(state, c);
   const R = BALANCE.research;
+  // Universities give less each: the tenth adds far less than the first.
+  const research = BALANCE.growth.RESEARCH_PER_LEVEL * (uniLevels / (1 + uniLevels / R.UNIVERSITY_SOFT_CAP)) * (0.5 + c.literacy);
   c.researchRate = (R.BASE + R.POP * Math.sqrt(c.population / 1e6) * (0.5 + c.literacy) + research) * rm;
   c.researchPoints += c.researchRate;
 }

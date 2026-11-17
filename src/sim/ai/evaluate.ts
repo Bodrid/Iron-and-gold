@@ -32,6 +32,8 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
   const out: BuildOption[] = [];
   const E = BALANCE.economy;
   if (state.constructions.filter(x => x.country === c.id).length >= maxConstructions(state, c.id)) return out;
+  let universities = 0;
+  for (const s of state.states) if (s.owner === c.id) for (const b of s.buildings) if (b.type === 'university') universities += b.level;
   const short = (g: (typeof GOODS)[number]) => c.demanded[g] > c.produced[g] + c.stockpile[g] * 0.25;
   for (const st of state.states) {
     if (!st.id || st.owner !== c.id || st.controller !== c.id) continue;
@@ -67,7 +69,7 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
       if (ef.taxPct) score = (value * (ef.taxPct / 100) * E.TAX_RATE - def.upkeep) / cost;
       if (ef.troopRefillPct) score = (atWar ? 0.06 : 0.02) * (0.5 + pers.aggression);
       if (ef.defenseMult) score = threatened ? 0.05 : 0.002;
-      if (ef.researchPoints) score = 0.03;
+      if (ef.researchPoints) score = 0.03 / (1 + universities / 4);
       if (ef.tradeRoutes) {
         // Ports pay when trade is waiting: our routes are full, or we have goods to sell or need goods.
         const cap = routeCapacity(state, c.id), used = routesOf(state, c.id).length;

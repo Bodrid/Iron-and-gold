@@ -15,6 +15,7 @@ import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
 import { navalDecisions } from './naval';
 import { diplomacyDecisions } from './diplomacy';
+import { politicsDecisions } from './politics';
 
 const YEAR = 365 * TICKS_PER_DAY;
 /** Chance per 30 days that a fully aggressive AI looks for a war. */
@@ -73,6 +74,7 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
 
   // 4c. Diplomacy: relations, treaties, plays in progress, puppets.
   diplomacyDecisions(state, c, d, neighbors, issue);
+  politicsDecisions(state, c, d, mistake, issue);
 
   // 5. Make demands of a weaker neighbour (a diplomatic play; war follows only if they don't give in).
   if (!enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {

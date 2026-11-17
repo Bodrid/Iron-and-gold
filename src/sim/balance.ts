@@ -87,8 +87,8 @@ export const BALANCE = {
     RESEARCH_PER_LEVEL: 5,
   },
   research: {
-    /** Points per month every country gets. */
-    BASE: 2,
+    /** Points per month every country gets (so small countries still advance). */
+    BASE: 4,
     /** Points per month per sqrt(millions of people), times (0.5 + literacy). */
     POP: 3,
     /** A tech every country knows costs this much less. */
@@ -96,6 +96,8 @@ export const BALANCE = {
     /** Extra cost per era ahead of the current one. */
     AHEAD_PENALTY: 0.3,
     MAX_QUEUE: 12,
+    /** University research is levels / (1 + levels / this). */
+    UNIVERSITY_SOFT_CAP: 12,
   },
   politics: {
     /** Living standards at which groups neither like nor dislike how people live. */
@@ -128,6 +130,12 @@ export const BALANCE = {
     REVOLT_MAX_SHARE: 0.6,
     RADICAL_AFTER_REVOLT: 40,
     MAX_COUNTRIES: 4000,
+    /** The AI starts a law only with at least this much support. */
+    AI_MIN_SUPPORT: 0.3,
+    /** How the AI scores a law: support (which mostly decides whether it can pass), its effects, and the unrest it causes. */
+    AI_SUPPORT_WEIGHT: 0.25,
+    AI_UTILITY_WEIGHT: 4,
+    AI_UNREST_WEIGHT: 0.08,
   },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
