@@ -25,7 +25,7 @@ export function groupAdmin1(features: any[]): Map<string, Group> {
     const byRegion = p.region && s.regions.size >= MIN_REGIONS && s.n > 25;
     const name = String(byRegion ? p.region : p.name ?? p.adm0_a3).trim();
     const key = `${p.adm0_a3}-${name}`;
-    const g = groups.get(key) ?? { name, modern: p.adm0_a3, polygons: [] };
+    const g: Group = groups.get(key) ?? { name, modern: p.adm0_a3, polygons: [] };
     g.polygons.push(f.geometry);
     groups.set(key, g);
   }

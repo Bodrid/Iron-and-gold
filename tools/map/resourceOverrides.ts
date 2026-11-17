@@ -4,7 +4,7 @@ export interface ResourceOverride { modern: string; match: RegExp; coal?: boolea
 export const RESOURCE_OVERRIDES: ResourceOverride[] = [
   { modern: 'DEU', match: /Nordrhein|Saarland/, coal: true, iron: true },
   { modern: 'DEU', match: /Sachsen$|Saxony/, coal: true },
-  { modern: 'POL', match: /Śląsk|Slask|Dolnoś|Opolsk/, coal: true, iron: true },
+  { modern: 'POL', match: /Silesia|Opole/, coal: true, iron: true },
   { modern: 'GBR', match: /Wales|North East|Yorkshire|West Midlands|North West|Scotland/, coal: true, iron: true },
   { modern: 'FRA', match: /Hauts-de-France|Nord|Grand Est|Lorraine/, coal: true, iron: true },
   { modern: 'BEL', match: /Wallon|Hainaut|Liège/, coal: true, iron: true },
