@@ -39,6 +39,25 @@ function bump(m: Map<CountryId, number>, id: CountryId, d: number) {
   if (v) m.set(id, v); else m.delete(id);
 }
 
+/** Called after a tile's controller changes. */
+export const controlListeners: ((state: GameState, tile: number, controller: CountryId) => void)[] = [];
+
+/** States where `country` controls at least one tile, ascending. */
+export function statesControlledBy(state: GameState, country: CountryId): number[] {
+  const c = counts(state);
+  const out: number[] = [];
+  for (let s = 1; s < c.controlled.length; s++) if (c.controlled[s].has(country)) out.push(s);
+  return out;
+}
+
+/** States where `country` owns at least one tile, ascending. */
+export function statesOwnedBy(state: GameState, country: CountryId): number[] {
+  const c = counts(state);
+  const out: number[] = [];
+  for (let s = 1; s < c.owned.length; s++) if (c.owned[s].has(country)) out.push(s);
+  return out;
+}
+
 export function setTile(state: GameState, tile: number, owner: CountryId, controller: CountryId, changed: number[]): void {
   const oldO = state.owner[tile], oldC = state.controller[tile];
   if (oldO === owner && oldC === controller) return;
@@ -58,6 +77,7 @@ export function setTile(state: GameState, tile: number, owner: CountryId, contro
   }
   changed.push(tile);
   refreshState(state, s);
+  if (oldC !== controller) for (const l of controlListeners) l(state, tile, controller);
 }
 
 /** State owner = country owning the most of its tiles (current owner keeps ties); controller = country controlling > 50%, else the owner. */
