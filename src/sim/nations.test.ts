@@ -51,6 +51,18 @@ it('forming is refused for the wrong country, too few cores, puppets and countri
   expect(formCheck(k, 1, 'TST')).toBe('puppet');
 });
 
+it('an event-only nation is refused by command and the monthly AI check, but its event forms it', () => {
+  FORMABLES.push({ tag: 'TSE', name: 'Eventland', color: 0x654321, from: ['PPP'], cores: ['T-A', 'T-B', 'T-C', 'T-D'], share: 0.75, description: 'test', eventOnly: true });
+  try {
+    const g = world();
+    expect(formCheck(g, 1, 'TSE')).toBe('byEvent');
+    expect(step(g, [{ type: 'formNation', country: 1, tag: 'TSE' }]).events).toContainEqual(expect.objectContaining({ type: 'rejected', reason: 'byEvent' }));
+    runDays(g, 40);
+    expect(g.countries[1].tag).toBe('PPP');
+    expect(formCheck(g, 1, 'TSE', true)).toBeNull();
+  } finally { FORMABLES.pop(); }
+});
+
 it('an independence revolt that wins leaves a real country with its states', () => {
   const g = world();
   const rebels = startIndependence(g, g.countries[2], { tag: 'REB', name: 'Free Republic', color: 0xabcdef, keys: ['T-E'] }, [], [])!;

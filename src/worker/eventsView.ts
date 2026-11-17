@@ -31,7 +31,7 @@ export function eventsView(state: GameState, me: CountryId): EventsView {
       const def = eventById(l.event);
       return { title: def?.title ?? l.event, choice: def?.options[l.option]?.label ?? '', date: formatDate(dateAtTick(state.startDate, l.tick)) };
     }),
-    decisions: FORMABLES.filter(f => f.from.some(t => hasTag(c, t))).map(f => {
+    decisions: FORMABLES.filter(f => !f.eventOnly && f.from.some(t => hasTag(c, t))).map(f => {
       const total = coreStates(state, f).length;
       return { tag: f.tag, name: f.name, description: f.description, owned: Math.round(coreShare(state, me, f) * total), total, needed: Math.ceil(f.share * total), check: formCheck(state, me, f.tag) };
     }),

@@ -10,7 +10,7 @@ export const DIPLO_REASON: Record<string, string> = {
   inBloc: 'You are already in a power bloc', notMajor: 'Only major powers can found a bloc', notLeader: 'Only the bloc leader can do that',
   badPrinciples: 'Pick up to two different principles', cantAfford: 'Not enough money', notInBloc: 'You aren’t in a power bloc', notMember: 'Not a member',
   rebels: 'Not possible with rebels: it’s a civil war', theyRefuse: 'They won’t have you: improve relations first', invitedRecently: 'They were asked recently',
-  sameBloc: 'You are in the same power bloc', alreadyExists: 'That nation already exists', notEligible: 'Your country can’t form it',
+  sameBloc: 'You are in the same power bloc', alreadyExists: 'That nation already exists', notEligible: 'Your country can’t form it', byEvent: 'Only through its event',
   needsCores: 'You need more of its lands', askThePlayer: 'They decide who joins: wait for an invitation',
   notYours: 'A historical company of another country', alreadyFounded: 'Already founded', tooMany: 'Build more industry to run another company',
   noCompany: 'Found the company first', alreadyGranted: 'Already granted', noPuppets: 'Needs at least one puppet', noCharter: 'No charter to revoke', 'no such play': 'That play is over', notYourPuppet: 'Not your puppet', 'no such country': 'Not possible',

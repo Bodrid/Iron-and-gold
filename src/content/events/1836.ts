@@ -38,32 +38,33 @@ export const EVENTS_1836: EventDef[] = [
       { label: 'The rivalry goes on', effects: [{ kind: 'modifier', name: 'Imperial vigilance', effects: { maxTroopsPct: 5 }, months: 120 }], ai: 1 },
     ] },
 
-  // ---- German unification ----
-  { id: 'de.zollverein', title: 'The Zollverein', starts: S1836, countries: ['PRU'], start: y(1836, 2), end: y(1860), mtthMonths: 6,
+  // ---- German unification (both starts) ----
+  { id: 'de.zollverein', title: 'The Zollverein', countries: ['PRU'], start: y(1836, 2), end: y(1860), mtthMonths: 6,
     text: 'The customs union of the German states lowers tolls from the Rhine to the Oder. Prussia could make it the heart of a wider German market under Berlin.\n\nVienna would not be pleased.',
     conditions: [],
     options: [
       { label: 'Lead the German states', effects: [{ kind: 'foundBloc', blocType: 'tradeLeague' }, { kind: 'inviteToBloc', tag: 'SAX' }, { kind: 'inviteToBloc', tag: 'THU' }, { kind: 'inviteToBloc', tag: 'HES' }, { kind: 'relation', tag: 'AUS', delta: -15 }, { kind: 'flag', flag: 'de.zollverein' }], ai: 3 },
       { label: 'Keep it a quiet customs union', effects: [{ kind: 'modifier', name: 'Zollverein', effects: { tradePct: 10 }, months: 240 }, { kind: 'flag', flag: 'de.zollverein' }], ai: 1 },
     ] },
-  { id: 'de.schleswig', title: 'The Schleswig-Holstein Question', starts: S1836, countries: ['PRU'], start: y(1848), end: y(1875), mtthMonths: 18,
+  { id: 'de.schleswig', title: 'The Schleswig-Holstein Question', countries: ['PRU'], start: y(1848), end: y(1875), mtthMonths: 18,
     text: 'The German duchies under the Danish crown want to join Germany. "Only three people ever understood it," said Palmerston: "one is dead, one went mad, and I have forgotten."',
     conditions: [{ kind: 'flag', flag: 'de.zollverein' }, { kind: 'exists', tag: 'DEN' }],
     options: [
       { label: 'Demand the duchies', effects: [{ kind: 'startPlay', target: 'DEN', demands: [{ kind: 'state', key: 'DEU-Schleswig-Holstein' }] }], ai: 3 },
       { label: 'Leave it to the Diet', effects: [{ kind: 'relation', tag: 'DEN', delta: 20 }], ai: 1 },
     ] },
-  { id: 'de.north', title: 'The North German Confederation', starts: S1836, countries: ['PRU'], start: y(1864), end: y(1885), mtthMonths: 12,
+  { id: 'de.north', title: 'The North German Confederation', countries: ['PRU'], start: y(1864), end: y(1885), mtthMonths: 12,
     text: 'Bismarck proposes that the northern German states join Prussia in a confederation run from Berlin. Those who refuse will find themselves alone.',
     conditions: [{ kind: 'flag', flag: 'de.zollverein' }, { kind: 'atPeace' }, { kind: 'notPuppet' }],
     options: [
       { label: 'Unite the north', effects: [
         { kind: 'transferStates', keys: ['DEU-Niedersachsen'], to: 'self', from: 'HAN' }, { kind: 'transferStates', keys: ['DEU-Hessen'], to: 'self', from: 'HES' },
         { kind: 'transferStates', keys: ['DEU-Thüringen'], to: 'self', from: 'THU' }, { kind: 'transferStates', keys: ['DEU-Sachsen'], to: 'self', from: 'SAX' },
+        { kind: 'transferStates', keys: ['DEU-Rheinland-Pfalz'], to: 'self', from: 'PAL' },
         { kind: 'relation', tag: 'AUS', delta: -30 }, { kind: 'relation', tag: 'FRA', delta: -20 }, { kind: 'flag', flag: 'de.north' }], ai: 3 },
       { label: 'Not yet', effects: [{ kind: 'relation', tag: 'AUS', delta: 10 }], ai: 1 },
     ] },
-  { id: 'de.empire', title: 'Proclaiming the German Empire', starts: S1836, countries: ['PRU'], start: y(1866), end: y(1936), mtthMonths: 3,
+  { id: 'de.empire', title: 'Proclaiming the German Empire', countries: ['PRU'], start: y(1866), end: y(1936), mtthMonths: 3,
     text: 'In the Hall of Mirrors the German princes are ready to hail one emperor. The south will follow Prussia if we ask now.',
     conditions: [{ kind: 'flag', flag: 'de.north' }, { kind: 'atPeace' }, { kind: 'ownsShare', prefixes: ['DEU-'], share: 0.6 }],
     options: [
@@ -71,29 +72,29 @@ export const EVENTS_1836: EventDef[] = [
       { label: 'Prussia is enough', effects: [{ kind: 'modifier', name: 'Prussian pride', effects: { attackPct: 5 }, months: 120 }], ai: 1 },
     ] },
 
-  // ---- Italian unification ----
-  { id: 'it.risorgimento', title: 'The Risorgimento', starts: S1836, countries: ['SAR'], start: y(1848), end: y(1866), mtthMonths: 12,
+  // ---- Italian unification (both starts) ----
+  { id: 'it.risorgimento', title: 'The Risorgimento', countries: ['SAR'], start: y(1848), end: y(1866), mtthMonths: 12,
     text: 'From Milan to Palermo, Italians dream of one nation. Turin could lead them, starting with Lombardy, held by Austria.',
     conditions: [{ kind: 'exists', tag: 'AUS' }],
     options: [
       { label: 'Demand Lombardy', effects: [{ kind: 'startPlay', target: 'AUS', demands: [{ kind: 'state', key: 'ITA-Lombardia' }] }, { kind: 'flag', flag: 'it.risorgimento' }], ai: 3 },
       { label: 'Patience', effects: [{ kind: 'flag', flag: 'it.risorgimento' }, { kind: 'relation', tag: 'AUS', delta: 15 }], ai: 1 },
     ] },
-  { id: 'it.garibaldi', title: 'The Expedition of the Thousand', starts: S1836, countries: ['SAR'], start: y(1859), end: y(1875), mtthMonths: 12,
+  { id: 'it.garibaldi', title: 'The Expedition of the Thousand', countries: ['SAR'], start: y(1859), end: y(1875), mtthMonths: 12,
     text: 'Garibaldi and his Redshirts have landed in Sicily and swept the Bourbon armies before them. He offers the south to King Victor Emmanuel.\n\nTuscany and the Papal Legations ask to join too.',
     conditions: [{ kind: 'flag', flag: 'it.risorgimento' }, { kind: 'atPeace' }, { kind: 'notPuppet' }],
     options: [
       { label: 'Accept the south and the centre', effects: [
         { kind: 'transferStates', keys: ['ITA-Sicily', 'ITA-Campania', 'ITA-Calabria', 'ITA-Apulia', 'ITA-Basilicata', 'ITA-Abruzzo'], to: 'self', from: 'SIC' },
-        { kind: 'transferStates', keys: ['ITA-Toscana'], to: 'self', from: 'TUS' }, { kind: 'transferStates', keys: ['ITA-Emilia-Romagna', 'ITA-Marche'], to: 'self', from: 'PAP' },
+        { kind: 'transferStates', keys: ['ITA-Toscana'], to: 'self', from: 'TUS' }, { kind: 'transferStates', keys: ['ITA-Veneto'], to: 'self', from: 'VEN' }, { kind: 'transferStates', keys: ['ITA-Emilia-Romagna', 'ITA-Marche'], to: 'self', from: 'PAP' },
         { kind: 'relation', tag: 'AUS', delta: -20 }, { kind: 'relation', tag: 'FRA', delta: -10 }, { kind: 'flag', flag: 'it.garibaldi' }], ai: 3 },
       { label: 'Garibaldi goes too far', effects: [{ kind: 'relation', tag: 'SIC', delta: 20 }, { kind: 'approval', group: 'intellectuals', radicalism: 20 }], ai: 1 },
     ] },
-  { id: 'it.kingdom', title: 'The Kingdom of Italy', starts: S1836, countries: ['SAR'], start: y(1860), end: y(1936), mtthMonths: 3,
+  { id: 'it.kingdom', title: 'The Kingdom of Italy', countries: ['SAR'], start: y(1860), end: y(1936), mtthMonths: 3,
     text: 'Italy is made. Now, as d’Azeglio said, we must make Italians.',
-    conditions: [{ kind: 'flag', flag: 'it.garibaldi' }, { kind: 'atPeace' }, { kind: 'ownsShare', prefixes: ['ITA-'], share: 0.75 }],
+    conditions: [{ kind: 'flag', flag: 'it.garibaldi' }, { kind: 'atPeace' }, { kind: 'ownsShare', prefixes: ['ITA-'], share: 0.7 }],
     options: [{ label: 'Long live Italy', effects: [{ kind: 'formNation', tag: 'ITA' }], ai: 1 }] },
-  { id: 'it.rome', title: 'Rome, the Capital', starts: S1836, countries: ['ITA', 'SAR'], start: y(1866), end: y(1936), mtthMonths: 12,
+  { id: 'it.rome', title: 'Rome, the Capital', countries: ['ITA', 'SAR'], start: y(1866), end: y(1936), mtthMonths: 12,
     text: 'The Pope still holds Rome, guarded by French troops. Without it, Italy is unfinished.',
     conditions: [{ kind: 'exists', tag: 'PAP' }, { kind: 'flag', flag: 'it.garibaldi' }],
     options: [

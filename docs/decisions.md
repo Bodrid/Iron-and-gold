@@ -223,6 +223,26 @@ Calls I made on my own while building Iron & Gold, and small issues left for lat
 **Left for later**
 
 - Sokoto still founds a bloc (a big farm economy); Agricultural Society is still the most common company.
-- the American Revolution still ends in 7–8 months when the USA wins (outcomes are all-or-nothing around troops 0.4–0.55); Greek and Serbian independence events.
+- the American Revolution still ends in 7–8 months when the USA wins (outcomes are all-or-nothing around troops 0.4–0.55). (Greek and Serbian independence for 1776: done in Unifications.)
 - an overlord can't set its puppet's laws; a player can be allied with a country in one play and opposed in another; Continue doesn't label finished games; the long-press needs no timer (gesture-based), so it's not an issue.
 - untested Task 2 behaviours (research by fit, value-first escorts, 35% concession); SoL flattens at 25 for great powers after about 1900; Germany forms in about 1 of 3 seeds; France's GDP swings from price volatility; a 375 px portrait check of the "/mo" labels.
+
+## Unifications
+
+**Decisions**
+
+- 12 new formables: Austria-Hungary, Scandinavia, India, Roman Empire, Byzantine Empire, Romania, Yugoslavia, Gran Colombia, Peru-Bolivian Confederation, Río de la Plata, Iberia and Arabia. Austria-Hungary is `eventOnly`: Austria owns its lands from day one, so only the Compromise event proclaims it. Commands get `byEvent`, the monthly AI check skips it and Decisions hides it.
+- 34 new events in `events/unifications.ts`, for one start or both:
+  - 1848 and the Ausgleich; Scandinavism and the union of the crowns; Finland and Kiel (1776).
+  - Maratha Delhi, Tipu and Ranjit Singh (1776); the 1857 rebellion (1836).
+  - Mare Nostrum, Roman legacy and the Balkan Wars.
+  - Serbian and Greek independence (1776); the Načertanije and the Balkan League; Romanian union and Transylvania; the January Uprising (1836).
+  - Spanish America and Brazil (1776); Peru-Bolivia, Bolívar's dream and the Uruguayan war (1836).
+  - Iberism; Vienna and the Belgian revolution (1776); the Holy Cities.
+  - Canada; Australia and Hawaii (1836).
+- The German and Italian chains now run in both starts. The Palatinate and Venice join them. Italy needs 70% of its states (was 75%), as in 1861 without Venice and Rome.
+- Probes (100 years, AI only): 1776 seed 1 forms Scandinavia (1863), Romania (1858) and Italy (1868), and Spanish America breaks away in 1808–17. 1836 seed 1 forms Austria-Hungary (1860) and Peru-Bolivia (1836). 1836 seed 2 forms Italy, Peru-Bolivia and Río de la Plata. Bench 1836 2y: worst month 48.5 ms.
+
+**Left for later**
+
+- Unclaimed states can't be taken by events, so there is nothing for Ethiopia, Madagascar or Central Asia yet. Germany still forms in a minority of seeds. Gran Colombia and Iberia rarely form, because the AI weighs those choices low on purpose.

@@ -46,5 +46,16 @@ it('every event refers to things that exist, and every option does something', (
       }
     }
   }
-  expect(EVENTS.filter(e => e.starts?.includes('1836')).length).toBeGreaterThanOrEqual(20);
+  for (const start of ['1776', '1836']) expect(EVENTS.filter(e => !e.starts || e.starts.includes(start)).length, start).toBeGreaterThanOrEqual(35);
+});
+
+it('every formable has a unique tag no start uses, and is eligible to someone that can exist', () => {
+  const startTags = new Set(STARTS.flatMap(s => s.countries.map(c => c.tag)));
+  const all = knownTags();
+  expect(new Set(FORMABLES.map(f => f.tag)).size).toBe(FORMABLES.length);
+  for (const f of FORMABLES) {
+    expect(startTags.has(f.tag), f.tag).toBe(false);
+    expect(f.from.some(t => all.has(t)), f.tag).toBe(true);
+    for (const c of f.cores) expect([...stateKeys].some(k => k.startsWith(c)), `${f.tag}: ${c}`).toBe(true);
+  }
 });

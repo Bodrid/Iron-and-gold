@@ -62,10 +62,11 @@ export function coreShare(state: GameState, c: CountryId, f: FormableDef): numbe
   return cores.length ? cores.filter(s => state.states[s].owner === c).length / cores.length : 0;
 }
 
-export function formCheck(state: GameState, c: CountryId, tag: string): string | null {
+export function formCheck(state: GameState, c: CountryId, tag: string, byEvent = false): string | null {
   const f = formableByTag(tag);
   const x = state.countries[c];
   if (!f) return 'unknown nation';
+  if (f.eventOnly && !byEvent) return 'byEvent';
   if (tagTaken(state, tag)) return 'alreadyExists';
   if (!f.from.some(t => hasTag(x, t))) return 'notEligible';
   if (x.overlord) return 'puppet';
@@ -101,7 +102,7 @@ handlers.formNation = (state, cmd: Extract<Command, { type: 'formNation' }>, eve
 
 effectHooks.independence = (state, c, e: Who, events, changed) => !!startIndependence(state, c, e, events, changed);
 effectHooks.release = (state, c, e: { tag: string; name: string; color: number; keys: string[] }, events, changed) => !!releaseNation(state, c, e, events, changed);
-effectHooks.formNation = (state, c, e: { tag: string }, events, changed) => { if (formCheck(state, c.id, e.tag)) return false; formNation(state, c.id, e.tag, events, changed); return true; };
+effectHooks.formNation = (state, c, e: { tag: string }, events, changed) => { if (formCheck(state, c.id, e.tag, true)) return false; formNation(state, c.id, e.tag, events, changed); return true; };
 
 // AI countries proclaim a nation as soon as they can (checked monthly; cheap: few formables, few eligible tags).
 systems.month.push((state, events, changed) => {
