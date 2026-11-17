@@ -2,6 +2,7 @@
 import { loadMap } from '../map/format';
 import { getStart } from '../content/starts';
 import { createWorkerHandler } from './handler';
+import { buildingIcons, computeLabels } from '../sim/labels';
 import type { ToWorker } from './protocol';
 
 const handler = createWorkerHandler({
@@ -9,6 +10,7 @@ const handler = createWorkerHandler({
   loadMap,
   getStart,
   now: () => performance.now(),
+  hooks: { labels: computeLabels, buildings: buildingIcons },
 });
 self.onmessage = (e: MessageEvent<ToWorker>) => { void handler.onMessage(e.data); };
 setInterval(() => handler.pump(), 16);
