@@ -24,5 +24,6 @@ export function hashState(state: GameState): number {
   mix(state.shipBuilds.length);
   for (let i = 0; i < state.relations.length; i++) h = Math.imul(h ^ state.relations[i], 0x01000193);
   mix(state.diploActions.length);
+  for (const t of state.treaties) { mix(t.id); mix(t.a); mix(t.b); }
   return h >>> 0;
 }

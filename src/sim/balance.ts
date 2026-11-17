@@ -118,6 +118,10 @@ export const BALANCE = {
     RELATION_ACTION_COST: 500,
     CAPACITY_BASE: 2,
     CAPACITY_PER_POP: 20_000_000,
+    TREATY_RELATION: { alliance: 20, defensivePact: 15, tradeAgreement: 10, guarantee: 10, embargo: -30 },
+    ALLIANCE_CANCEL_PENALTY: -20,
+    TRADE_AGREEMENT_BONUS: 0.25,
+    OFFER_DAYS: 30,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

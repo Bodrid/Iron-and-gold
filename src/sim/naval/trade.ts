@@ -9,6 +9,9 @@ import { getNavGrid, portCell, seaPath } from './nav';
 
 const T = BALANCE.trade;
 
+/** Diplomacy plugs in here: embargoes block trade, trade agreements add earnings. */
+export const tradeHooks = { blocked: (_s: GameState, _a: CountryId, _b: CountryId) => false, bonus: (_s: GameState, _a: CountryId, _b: CountryId) => 0 };
+
 /** Hooks for the ships module (trade ships appear and disappear with routes). */
 export const routeHooks = { opened: (_s: GameState, _r: TradeRoute) => {}, closed: (_s: GameState, _r: TradeRoute) => {} };
 
@@ -58,7 +61,7 @@ function cellDistance(state: GameState, a: number, b: number): number {
 
 function routeValid(state: GameState, r: TradeRoute): boolean {
   const e = state.countries[r.exporter], i = state.countries[r.importer];
-  if (!e.alive || !i.alive || atWar(state, r.exporter, r.importer)) return false;
+  if (!e.alive || !i.alive || atWar(state, r.exporter, r.importer) || tradeHooks.blocked(state, r.exporter, r.importer)) return false;
   const ok = (sid: number, c: CountryId) => {
     const st = state.states[sid];
     return st.owner === c && st.controller === c && st.buildings.some(b => b.type === 'port');
@@ -86,8 +89,9 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
     if (amount <= 0) continue;
     e.stockpile[r.good] -= amount;
     i.stockpile[r.good] += amount;
-    const exportEarn = amount * e.prices[r.good] * T.EXPORT_EARN;
-    const importEarn = amount * i.prices[r.good] * T.IMPORT_EARN;
+    const bonus = 1 + tradeHooks.bonus(state, r.exporter, r.importer);
+    const exportEarn = amount * e.prices[r.good] * T.EXPORT_EARN * bonus;
+    const importEarn = amount * i.prices[r.good] * T.IMPORT_EARN * bonus;
     e.money += exportEarn; e.tradeIncome += exportEarn; e.income += exportEarn;
     i.money += importEarn; i.tradeIncome += importEarn; i.income += importEarn;
   }
@@ -105,7 +109,7 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
     const goods = GOODS.filter(g => surplus(state, e, g) > 0).sort((a, b) => surplus(state, e, b) * e.prices[b] - surplus(state, e, a) * e.prices[a]);
     for (const g of goods) {
       const candidates = state.countries.filter(i => i.alive && i.id && i.id !== e.id && !state.tradeOff.includes(i.id) && free(i.id) > 0
-        && shortage(state, i, g) > 0 && !atWar(state, e.id, i.id) && !state.tradeRoutes.some(r => r.exporter === e.id && r.importer === i.id && r.good === g)
+        && shortage(state, i, g) > 0 && !atWar(state, e.id, i.id) && !tradeHooks.blocked(state, e.id, i.id) && !state.tradeRoutes.some(r => r.exporter === e.id && r.importer === i.id && r.good === g)
         && !state.tradeBlocks.some(b => b.exporter === e.id && b.importer === i.id && b.good === g))
         .sort((a, b) => shortage(state, b, g) - shortage(state, a, g) || a.id - b.id)
         .slice(0, T.CANDIDATES);

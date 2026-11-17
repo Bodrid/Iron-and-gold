@@ -55,6 +55,9 @@ export interface Ship {
   /** A one-off boat for an invasion, removed when its job is done. */ temp?: boolean;
 }
 export interface ShipBuild { id: number; country: CountryId; state: number; kind: ShipKind; doneTick: number }
+export type TreatyKind = 'alliance' | 'defensivePact' | 'tradeAgreement' | 'guarantee' | 'embargo';
+/** a proposed it (guarantor for guarantees, embargoer for embargoes). */
+export interface Treaty { id: number; kind: TreatyKind; a: CountryId; b: CountryId; since: number }
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
@@ -80,6 +83,8 @@ export interface GameState {
   shipBuilds: ShipBuild[];
   /** Relations, n×n (index a*n+b), −100..100. */ relations: Int16Array;
   diploActions: { from: CountryId; to: CountryId; kind: 'improve' | 'worsen' }[];
+  treaties: Treaty[];
+  treatyOffers: { from: CountryId; to: CountryId; kind: TreatyKind; tick: number }[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
   outcome: Outcome;
@@ -99,7 +104,10 @@ export type Command =
   | { type: 'navalInvasion'; country: CountryId; target: CountryId; tile: number; ratio: number }
   | { type: 'improveRelations'; country: CountryId; target: CountryId }
   | { type: 'worsenRelations'; country: CountryId; target: CountryId }
-  | { type: 'stopDiploAction'; country: CountryId; target: CountryId };
+  | { type: 'stopDiploAction'; country: CountryId; target: CountryId }
+  | { type: 'proposeTreaty'; country: CountryId; target: CountryId; kind: TreatyKind }
+  | { type: 'respondTreaty'; country: CountryId; from: CountryId; kind: TreatyKind; accept: boolean }
+  | { type: 'cancelTreaty'; country: CountryId; treatyId: number };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -113,7 +121,11 @@ export type SimEvent =
   | { type: 'shipBuilt'; country: CountryId; ship: number; kind: ShipKind }
   | { type: 'shipLost'; country: CountryId; ship: number; kind: ShipKind }
   | { type: 'shipCaptured'; ship: number; owner: CountryId; by: CountryId; value: number }
-  | { type: 'navalBattle'; a: CountryId; b: CountryId; winner: CountryId; cell: number };
+  | { type: 'navalBattle'; a: CountryId; b: CountryId; winner: CountryId; cell: number }
+  | { type: 'treatyOffered'; from: CountryId; to: CountryId; kind: TreatyKind }
+  | { type: 'treatySigned'; a: CountryId; b: CountryId; kind: TreatyKind }
+  | { type: 'treatyRefused'; from: CountryId; to: CountryId; kind: TreatyKind }
+  | { type: 'treatyEnded'; a: CountryId; b: CountryId; kind: TreatyKind };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

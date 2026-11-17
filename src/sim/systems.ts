@@ -8,5 +8,6 @@ import './naval/trade';
 import './naval/ships';
 import './naval/invasion';
 import './diplomacy/relations';
+import './diplomacy/treaties';
 import './ai/ai';
 import './victory';
