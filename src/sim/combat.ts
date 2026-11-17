@@ -101,7 +101,7 @@ function fortLevel(state: GameState, tile: number): number {
 export function tileCost(state: GameState, tile: number, target: CountryId, attacker: CountryId = 0): number {
   const atk = attacker ? pctMult(mods(state, state.countries[attacker]).attackPct) : 1;
   const base = staticCost(state, tile) / atk;
-  if (target === 0) return base * C.UNCLAIMED_COST_MULT;
+  if (target === 0) return base * C.UNCLAIMED_COST_MULT / (attacker ? pctMult(mods(state, state.countries[attacker]).colonisePct) : 1);
   const d = state.countries[target];
   const density = d.troops / Math.max(1, d.controlled);
   return base * pctMult(mods(state, d).defensePct) * (1 + fortLevel(state, tile) * (C.FORT_MULT - 1)) * (1 + density / C.DENSITY_REF);

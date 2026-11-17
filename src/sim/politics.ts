@@ -5,7 +5,7 @@ import { LAW_AREAS, LAW_BY_ID, type LawArea } from '../content/laws';
 import { BUILDINGS } from '../content/buildings';
 import { BALANCE } from './balance';
 import { TICKS_PER_DAY } from './calendar';
-import { effectSources } from './mods';
+import { effectSources, mods } from './mods';
 import { handlers, systems } from './registry';
 import { nextRandom } from './rng';
 import { warsOf } from './war';
@@ -78,6 +78,7 @@ export function approvalTarget(state: GameState, c: Country, g: GroupId): number
   const longWar = warsOf(state, c.id).some(w => state.tick - w.startTick > 2 * YEAR);
   if (longWar) v -= g === 'army' ? 0 : g === 'workers' ? 3 : 1.5;
   if (c.lastDefeat && state.tick - c.lastDefeat < P.DEFEAT_YEARS * YEAR) v -= g === 'army' ? 4 : 1;
+  v += mods(state, c).approval;
   return Math.max(-10, Math.min(10, v));
 }
 

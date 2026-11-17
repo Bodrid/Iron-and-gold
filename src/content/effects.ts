@@ -25,19 +25,23 @@ export interface Effects {
   /** More income from trade. */
   tradePct?: number;
   buildCostPct?: number;
-  /** Laws: army upkeep per soldier. */
+  /** Army upkeep per soldier. */
   armyUpkeepPct?: number;
   /** Laws: home industry output when trade is opened up (negative = weaker). */
   industryPct?: number;
+  /** Fewer troops spent taking unclaimed land. */
+  colonisePct?: number;
+  /** Approval of every interest group. */
+  approval?: number;
 }
 
-export const EFFECT_KEYS = ['maxTroopsPct', 'refillPct', 'attackPct', 'defensePct', 'shipStrengthPct', 'shipSpeedPct', 'sol', 'literacyPct', 'taxPct', 'growthPct', 'researchPct', 'tradePct', 'buildCostPct', 'armyUpkeepPct', 'industryPct'] as const;
+export const EFFECT_KEYS = ['maxTroopsPct', 'refillPct', 'attackPct', 'defensePct', 'shipStrengthPct', 'shipSpeedPct', 'sol', 'literacyPct', 'taxPct', 'growthPct', 'researchPct', 'tradePct', 'buildCostPct', 'armyUpkeepPct', 'industryPct', 'colonisePct', 'approval'] as const;
 export type ScalarEffect = typeof EFFECT_KEYS[number];
 
 const LABELS: Record<ScalarEffect, string> = {
   maxTroopsPct: 'troop limit', refillPct: 'troop refill', attackPct: 'attack strength', defensePct: 'defence', shipStrengthPct: 'ship strength',
   shipSpeedPct: 'ship speed', sol: 'living standards', literacyPct: 'literacy growth', taxPct: 'taxes', growthPct: 'population growth',
-  researchPct: 'research', tradePct: 'trade income', buildCostPct: 'building cost', armyUpkeepPct: 'army upkeep', industryPct: 'industry output',
+  researchPct: 'research', tradePct: 'trade income', buildCostPct: 'building cost', armyUpkeepPct: 'army upkeep', industryPct: 'industry output', colonisePct: 'colonising strength', approval: 'interest group approval',
 };
 
 const BUILDING_LABEL: Partial<Record<BuildingType | 'all', string>> = {
@@ -54,7 +58,7 @@ export function describeEffects(e: Effects, buildingName: (t: BuildingType) => s
   for (const k of EFFECT_KEYS) {
     const v = e[k];
     if (!v) continue;
-    out.push(k === 'sol' ? `${sign(v)} ${LABELS[k]}` : `${sign(v)}% ${LABELS[k]}`);
+    out.push(k === 'sol' || k === 'approval' ? `${sign(v)} ${LABELS[k]}` : `${sign(v)}% ${LABELS[k]}`);
   }
   return out;
 }
