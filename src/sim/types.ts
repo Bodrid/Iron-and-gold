@@ -1,7 +1,8 @@
 import type { MapData } from '../map/format';
 import type { BuildingType } from '../content/buildingTypes';
+import type { ShipKind } from '../content/ships';
 
-export type { BuildingType };
+export type { BuildingType, ShipKind };
 export type CountryId = number; // 1..4095; 0 = nobody (unclaimed)
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'veryHard' | 'grandMaster';
 export type Good = 'grain' | 'wood' | 'coal' | 'iron' | 'textiles' | 'tools' | 'arms' | 'luxuries';
@@ -38,6 +39,19 @@ export interface TradeRoute {
   id: number; exporter: CountryId; importer: CountryId; fromState: number; toState: number; good: Good; amount: number;
   createdTick: number; idleMonths: number; /** Set when its trade ship was captured; that month's cargo is lost. */ captured: boolean;
 }
+export type ShipOrder =
+  | { type: 'idle'; port: number }
+  | { type: 'patrol'; cell: number }
+  | { type: 'raid'; cell: number }
+  | { type: 'escort'; routeId: number }
+  | { type: 'trade'; routeId: number }
+  | { type: 'invade'; tile: number; target: CountryId };
+export interface Ship {
+  id: number; owner: CountryId; kind: ShipKind; cell: number;
+  /** Lane endpoints; the lane itself comes from the sea-lane cache. */ fromCell: number; toCell: number;
+  pathPos: number; dir: 1 | -1; order: ShipOrder; hp: number; routeId?: number; troops?: number;
+}
+export interface ShipBuild { id: number; country: CountryId; state: number; kind: ShipKind; doneTick: number }
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
@@ -58,6 +72,8 @@ export interface GameState {
   wars: War[];
   peaceOffers: PeaceOffer[];
   tradeRoutes: TradeRoute[];
+  ships: Ship[];
+  shipBuilds: ShipBuild[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
   outcome: Outcome;
@@ -71,7 +87,9 @@ export type Command =
   | { type: 'offerPeace'; country: CountryId; target: CountryId }
   | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean }
   | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
-  | { type: 'setTradeAuto'; country: CountryId; on: boolean };
+  | { type: 'setTradeAuto'; country: CountryId; on: boolean }
+  | { type: 'buildShip'; country: CountryId; state: number; kind: 'warship' | 'transport' }
+  | { type: 'orderShip'; country: CountryId; shipId: number; order: ShipOrder };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -81,7 +99,9 @@ export type SimEvent =
   | { type: 'built'; country: CountryId; state: number; building: BuildingType }
   | { type: 'eliminated'; country: CountryId }
   | { type: 'rejected'; command: Command; reason: string }
-  | { type: 'gameOver'; kind: 'victory' | 'defeat' | 'endDate' };
+  | { type: 'gameOver'; kind: 'victory' | 'defeat' | 'endDate' }
+  | { type: 'shipBuilt'; country: CountryId; ship: number; kind: ShipKind }
+  | { type: 'shipLost'; country: CountryId; ship: number; kind: ShipKind };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

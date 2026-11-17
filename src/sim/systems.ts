@@ -5,5 +5,6 @@ import './war';
 import './economy';
 import './population';
 import './naval/trade';
+import './naval/ships';
 import './ai/ai';
 import './victory';
