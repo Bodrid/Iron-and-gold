@@ -12,6 +12,7 @@ import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
 import { country, layoutFor, pushToast, ui, type Tab } from './store';
 import { BUILDING_NAMES } from '../worker/summaries';
+import { cellOfTile } from '../sim/naval/nav';
 
 export class GameController {
   private owner: Uint16Array;
@@ -89,7 +90,7 @@ export class GameController {
       if (this.dirty && this.renderer && this.overlay) {
         this.dirty = false;
         this.renderer.render(this.cam);
-        this.overlay.draw(this.cam, this.labels, this.icons, ui.playerId.value);
+        this.overlay.draw(this.cam, this.labels, this.icons, ui.playerId.value, ui.ships.value, ui.countries.value);
       }
       this.raf = requestAnimationFrame(loop);
     };
@@ -119,6 +120,9 @@ export class GameController {
     if (f.labels) { this.labels = f.labels; this.dirty = true; }
     if (f.buildings) { this.icons = f.buildings; this.dirty = true; }
     if (f.selection !== undefined) ui.selection.value = f.selection;
+    if (f.ships) { ui.ships.value = f.ships; this.dirty = true; }
+    if (f.trade) ui.trade.value = f.trade;
+    if (f.fleet) ui.fleet.value = f.fleet;
   }
 
   private onEvents(events: SimEvent[]) {
@@ -140,6 +144,11 @@ export class GameController {
       else if (e.type === 'built' && e.country === me) { pushToast({ kind: 'good', text: `${BUILDING_NAMES[e.building]} finished in ${this.map.states[e.state].name}.` }); haptic('light'); }
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
+      else if (e.type === 'shipBuilt' && e.country === me) { pushToast({ kind: 'good', text: `A new ${e.kind === 'warship' ? 'warship' : 'transport'} is ready.` }); haptic('light'); }
+      else if (e.type === 'shipLost' && e.country === me) pushToast({ kind: 'war', text: `You lost a ${e.kind === 'warship' ? 'warship' : 'transport'}.` });
+      else if (e.type === 'shipCaptured' && e.owner === me) pushToast({ kind: 'war', text: `${name(e.by)} captured one of your trade ships.` });
+      else if (e.type === 'shipCaptured' && e.by === me) pushToast({ kind: 'good', text: `Your navy captured a ${name(e.owner)} trade ship.` });
+      else if (e.type === 'navalBattle' && (e.a === me || e.b === me)) pushToast({ kind: e.winner === me ? 'good' : 'war', text: e.winner === me ? 'Your navy won a battle at sea.' : 'Your navy lost a battle at sea.' });
     }
   }
 
@@ -148,7 +157,7 @@ export class GameController {
     const a = keyAction(e);
     if (!a) return;
     e.preventDefault();
-    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabDiplomacy: 'diplomacy', tabNation: 'nation' };
+    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabTrade: 'trade', tabDiplomacy: 'diplomacy', tabNation: 'nation' };
     if (a === 'pause') this.setSpeed(ui.speed.value === 0 ? 2 : 0);
     else if (a.startsWith('speed')) this.setSpeed(Number(a.slice(5)) as 1 | 2 | 3);
     else if (tabs[a]) ui.tab.value = ui.tab.value === tabs[a] ? null : tabs[a];
@@ -166,11 +175,15 @@ export class GameController {
   selectTile([tx, ty]: [number, number]) {
     const x = Math.floor(tx), y = Math.floor(ty);
     if (x < 0 || y < 0 || x >= this.map.width || y >= this.map.height) return this.selectState(null);
-    const s = this.map.stateOf[y * this.map.width + x];
+    const tile = y * this.map.width + x;
+    const s = this.map.stateOf[tile];
+    ui.selectedTile.value = tile;
+    ui.selectedSea.value = s ? null : cellOfTile(tile, this.map);
     this.selectState(s || null);
   }
 
   selectState(id: number | null) {
+    if (id === null && ui.selectedSea.value === null) ui.selectedTile.value = null;
     ui.selectedState.value = id;
     if (id === null) ui.selection.value = null;
     this.host.select(id);
@@ -204,7 +217,9 @@ export function rejectionText(reason: string): string {
     'not at war': 'You need to be at war to attack them.', 'no border': 'You have no border there to attack across.',
     'not enough troops': 'Not enough troops for that attack.', cantAfford: 'Not enough money.', noSlots: 'No free building slots in that state.',
     tooManyConstructions: 'Your builders are busy. Wait for a construction to finish.', 'already at war': 'You are already at war with them.',
-    'already offered': 'You already offered them peace.',
+    'already offered': 'You already offered them peace.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
+    needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
+    unreachable: 'Your ships can’t reach there.',
   };
   return map[reason] ?? `That didn't work (${reason}).`;
 }

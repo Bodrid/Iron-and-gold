@@ -1,9 +1,11 @@
 // Country names and building icons, drawn on a 2D canvas above the map.
 import { BUILDINGS } from '../content/buildings';
 import type { BuildingIcon, Label } from '../sim/types';
+import type { CountrySummary } from '../worker/protocol';
 import type { Camera } from './camera';
 
 export const ICON_MIN_ZOOM = 6;
+export const SHIP_MIN_ZOOM = 1.5;
 
 export function visibleIcons(icons: BuildingIcon[], cam: Camera, minZoom = ICON_MIN_ZOOM, mapW = 2400): BuildingIcon[] {
   if (cam.zoom < minZoom) return [];
@@ -24,7 +26,7 @@ export class Overlay {
     this.canvas.height = Math.round(h * this.dpr);
   }
 
-  draw(cam: Camera, labels: Label[], icons: BuildingIcon[], playerId: number): void {
+  draw(cam: Camera, labels: Label[], icons: BuildingIcon[], playerId: number, ships: Int32Array = new Int32Array(0), countries: CountrySummary[] = []): void {
     const g = this.ctx;
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     g.clearRect(0, 0, cam.viewW, cam.viewH);
@@ -45,6 +47,7 @@ export class Overlay {
       g.strokeText(text, x, y);
       g.fillText(text, x, y);
     }
+    this.drawShips(cam, ships, countries, playerId);
     const vis = visibleIcons(icons, cam, ICON_MIN_ZOOM, this.mapW);
     const s = Math.min(26, cam.zoom * 1.6);
     for (const i of vis) {
@@ -64,6 +67,26 @@ export class Overlay {
         g.font = `600 ${s * 0.36}px -apple-system, system-ui, sans-serif`;
         g.fillText(String(i.level), x + s * 0.42, y + s * 0.42);
       }
+    }
+  }
+
+  private drawShips(cam: Camera, ships: Int32Array, countries: CountrySummary[], playerId: number) {
+    if (cam.zoom < SHIP_MIN_ZOOM || !ships.length) return;
+    const g = this.ctx;
+    const colour = new Map(countries.map(c => [c.id, `#${c.color.toString(16).padStart(6, '0')}`]));
+    const r = Math.max(2.5, Math.min(9, cam.zoom * 1.2));
+    for (let k = 0; k + 4 < ships.length; k += 5) {
+      const owner = ships[k + 1], kind = ships[k + 2];
+      const [x, y] = cam.tileToScreen(ships[k + 3] / 16, ships[k + 4] / 16);
+      if (x < -20 || y < -20 || x > cam.viewW + 20 || y > cam.viewH + 20) continue;
+      g.lineWidth = owner === playerId ? 2 : 1.2;
+      g.strokeStyle = owner === playerId ? '#ffe9a8' : 'rgba(10,16,24,0.9)';
+      g.fillStyle = kind === 0 ? '#f4efe1' : colour.get(owner) ?? '#ccc';
+      g.beginPath();
+      if (kind === 0) g.arc(x, y, r * 0.6, 0, 6.2832);
+      else if (kind === 1) { g.moveTo(x, y - r); g.lineTo(x + r * 0.9, y + r * 0.7); g.lineTo(x - r * 0.9, y + r * 0.7); g.closePath(); }
+      else g.rect(x - r * 0.7, y - r * 0.7, r * 1.4, r * 1.4);
+      g.fill(); g.stroke();
     }
   }
 }

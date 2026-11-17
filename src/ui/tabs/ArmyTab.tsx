@@ -1,4 +1,6 @@
-import { country, fmtNum, player, ui } from '../store';
+import { country, fmtMoney, fmtNum, player, ui } from '../store';
+import { SHIPS } from '../../content/ships';
+import type { ShipOrder } from '../../sim/types';
 import { defaultSend, type Send } from './common';
 
 export function ArmyTab({ send = defaultSend }: { send?: Send }) {
@@ -35,6 +37,7 @@ export function ArmyTab({ send = defaultSend }: { send?: Send }) {
           </div>
         );
       })}
+      <NavySection send={send} />
       <h3>Attacks</h3>
       {attacks.length === 0 && <p class="hint">No attacks under way.</p>}
       {attacks.map(a => (
@@ -44,5 +47,37 @@ export function ArmyTab({ send = defaultSend }: { send?: Send }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function NavySection({ send }: { send: Send }) {
+  const me = ui.playerId.value;
+  const fleet = ui.fleet.value;
+  const sea = ui.selectedSea.value;
+  const sel = ui.selection.value;
+  const yard = sel && sel.owner === me && sel.buildings.some(b => b.type === 'shipyard') ? sel : null;
+  const route = ui.trade.value.routes[0];
+  const order = (shipId: number, o: ShipOrder) => send({ type: 'orderShip', country: me, shipId, order: o });
+  return (
+    <>
+      <h3>Navy</h3>
+      {yard ? (
+        <div class="row">
+          <button onClick={() => send({ type: 'buildShip', country: me, state: yard.id, kind: 'warship' })}>Build warship · {fmtMoney(SHIPS.warship.cost)}</button>
+          <button onClick={() => send({ type: 'buildShip', country: me, state: yard.id, kind: 'transport' })}>Build transport · {fmtMoney(SHIPS.transport.cost)}</button>
+        </div>
+      ) : <p class="hint">To build ships, select one of your states with a shipyard.</p>}
+      {fleet.builds.map((b, i) => <p class="hint" key={`b${i}`}>{b.kind === 'warship' ? 'Warship' : 'Transport'} · {b.daysLeft} days left</p>)}
+      {fleet.ships.length === 0 && <p class="hint">No ships yet.</p>}
+      {fleet.ships.length > 0 && sea === null && <p class="hint">Tap the sea on the map to send ships there.</p>}
+      {fleet.ships.map(s => (
+        <div class="row ship" key={s.id}>
+          <span class="grow">{s.kind === 'warship' ? 'Warship' : 'Transport'} <small>{s.order}{s.troops ? ` · ${fmtNum(s.troops)} troops` : ''}</small></span>
+          {sea !== null && s.kind === 'warship' && <button onClick={() => order(s.id, { type: 'raid', cell: sea })}>Raid here</button>}
+          {sea !== null && <button onClick={() => order(s.id, { type: 'patrol', cell: sea })}>Patrol here</button>}
+          {s.kind === 'warship' && route && <button onClick={() => order(s.id, { type: 'escort', routeId: route.id })}>Escort trade</button>}
+        </div>
+      ))}
+    </>
   );
 }

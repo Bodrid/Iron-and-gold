@@ -9,7 +9,7 @@ import type { BuildingIcon, Command, GameState, Label, SimEvent, StartDef } from
 import { applyCommand } from '../sim/registry';
 import { coalesceTiles, type FromWorker, type ToWorker } from './protocol';
 import { TickScheduler } from './scheduler';
-import { allSummaries, militaryView, stateDetail } from './summaries';
+import { allSummaries, fleetView, militaryView, packShips, stateDetail, tradeView } from './summaries';
 
 export interface HandlerDeps {
   post: (msg: FromWorker, transfer?: Transferable[]) => void;
@@ -66,11 +66,19 @@ export function createWorkerHandler(deps: HandlerDeps) {
     dirty.length = 0;
     const day = Math.floor(s.tick / TICKS_PER_DAY);
     const msg: any = { type: 'frame', tick: s.tick, date: date(), speed: sched.getSpeed(), tiles };
-    if (day !== lastCountriesDay || force) { lastCountriesDay = day; msg.countries = allSummaries(s); Object.assign(msg, militaryView(s)); if (selected !== null) selectionDirty = true; }
+    if (day !== lastCountriesDay || force) {
+      lastCountriesDay = day;
+      msg.countries = allSummaries(s);
+      Object.assign(msg, militaryView(s));
+      msg.ships = packShips(s);
+      msg.trade = tradeView(s, player());
+      msg.fleet = fleetView(s, player());
+      if (selected !== null) selectionDirty = true;
+    }
     if (deps.hooks?.labels && day - lastLabelsDay >= LABEL_DAYS) { lastLabelsDay = day; msg.labels = deps.hooks.labels(s); }
     if (deps.hooks?.buildings && buildingsDirty) { buildingsDirty = false; msg.buildings = deps.hooks.buildings(s); }
     if (selectionDirty) { selectionDirty = false; msg.selection = selected === null ? null : stateDetail(s, selected, player()); }
-    deps.post(msg, [tiles.idx.buffer, tiles.val.buffer]);
+    deps.post(msg, msg.ships ? [tiles.idx.buffer, tiles.val.buffer, msg.ships.buffer] : [tiles.idx.buffer, tiles.val.buffer]);
   }
 
   function pump() {

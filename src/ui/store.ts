@@ -1,9 +1,9 @@
 // UI state shared by components (Preact signals).
 import { signal } from '@preact/signals';
-import type { CountrySummary, FrameMsg, StateDetail } from '../worker/protocol';
+import type { CountrySummary, FleetView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
 import type { ScoreRow } from '../sim/victory';
 
-export type Tab = 'build' | 'army' | 'diplomacy' | 'nation';
+export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'nation';
 export type Screen = 'menu' | 'newGame' | 'loading' | 'game';
 export interface Toast { id: number; text: string; kind: 'info' | 'war' | 'peace' | 'good'; actions?: { label: string; run: () => void }[]; sticky?: boolean }
 
@@ -29,6 +29,13 @@ export const ui = {
   outcome: signal<null | { kind: 'victory' | 'defeat' | 'endDate'; scores: ScoreRow[] }>(null),
   outcomeDismissed: signal(false),
   confirmWar: signal<number | null>(null),
+  trade: signal<TradeView>({ routes: [], capacity: 0, used: 0, auto: true, income: 0 }),
+  fleet: signal<FleetView>({ ships: [], builds: [] }),
+  ships: signal<Int32Array>(new Int32Array(0)),
+  /** Last tapped tile (land or sea), for Send boat and ship orders. */
+  selectedTile: signal<number | null>(null),
+  /** Navigation cell of a tapped sea tile, for ship orders. */
+  selectedSea: signal<number | null>(null),
 };
 
 export function player(): CountrySummary | undefined {

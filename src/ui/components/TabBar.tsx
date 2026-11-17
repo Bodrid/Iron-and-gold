@@ -1,7 +1,7 @@
 import { ui, type Tab } from '../store';
 
 export const TABS: { id: Tab; label: string }[] = [
-  { id: 'build', label: 'Build' }, { id: 'army', label: 'Army' }, { id: 'diplomacy', label: 'Diplomacy' }, { id: 'nation', label: 'Nation' },
+  { id: 'build', label: 'Build' }, { id: 'army', label: 'Army' }, { id: 'trade', label: 'Trade' }, { id: 'diplomacy', label: 'Diplomacy' }, { id: 'nation', label: 'Nation' },
 ];
 
 export function TabBar() {

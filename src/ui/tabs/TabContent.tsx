@@ -3,6 +3,7 @@ import { ArmyTab } from './ArmyTab';
 import { BuildTab } from './BuildTab';
 import { DiplomacyTab } from './DiplomacyTab';
 import { NationTab } from './NationTab';
+import { TradeTab } from './TradeTab';
 import { backToMenu } from '../screens/ScoreScreen';
 import { session } from '../game';
 import { pushToast } from '../store';
@@ -10,6 +11,7 @@ import { pushToast } from '../store';
 export function TabContent({ tab }: { tab: Tab }) {
   if (tab === 'build') return <BuildTab />;
   if (tab === 'army') return <ArmyTab />;
+  if (tab === 'trade') return <TradeTab />;
   if (tab === 'diplomacy') return <DiplomacyTab />;
   return <NationTab extra={<SaveRow />} />;
 }

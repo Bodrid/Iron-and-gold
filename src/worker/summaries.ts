@@ -4,7 +4,10 @@ import { TICKS_PER_DAY } from '../sim/calendar';
 import { buildCheck, stateSlots } from '../sim/economy';
 import { warScore } from '../sim/war';
 import type { Country, GameState } from '../sim/types';
-import type { CountrySummary, FrameMsg, StateDetail } from './protocol';
+import type { CountrySummary, FleetView, FrameMsg, StateDetail, TradeView } from './protocol';
+import { SHIP_STRIDE } from './protocol';
+import { cellCentre, getNavGrid } from '../sim/naval/nav';
+import { routeCapacity, routesOf } from '../sim/naval/trade';
 
 export function summarize(state: GameState, c: Country): CountrySummary {
   return {
@@ -43,3 +46,32 @@ export function militaryView(state: GameState): Pick<FrameMsg, 'attacks' | 'wars
 }
 
 export const BUILDING_NAMES = Object.fromEntries(BUILDING_TYPES.map(t => [t, BUILDINGS[t].name]));
+
+const KIND = { trade: 0, warship: 1, transport: 2 } as const;
+
+export function packShips(state: GameState): Int32Array {
+  const g = getNavGrid(state.map);
+  const out = new Int32Array(state.ships.length * SHIP_STRIDE);
+  state.ships.forEach((s, k) => {
+    const [x, y] = cellCentre(s.cell, g);
+    out.set([s.id, s.owner, KIND[s.kind], Math.round(x * 16), Math.round(y * 16)], k * SHIP_STRIDE);
+  });
+  return out;
+}
+
+export function tradeView(state: GameState, me: number): TradeView {
+  const routes = routesOf(state, me);
+  return {
+    routes: routes.map(r => ({ id: r.id, exporter: r.exporter, importer: r.importer, good: r.good, amount: Math.round(r.amount) })),
+    capacity: routeCapacity(state, me), used: routes.length, auto: !state.tradeOff.includes(me), income: state.countries[me].tradeIncome,
+  };
+}
+
+const ORDER_TEXT: Record<string, string> = { idle: 'In port', patrol: 'Patrolling', raid: 'Raiding', escort: 'Escorting', invade: 'Invading', trade: 'Trading' };
+
+export function fleetView(state: GameState, me: number): FleetView {
+  return {
+    ships: state.ships.filter(s => s.owner === me && s.kind !== 'trade').map(s => ({ id: s.id, kind: s.kind as 'warship' | 'transport', order: ORDER_TEXT[s.order.type], cell: s.cell, troops: Math.round(s.troops ?? 0) })),
+    builds: state.shipBuilds.filter(b => b.country === me).map(b => ({ kind: b.kind, state: b.state, daysLeft: Math.max(0, Math.ceil((b.doneTick - state.tick) / TICKS_PER_DAY)) })),
+  };
+}

@@ -29,6 +29,14 @@ export interface StateDetail {
   buildOptions: { type: BuildingType; check: BuildCheck }[]; resources: StateResources; coastal: boolean;
 }
 
+export interface TradeView { routes: { id: number; exporter: CountryId; importer: CountryId; good: Good; amount: number }[]; capacity: number; used: number; auto: boolean; income: number }
+export interface FleetView {
+  ships: { id: number; kind: 'warship' | 'transport'; order: string; cell: number; troops: number }[];
+  builds: { kind: string; state: number; daysLeft: number }[];
+}
+/** Ships packed as [id, owner, kind (0 trade, 1 warship, 2 transport), x×16, y×16] per ship, in tile coordinates. */
+export const SHIP_STRIDE = 5;
+
 export interface ReadyMsg {
   type: 'ready'; player: CountryId; startId: string; mapInfo: { width: number; height: number };
   countries: CountrySummary[]; owner: Uint16Array; controller: Uint16Array; date: string; tick: number;
@@ -42,6 +50,7 @@ export interface FrameMsg {
   attacks?: { id: number; attacker: CountryId; target: CountryId; troops: number }[];
   wars?: { id: number; a: CountryId; b: CountryId; scoreA: number; scoreB: number; startTick: number }[];
   peaceOffers?: { from: CountryId; to: CountryId }[];
+  ships?: Int32Array; trade?: TradeView; fleet?: FleetView;
 }
 
 export type FromWorker =
