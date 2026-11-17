@@ -27,7 +27,7 @@ export function drawPolyline(grid: Uint8Array, w: number, h: number, line: numbe
   for (let i = 0; i + 1 < line.length; i++) {
     let x0 = Math.floor(line[i][0]), y0 = Math.floor(line[i][1]);
     const x1 = Math.floor(line[i + 1][0]), y1 = Math.floor(line[i + 1][1]);
-    if (Math.abs(x1 - x0) > w * 0.75) continue; // segment wraps the antimeridian
+    if (Math.abs(x1 - x0) > w * 0.95) continue; // segment wraps the antimeridian
     const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx + dy;
     for (;;) {
