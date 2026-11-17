@@ -45,6 +45,7 @@ export function diploView(state: GameState, me: CountryId): DiploView {
         id: w.id, leader: w.a === me || w.b === me, mySide: mineA ? [...w.sideA] : [...w.sideB], enemySide: [...enemySide],
         myScore: warScore(state, w, me), enemyScore: warScore(state, w, enemyLeader), available: peacePoints(state, w, me).available, goals: goals.map(d => demandLabel(state, d)),
         candidates: demands.map(d => ({ demand: d, label: demandLabel(state, d), cost: termsCost(state, w, me, [d]), goal: sameGoal(d) })),
+        concede: w.b === me && w.goals.length ? { demands: w.goals.map(d => ({ ...d })), labels: w.goals.map(d => demandLabel(state, d)) } : null,
       };
     }),
     puppets: state.countries.filter(c => c.alive && c.overlord === me).map(c => ({ id: c.id, annex: annexCheck(state, me, c.id) })),

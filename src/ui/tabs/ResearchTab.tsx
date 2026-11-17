@@ -3,6 +3,7 @@ import { describeEffects } from '../../content/effects';
 import { ERAS, TECH_BY_ID, TREES, type TechTree } from '../../content/techs';
 import type { PoliticsView } from '../../worker/protocol';
 import { fmtNum, ui } from '../store';
+import { BALANCE } from '../../sim/balance';
 import { defaultSend, type Send } from './common';
 
 const effectsText = (id: string) => describeEffects(TECH_BY_ID[id].effects, t => BUILDINGS[t].name).join(' · ');
@@ -18,6 +19,7 @@ export function ResearchTab({ send = defaultSend }: { send?: Send }) {
   const tree = ui.techTree.value;
   const months = r.researching && r.rate > 0 ? Math.max(0, Math.ceil((r.cost - r.points) / r.rate)) : null;
   const byId = new Map(r.techs.map(t => [t.id, t]));
+  const full = r.queue.length >= BALANCE.research.MAX_QUEUE;
   return (
     <div class="research">
       <div class="card current-tech">
@@ -40,7 +42,9 @@ export function ResearchTab({ send = defaultSend }: { send?: Send }) {
             <div class="crow" key={id}>
               <span>{TECH_BY_ID[id].name}</span><small>{fmtNum(byId.get(id)?.cost ?? 0)} pts</small>
               <span class="grow" />
-              {byId.get(id)?.status === 'queued' && TECH_BY_ID[id].requires.every(q => byId.get(q)?.status === 'known') && <button onClick={() => send({ type: 'research', country: me, tech: id })}>Now</button>}
+              {TECH_BY_ID[id].requires.every(q => byId.get(q)?.status === 'known')
+                ? <button onClick={() => send({ type: 'research', country: me, tech: id })}>Now</button>
+                : !TECH_BY_ID[id].requires.every(q => ['known', 'researching', 'queued'].includes(byId.get(q)?.status ?? '')) && <small class="warn">needs {TECH_BY_ID[id].requires.filter(q => byId.get(q)?.status !== 'known').map(q => TECH_BY_ID[q].name).join(', ')}</small>}
               <button class="ghost" aria-label={`Remove ${TECH_BY_ID[id].name}`} onClick={() => send({ type: 'unqueueTech', country: me, tech: id })}>✕</button>
             </div>
           ))}
@@ -66,10 +70,10 @@ export function ResearchTab({ send = defaultSend }: { send?: Send }) {
                   {t.status === 'available' && (
                     <div class="row">
                       <button onClick={() => send({ type: 'research', country: me, tech: t.id })}>Research</button>
-                      {r.researching && <button class="ghost" onClick={() => send({ type: 'queueTech', country: me, tech: t.id })}>Queue</button>}
+                      {r.researching && !full && <button class="ghost" onClick={() => send({ type: 'queueTech', country: me, tech: t.id })}>Queue</button>}
                     </div>
                   )}
-                  {plannable && <div class="row"><button class="ghost" onClick={() => send({ type: 'queueTech', country: me, tech: t.id })}>Queue</button></div>}
+                  {plannable && !full && <div class="row"><button class="ghost" onClick={() => send({ type: 'queueTech', country: me, tech: t.id })}>Queue</button></div>}
                 </div>
               );
             })}

@@ -53,7 +53,8 @@ export interface DiploView {
   peaceOffers: { from: CountryId; warId: number; white: boolean; give: boolean; demands: string[] }[];
   plays: { id: number; initiator: CountryId; target: CountryId; demands: string[]; sideA: CountryId[]; sideB: CountryId[]; strengthA: number; strengthB: number; daysLeft: number; /** Why the player can't back a side (null = can). */ join: string | null }[];
   wars: { id: number; leader: boolean; mySide: CountryId[]; enemySide: CountryId[]; myScore: number; enemyScore: number; available: number; goals: string[];
-    candidates: { demand: Demand; label: string; cost: number; goal: boolean }[] }[];
+    candidates: { demand: Demand; label: string; cost: number; goal: boolean }[];
+    /** What the enemy fought for, if the player could hand it over to end the war (side B leader facing goals). */ concede: { demands: Demand[]; labels: string[] } | null }[];
   puppets: { id: CountryId; annex: string | null }[];
   privateers: CountryId[];
   coalitionAgainstMe: CountryId[];

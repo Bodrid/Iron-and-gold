@@ -188,7 +188,7 @@ export type SimEvent =
   | { type: 'annexed'; overlord: CountryId; puppet: CountryId }
   | { type: 'techResearched'; country: CountryId; tech: string }
   | { type: 'lawPassed'; country: CountryId; law: string }
-  | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' }
+  | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' | 'revolution' }
   | { type: 'revolt'; country: CountryId; rebels: CountryId; group: GroupId; law: string }
   | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean }
   | { type: 'blocFounded'; leader: CountryId; blocType: BlocType }

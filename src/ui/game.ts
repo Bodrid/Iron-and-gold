@@ -154,8 +154,8 @@ export class GameController {
       else if (e.type === 'puppeted' && e.overlord === me) pushToast({ kind: 'good', text: `${name(e.puppet)} is now your puppet.` });
       else if (e.type === 'techResearched' && e.country === me) { pushToast({ kind: 'good', text: `Researched ${TECH_BY_ID[e.tech]?.name ?? e.tech}.` }); haptic('light'); }
       else if (e.type === 'lawPassed' && e.country === me) pushToast({ kind: 'good', text: `${LAW_BY_ID[e.law]?.name ?? e.law} is now law.` });
-      else if (e.type === 'lawFailed' && e.country === me) pushToast({ kind: 'info', text: `${LAW_BY_ID[e.law]?.name ?? e.law} failed: ${e.reason === 'noSupport' ? 'support collapsed' : e.reason === 'timeout' ? 'it took too long' : 'your overlord blocked it'}.` });
-      else if (e.type === 'revolt' && e.country === me) { pushToast({ kind: 'war', sticky: true, text: `Revolt! Your ${GROUPS[e.group].name.toLowerCase()} have risen up demanding ${LAW_BY_ID[e.law]?.name ?? 'change'}. Beat them, or give them the law in a peace deal.` }); haptic('heavy'); }
+      else if (e.type === 'lawFailed' && e.country === me) pushToast({ kind: 'info', text: `${LAW_BY_ID[e.law]?.name ?? e.law} failed: ${e.reason === 'noSupport' ? 'support collapsed' : e.reason === 'timeout' ? 'it took too long' : e.reason === 'revolution' ? 'the revolution changed that law' : 'your overlord blocked it'}.` });
+      else if (e.type === 'revolt' && e.country === me) { pushToast({ kind: 'war', sticky: true, text: `Revolt! Your ${GROUPS[e.group].name.toLowerCase()} have risen up demanding ${LAW_BY_ID[e.law]?.name ?? 'change'}. Beat them, or give in from the Diplomacy tab (Make peace).` }); haptic('heavy'); }
       else if (e.type === 'revolt') pushToast({ kind: 'info', text: `Revolt in ${name(e.country)}: the ${GROUPS[e.group].name.toLowerCase()} have risen up.` });
       else if (e.type === 'revoltEnded' && e.country === me) pushToast({ kind: e.won ? 'war' : 'good', text: e.won ? 'The rebels won: their law is now yours, and their land comes back to you.' : 'The revolt is over and the land is yours again.' });
       else if (e.type === 'revoltEnded') continue;
@@ -278,6 +278,9 @@ export function rejectionText(reason: string): string {
     'already offered': 'You already offered them peace.', leader: 'Only the war leaders can make peace for everyone.', notTheirState: 'That state isn’t theirs.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
     needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
     unreachable: 'Your ships can’t reach there.',
+    'queue full': 'The research queue is full.', 'cannot queue': 'That tech can’t be queued yet: queue what it needs first.', 'needs earlier techs': 'Research the techs it needs first.',
+    'already known': 'You already know that tech.', 'not queued': 'That tech isn’t queued.', notEnacting: 'No law is being passed.', noSupport: 'Not enough support for that law.',
+    alreadyEnacting: 'You are already passing another law.', rebels: 'Not possible with rebels.',
   };
   return map[reason] ?? (DIPLO_REASON[reason] ? `${DIPLO_REASON[reason]}.` : `That didn't work (${reason}).`);
 }

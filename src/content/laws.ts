@@ -23,7 +23,7 @@ export const LAWS: LawDef[] = [
   l('wealthVoting', 'voting', 'Wealth-Based Voting', { taxPct: 3 }, { industrialists: 2, landowners: 0, workers: -1 }, 'Property owners vote.'),
   l('universalSuffrage', 'voting', 'Universal Suffrage', { sol: 1 }, { workers: 2, intellectuals: 1, landowners: -2, industrialists: -1 }, 'Every adult votes.'),
 
-  l('mercantilism', 'trade', 'Mercantilism', { tradePct: -20, industryPct: 5 }, { landowners: 1, industrialists: 1, intellectuals: -1 }, 'Hoard gold, export, never import.'),
+  l('mercantilism', 'trade', 'Mercantilism', { tradePct: -20, industryPct: 5, taxPct: 5 }, { landowners: 1, industrialists: 1, intellectuals: -1 }, 'Hoard gold: state monopolies fill the treasury, but trade suffers.'),
   l('protectionism', 'trade', 'Protectionism', { tradePct: -10, industryPct: 10 }, { industrialists: 2, workers: 1, landowners: -1 }, 'Tariffs shelter home industry.'),
   l('freeTrade', 'trade', 'Free Trade', { tradePct: 30, industryPct: -10 }, { landowners: 1, intellectuals: 1, industrialists: -1, workers: -1 }, 'Open markets: more trade income, weaker home industry.'),
 

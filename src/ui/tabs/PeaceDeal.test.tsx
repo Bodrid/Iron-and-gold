@@ -5,7 +5,7 @@ import { PeaceDeal } from './PeaceDeal';
 
 afterEach(cleanup);
 const war = { id: 5, leader: true, mySide: [1], enemySide: [2], myScore: 110, enemyScore: 20, available: 120, goals: ['Take Silesia'],
-  candidates: [{ demand: { kind: 'state' as const, state: 9 }, label: 'Take Silesia', cost: 50, goal: true }, { demand: { kind: 'state' as const, state: 10 }, label: 'Take Bohemia', cost: 80, goal: false }, { demand: { kind: 'reparations' as const }, label: 'Reparations', cost: 30, goal: false }] };
+  candidates: [{ demand: { kind: 'state' as const, state: 9 }, label: 'Take Silesia', cost: 50, goal: true }, { demand: { kind: 'state' as const, state: 10 }, label: 'Take Bohemia', cost: 80, goal: false }, { demand: { kind: 'reparations' as const }, label: 'Reparations', cost: 30, goal: false }], concede: null as null | { demands: any[]; labels: string[] } };
 
 it('starts with the war goals picked, adds up costs against the points available, and offers the terms', () => {
   const sent: any[] = [];
@@ -25,4 +25,13 @@ it('offers a white peace', () => {
   render(<PeaceDeal me={1} war={war} enemyName="Austria" send={c => sent.push(c)} onDone={() => {}} />);
   fireEvent.click(screen.getByRole('button', { name: /White peace/ }));
   expect(sent[0]).toMatchObject({ type: 'proposePeace', terms: { demands: [], white: true } });
+});
+
+it('a defender facing war goals can give in to end the war', () => {
+  const sent: any[] = [];
+  const law = { kind: 'law' as const, law: 'freeLabour' };
+  render(<PeaceDeal me={1} war={{ ...war, concede: { demands: [law], labels: ['Enact Free Labour'] } }} enemyName="Rebels" send={c => sent.push(c)} onDone={() => {}} />);
+  expect(screen.getByText(/what they fought for: Enact Free Labour/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Give in' }));
+  expect(sent).toEqual([{ type: 'proposePeace', country: 1, warId: 5, terms: { demands: [law], give: true } }]);
 });

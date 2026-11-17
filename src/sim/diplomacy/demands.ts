@@ -42,7 +42,7 @@ export function applyDemands(state: GameState, winner: CountryId, loser: Country
       if (!demandHooks.joinBloc(state, winner, loser, events)) continue;
     } else if (d.kind === 'law') {
       if (Object.values(state.countries[loser].laws).includes(d.law)) continue;
-      setLaw(state.countries[loser], d.law);
+      setLaw(state.countries[loser], d.law, events);
     } else if (d.kind === 'reparations') {
       state.reparations.push({ from: loser, to: winner, until: state.tick + D.REPARATIONS_YEARS * 365 * TICKS_PER_DAY });
     }

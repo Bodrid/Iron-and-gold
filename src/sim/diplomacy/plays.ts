@@ -29,6 +29,7 @@ export function playCheck(state: GameState, cmd: Extract<Command, { type: 'start
   const c = state.countries[cmd.country], t = state.countries[cmd.target];
   if (!t?.alive || cmd.target <= 0 || cmd.target === cmd.country) return 'no such country';
   if (c.overlord) return 'puppet';
+  if (c.rebel || t.rebel) return 'rebels';
   if (t.overlord === cmd.country) return 'alreadyPuppet';
   if (t.overlord) return 'targetIsPuppet';
   if (atWar(state, cmd.country, cmd.target)) return 'atWar';
@@ -107,6 +108,7 @@ export function joinCheck(state: GameState, country: CountryId, playId: number):
   if (!state.plays.some(x => x.id === playId)) return 'no such play';
   if (involved(state, country)) return 'alreadyInvolved';
   if (state.countries[country].overlord) return 'puppet';
+  if (state.countries[country].rebel) return 'rebels';
   return null;
 }
 

@@ -11,7 +11,7 @@ import { makeCountry } from './country';
 import { changeRelation, ensureRelations } from './diplomacy/relations';
 import { attitude } from './politics';
 import { systems } from './registry';
-import { atWar, startWar } from './war';
+import { atWar, eliminate, startWar } from './war';
 import type { Country, GameState, SimEvent } from './types';
 
 const P = BALANCE.politics;
@@ -96,8 +96,8 @@ function endRevolt(state: GameState, rebels: Country, events: SimEvent[], change
   for (let t = 0; t < state.owner.length; t++) if (state.owner[t] === rebels.id) setTile(state, t, parent.id, parent.id, changed);
   parent.troops += rebels.troops * 0.5;
   parent.money += Math.max(0, rebels.money);
-  rebels.alive = false;
-  rebels.troops = 0;
+  // The normal elimination path: tiles they still occupy go back, other wars and attacks end.
+  eliminate(state, rebels.id, events, changed, true);
   const won = Object.values(parent.laws).includes(r.law);
   events.push({ type: 'revoltEnded', country: parent.id, rebels: rebels.id, won });
 }

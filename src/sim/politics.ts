@@ -108,15 +108,23 @@ export function enactCheck(state: GameState, c: Country, law: string): string | 
   if (c.laws[def.area] === law) return 'alreadyLaw';
   if (c.enacting) return 'alreadyEnacting';
   if (c.overlord) return 'puppet';
-  if (lawSupport(c, law) < P.FAIL_SUPPORT) return 'noSupport';
+  if (c.rebel) return 'rebels';
+  const s = lawSupport(c, law);
+  if (s < P.FAIL_SUPPORT || passChance(s) <= 0) return 'noSupport';
   void state;
   return null;
 }
 
-/** Switches a law immediately (law passed, revolution, or start-of-game setup). */
-export function setLaw(c: Country, law: string): void {
+/** Switches a law immediately (law passed, revolution, or start-of-game setup). A law being passed in the same
+ *  area stops: it would otherwise undo the change later. */
+export function setLaw(c: Country, law: string, events?: SimEvent[]): void {
   const def = LAW_BY_ID[law];
-  if (def) c.laws = { ...c.laws, [def.area]: law };
+  if (!def) return;
+  c.laws = { ...c.laws, [def.area]: law };
+  if (c.enacting && LAW_BY_ID[c.enacting.law]?.area === def.area) {
+    if (c.enacting.law !== law && events) events.push({ type: 'lawFailed', country: c.id, law: c.enacting.law, reason: 'revolution' });
+    c.enacting = null;
+  }
 }
 
 function endEnactment(c: Country, events: SimEvent[], reason: 'noSupport' | 'timeout' | 'puppeted' | null): void {

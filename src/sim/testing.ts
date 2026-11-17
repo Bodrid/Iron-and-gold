@@ -82,3 +82,15 @@ export function makeSmallWorldGame(opts: { difficulty?: Difficulty; seed?: numbe
   return makeGame({ rows, owners, player: 'PLR', seed: opts.seed ?? 1, difficulty: opts.difficulty ?? 'normal', population: 1_000_000, money: 50_000, seedEconomy: true, ai: true,
     resources: { 'T-A': { coal: true }, 'T-F': { iron: true }, 'T-M': { coal: true, iron: true }, 'T-R': { iron: true }, 'T-S': { coal: true }, 'T-X': { coal: true, iron: true } } });
 }
+
+/** Things that must always hold: no dead country controls land, fights a war, attacks, leads a bloc or has puppets. */
+export function invariantProblems(g: GameState): string[] {
+  const dead = (id: number) => id > 0 && !g.countries[id]?.alive;
+  const out: string[] = [];
+  for (let t = 0; t < g.controller.length; t++) if (dead(g.controller[t]) || dead(g.owner[t])) { out.push(`tile ${t} held by dead ${g.controller[t]}/${g.owner[t]}`); break; }
+  for (const w of g.wars) for (const c of [...w.sideA, ...w.sideB]) if (dead(c)) out.push(`war ${w.id} has dead ${c}`);
+  for (const a of g.attacks) if (dead(a.attacker) || dead(a.target)) out.push(`attack ${a.id} involves the dead`);
+  for (const b of g.blocs) if (dead(b.leader) || b.members.some(dead)) out.push(`bloc ${b.id} has the dead`);
+  for (const c of g.countries) if (c.alive && dead(c.overlord)) out.push(`${c.tag} is a puppet of the dead`);
+  return out;
+}

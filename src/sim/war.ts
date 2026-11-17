@@ -104,25 +104,31 @@ export function endWar(state: GameState, war: War): void {
 export const attackHooks = { endBetween: (_s: GameState, _a: CountryId, _b: CountryId, _ret: boolean) => {}, endAllOf: (_s: GameState, _c: CountryId) => {} };
 function endAttacksBetween(state: GameState, a: CountryId, b: CountryId, ret: boolean) { attackHooks.endBetween(state, a, b, ret); }
 
-export function checkElimination(state: GameState, events: SimEvent[], changed: number[]): void {
-  for (const c of state.countries) {
-    if (!c.alive || c.id === 0 || c.tiles > 0) continue;
-    c.alive = false;
-    attackHooks.endAllOf(state, c.id);
-    for (const w of warsOf(state, c.id)) {
-      for (const other of enemiesIn(w, c.id)) for (const s of statesOwnedBy(state, other)) for (const t of getStateTiles(state.map, s)) {
-        if (state.owner[t] === other && state.controller[t] === c.id) setTile(state, t, other, other, changed);
-      }
-      w.sideA = w.sideA.filter(x => x !== c.id);
-      w.sideB = w.sideB.filter(x => x !== c.id);
-      if (w.a === c.id) w.a = w.sideA[0] ?? 0;
-      if (w.b === c.id) w.b = w.sideB[0] ?? 0;
-      if (!w.sideA.length || !w.sideB.length) endWar(state, w);
-    }
-    state.peaceOffers = state.peaceOffers.filter(o => o.from !== c.id && o.to !== c.id);
-    c.troops = 0;
-    events.push({ type: 'eliminated', country: c.id });
+/** Removes a country from the game cleanly: its attacks end, every tile it still occupies goes back to its owner,
+ *  it leaves every war (ending wars with nobody left on a side) and its peace offers lapse. `silent` skips the
+ *  'eliminated' event (a revolt that ends announces itself). */
+export function eliminate(state: GameState, id: CountryId, events: SimEvent[], changed: number[], silent = false): void {
+  const c = state.countries[id];
+  if (!c.alive) return;
+  c.alive = false;
+  attackHooks.endAllOf(state, id);
+  for (let t = 0; t < state.controller.length; t++) {
+    if (state.controller[t] === id && state.owner[t] !== id) setTile(state, t, state.owner[t], state.owner[t], changed);
   }
+  for (const w of warsOf(state, id)) {
+    w.sideA = w.sideA.filter(x => x !== id);
+    w.sideB = w.sideB.filter(x => x !== id);
+    if (w.a === id) w.a = w.sideA[0] ?? 0;
+    if (w.b === id) w.b = w.sideB[0] ?? 0;
+    if (!w.sideA.length || !w.sideB.length) endWar(state, w);
+  }
+  state.peaceOffers = state.peaceOffers.filter(o => o.from !== id && o.to !== id);
+  c.troops = 0;
+  if (!silent) events.push({ type: 'eliminated', country: id });
+}
+
+export function checkElimination(state: GameState, events: SimEvent[], changed: number[]): void {
+  for (const c of state.countries) if (c.alive && c.id !== 0 && c.tiles <= 0) eliminate(state, c.id, events, changed);
 }
 
 handlers.separatePeace = (state, cmd: Extract<Command, { type: 'separatePeace' }>, _events, changed) => {

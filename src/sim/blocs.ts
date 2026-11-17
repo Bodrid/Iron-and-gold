@@ -45,6 +45,7 @@ export function foundCheck(state: GameState, c: CountryId, type: BlocType, picks
   const x = state.countries[c];
   if (!BLOC_TYPE_IDS.includes(type)) return 'badType';
   if (x.overlord) return 'puppet';
+  if (x.rebel) return 'rebels';
   if (blocOf(state, c)) return 'inBloc';
   if (!isMajor(state, c)) return 'notMajor';
   const all = principlesFor(type, picks);
@@ -71,6 +72,7 @@ export function inviteCheck(state: GameState, leader: CountryId, target: Country
   const t = state.countries[target];
   if (!t?.alive || target <= 0 || target === leader) return 'no such country';
   if (t.overlord) return 'targetIsPuppet';
+  if (t.rebel) return 'rebels';
   if (blocOf(state, target)) return 'targetInBloc';
   if (atWar(state, leader, target)) return 'atWar';
   if (relation(state, leader, target) < B.INVITE_MIN_RELATION) return 'needsNeutral';

@@ -23,6 +23,12 @@ export function PeaceDeal({ me, war, enemyName, send, onDone }: { me: number; wa
         ))}
       </div>
       <p class={cost > available ? 'hint warn' : 'hint'}>{cost} of {available} points</p>
+      {war.concede && (
+        <div class="card">
+          <small>Or end it by giving {enemyName} what they fought for: {war.concede.labels.join(', ')}.</small>
+          <div class="row"><button class="war" onClick={() => { send({ type: 'proposePeace', country: me, warId: war.id, terms: { demands: war.concede!.demands, give: true } }); onDone(); }}>Give in</button></div>
+        </div>
+      )}
       <div class="row">
         <button class="ghost" onClick={onDone}>Back</button>
         <button onClick={() => { send({ type: 'proposePeace', country: me, warId: war.id, terms: { demands: [], white: true } }); onDone(); }}>White peace</button>

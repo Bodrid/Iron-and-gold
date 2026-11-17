@@ -27,6 +27,7 @@ export function treatyCheck(state: GameState, from: CountryId, to: CountryId, ki
   if (from === to || !state.countries[to]?.alive || to <= 0) return 'no such country';
   if (hasTreaty(state, from, to, kind)) return 'alreadySigned';
   if (atWar(state, from, to)) return 'atWar';
+  if (state.countries[from].rebel || state.countries[to].rebel) return 'rebels';
   if ((state.countries[from].overlord || state.countries[to].overlord) && kind !== 'tradeAgreement') return 'puppet';
   const rel = relation(state, from, to);
   switch (kind) {

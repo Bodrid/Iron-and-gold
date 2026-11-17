@@ -1,12 +1,13 @@
 import { it, expect } from 'vitest';
 import { step } from './step';
-import { makeGame, runDays, stateId } from './testing';
+import { makeGame, runDays, stateId, invariantProblems } from './testing';
 import { atWar, startWar } from './war';
 import { startRevolt, wantedLaw, revoltDay } from './revolts';
 import { makePuppet } from './diplomacy/subjects';
 import { relation } from './diplomacy/relations';
 import { hasTreaty, sign } from './diplomacy/treaties';
 import type { GameState, SimEvent } from './types';
+import { getStateTiles as stateTilesOf } from '../map/stateTiles';
 
 // XXX has five states (A1..A5, capital A1); YYY and ZZZ are neighbours.
 const world = (): GameState => {
@@ -99,4 +100,52 @@ it('rebels outlive a parent that is destroyed by someone else', () => {
   expect(rebels.rebel).toBeUndefined();
   expect(rebels.alive).toBe(true);
   void stateId;
+});
+
+// ---- review fixes ----
+it('when a revolt ends, nothing on the map or in any war still belongs to the dead rebels', () => {
+  const g = world();
+  // XXX occupies YYY's state in a separate war, then the rebels take it from XXX.
+  const other = startWar(g, [1], [2], [], []);
+  const yTiles = g.map.states.filter(s => s.key === 'T-Y').flatMap(s => Array.from(stateTilesOf(g.map, s.id)));
+  for (const t of yTiles) { g.controller[t] = 1; }
+  angry(g);
+  const rebels = startRevolt(g, g.countries[1], 'workers', [], [])!;
+  for (const t of yTiles) g.controller[t] = rebels.id;
+  const third = startWar(g, [3], [rebels.id], [], []);                    // ZZZ also fights the rebels
+  void third; void other;
+  const war = atWar(g, rebels.id, 1)!;
+  step(g, [{ type: 'proposePeace', country: rebels.id, warId: war.id, terms: { demands: [], white: true } }]);
+  runDays(g, 2);
+  expect(rebels.alive).toBe(false);
+  for (let t = 0; t < g.controller.length; t++) expect(g.controller[t]).not.toBe(rebels.id);
+  expect(g.wars.some(w => w.sideA.includes(rebels.id) || w.sideB.includes(rebels.id))).toBe(false);
+  expect(g.attacks.some(a => a.attacker === rebels.id || a.target === rebels.id)).toBe(false);
+  expect(invariantProblems(g)).toEqual([]);
+});
+
+it('a revolution cancels a conflicting law being passed', () => {
+  const g = world();
+  angry(g);
+  const c = g.countries[1];
+  revoltDay(g, [], []);
+  const rebels = g.countries[g.countries.length - 1];
+  c.enacting = { law: 'slavery', startTick: 0, months: 1 };
+  const war = atWar(g, rebels.id, 1)!;
+  const r = step(g, [{ type: 'proposePeace', country: 1, warId: war.id, terms: { demands: war.goals, give: true } }]);
+  expect(c.laws.labour).toBe('freeLabour');
+  expect(c.enacting).toBeNull();
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'lawFailed', law: 'slavery', reason: 'revolution' }));
+});
+
+it('rebels can’t be dealt with diplomatically by others, and don’t do diplomacy themselves', async () => {
+  const { playCheck } = await import('./diplomacy/plays');
+  const { treatyCheck } = await import('./diplomacy/treaties');
+  const g = world();
+  angry(g);
+  revoltDay(g, [], []);
+  const id = g.countries.length - 1;
+  expect(playCheck(g, { type: 'startPlay', country: 2, target: id, demands: [{ kind: 'reparations' }] })).toBe('rebels');
+  expect(treatyCheck(g, 2, id, 'tradeAgreement')).toBe('rebels');
+  expect(treatyCheck(g, id, 2, 'guarantee')).toBe('rebels');
 });

@@ -50,8 +50,10 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   };
 
   // 1. Economy: order the best buildings while money and construction slots allow.
+  // Rebels only fight and make peace: no building, diplomacy, laws, blocs or companies of their own.
+  const rebel = !!c.rebel;
   const reserve = 3 * c.troops * BALANCE.economy.ARMY_UPKEEP;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < (rebel ? 0 : 3); i++) {
     const opts = buildOptions(state, c, pers, enemies.length > 0, threatened).filter(o => c.money - o.cost >= reserve);
     const choice = pick(state, opts, o => o.score, mistake());
     if (!choice || !buildCheck(state, c.id, choice.state, choice.type).ok) break;
@@ -75,13 +77,15 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1);
 
   // 4c. Diplomacy: relations, treaties, plays in progress, puppets.
-  diplomacyDecisions(state, c, d, neighbors, issue);
-  politicsDecisions(state, c, d, mistake, issue);
-  blocDecisions(state, c, d, issue);
-  companyDecisions(state, c, d, issue);
+  if (!rebel) {
+    diplomacyDecisions(state, c, d, neighbors, issue);
+    politicsDecisions(state, c, d, mistake, issue);
+    blocDecisions(state, c, d, issue);
+    companyDecisions(state, c, d, issue);
+  }
 
   // 5. Make demands of a weaker neighbour (a diplomatic play; war follows only if they don't give in).
-  if (!enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {
+  if (!rebel && !enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {
     const chance = WAR_CHANCE_PER_MONTH * d.aggression * pers.aggression * (d.decisionDays / 30);
     if (nextRandom(state) < chance) {
       // A play isn't a war: the target may give in, so demand of anyone noticeably weaker.
@@ -131,6 +135,7 @@ function peaceTerms(state: GameState, w: War, me: CountryId, enemy: CountryId): 
   const occupiedBy = (by: CountryId, from: CountryId[]) => state.states
     .filter(st => st.id && st.owner && from.includes(st.owner) && st.controller === by)
     .sort((a, b) => b.population - a.population || a.id - b.id);
+  if (mine.winning && mine.score >= 60 && state.countries[me].rebel) return myGoals.length ? { demands: [...myGoals] } : null;   // rebels want their law, nothing else
   if (mine.winning && mine.score >= 60) {
     // Our goals first (if we have any), then the enemy's most valuable occupied states while points last.
     const demands: Demand[] = [...myGoals];

@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest';
-import { makeSmallWorldGame, runYears, runYearsCollect, makeGame } from '../testing';
+import { makeSmallWorldGame, runYears, runYearsCollect, makeGame, invariantProblems } from '../testing';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import type { Difficulty, GameState } from '../types';
 
@@ -11,6 +11,7 @@ it('AI never issues a rejected command over 10 years on every difficulty', () =>
     const g = makeSmallWorldGame({ difficulty: d, seed: 7 });
     const rejected = runYearsCollect(g, 10).filter(e => e.type === 'rejected');
     expect(rejected, d).toEqual([]);
+    expect(invariantProblems(g), d).toEqual([]);
   }
 }, 120_000);
 
