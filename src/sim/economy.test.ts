@@ -118,3 +118,17 @@ it('a new game already shows GDP and income without changing money or stockpiles
   expect(g.countries[1].money).toBe(10_000);
   expect(g.countries[1].history).toHaveLength(0);
 });
+
+it('living standards climb over the decades as an AI country develops, and population grows at a sane pace', async () => {
+  const { makeSmallWorldGame, runYears } = await import('./testing');
+  const g = makeSmallWorldGame({ difficulty: 'normal', seed: 4 });
+  runYears(g, 1);
+  const ai = g.countries.filter(c => c.alive && c.id && !c.isPlayer);
+  const sol0 = ai.reduce((n, c) => n + c.sol, 0) / ai.length;
+  const pop0 = ai.reduce((n, c) => n + c.population, 0);
+  runYears(g, 20);
+  const alive = ai.filter(c => c.alive);
+  expect(alive.reduce((n, c) => n + c.sol, 0) / alive.length).toBeGreaterThan(sol0);
+  const growth = alive.reduce((n, c) => n + c.population, 0) / pop0;
+  expect(growth).toBeLessThan(1.8);   // well under 3% a year
+}, 120_000);

@@ -13,7 +13,6 @@ import { treatyCheckHooks } from './diplomacy/treaties';
 import { demandHooks } from './diplomacy/demands';
 import { changeRelation, relation, relationPairHooks } from './diplomacy/relations';
 import { tradeHooks } from './naval/trade';
-import { computeScores } from './victory';
 import type { Bloc, Command, CountryId, GameState, SimEvent } from './types';
 
 const B = BALANCE.blocs;
@@ -40,7 +39,11 @@ export function blocCountries(state: GameState, b: Bloc): CountryId[] {
 
 export function isMajor(state: GameState, c: CountryId): boolean {
   if (state.countries[c].population >= B.MAJOR_POPULATION) return true;
-  return computeScores(state).slice(0, B.MAJOR_RANK).some(r => r.country === c);
+  // Otherwise the biggest economies (score ranks weigh land heavily and lifted minors such as Sokoto).
+  const gdp = state.countries[c].gdp;
+  let richer = 0;
+  for (const x of state.countries) if (x.alive && x.id && x.id !== c && (x.gdp > gdp || (x.gdp === gdp && x.id < c))) richer++;
+  return richer < B.MAJOR_RANK;
 }
 
 export function foundCheck(state: GameState, c: CountryId, type: BlocType, picks: PrincipleId[]): string | null {

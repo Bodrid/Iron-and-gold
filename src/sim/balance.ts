@@ -144,7 +144,7 @@ export const BALANCE = {
   blocs: {
     /** A major power: this many people, or in the top ranks by score. */
     MAJOR_POPULATION: 15_000_000,
-    MAJOR_RANK: 8,
+    MAJOR_RANK: 6,
     FOUND_COST: 200_000,
     /** Principles the leader picks on top of the type's fixed one. */
     MAX_PICKS: 2,

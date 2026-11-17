@@ -129,7 +129,7 @@ it('map changes from AI events reach changedTiles', () => {
   expect(new Set(changed.filter(t => g.map.stateOf[t] === stateId(g, 'T-B'))).size).toBe(bTiles);
 });
 
-it('an AI event never takes the player’s land without a war: it makes demands instead; capitals never move', () => {
+it('an AI event never takes the player’s land without a war: it makes demands instead (never the capital)', () => {
   const g = world('XXX');
   add(gift({ countries: ['YYY'], options: [{ label: 'Take the player’s land', effects: [{ kind: 'transferStates', keys: ['T-A', 'T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
   g.countries[1].capitalState = stateId(g, 'T-A');
@@ -138,13 +138,13 @@ it('an AI event never takes the player’s land without a war: it makes demands 
   expect(g.states[stateId(g, 'T-A')].owner).toBe(1);
   expect(g.states[stateId(g, 'T-B')].owner).toBe(1);
   expect(g.plays).toContainEqual(expect.objectContaining({ initiator: 2, target: 1, demands: [{ kind: 'state', state: stateId(g, 'T-B') }] }));
-  // Between AI countries the capital is never taken either.
+  // Between AI countries a capital can go (unification of minors); the loser moves its capital.
   const h = world('ZZZ');
-  add(gift({ id: 'test.cap', countries: ['YYY'], options: [{ label: 'Take', effects: [{ kind: 'transferStates', keys: ['T-A', 'T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  add(gift({ id: 'test.cap', countries: ['YYY'], options: [{ label: 'Take', effects: [{ kind: 'transferStates', keys: ['T-A'], to: 'self', from: 'XXX' }], ai: 1 }] }));
   h.countries[1].capitalState = stateId(h, 'T-A');
   monthlyEvents(h, []);
-  expect(h.states[stateId(h, 'T-A')].owner).toBe(1);
-  expect(h.states[stateId(h, 'T-B')].owner).toBe(2);
+  expect(h.states[stateId(h, 'T-A')].owner).toBe(2);
+  expect(h.countries[1].capitalState).toBe(stateId(h, 'T-B'));
 });
 
 it('transfers skip states occupied by a third country', () => {

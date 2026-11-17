@@ -54,7 +54,9 @@ export function companyDecisions(state: GameState, c: Country, d: DifficultyPara
     let best: string | null = null, bestScore = 9;
     for (const k of COMPANIES) {
       if (foundCompanyCheck(state, c.id, k.id)) continue;
-      const n = k.buildings.reduce((sum, b) => sum + (BUILDINGS[b].category === 'infrastructure' ? 0.5 : 1) * (levels.get(b) ?? 0), 0) * (k.tag ? 2 : 1);
+      // Favour our historical companies, and generic ones few others run (so not everyone founds the same one).
+      const founders = state.countries.filter(x => x.alive && x.companies.some(y => y.id === k.id)).length;
+      const n = k.buildings.reduce((sum, b) => sum + (BUILDINGS[b].category === 'infrastructure' ? 0.5 : 1) * (levels.get(b) ?? 0), 0) * (k.tag ? 2 : 1) / (1 + 0.15 * founders);
       if (n > bestScore) { best = k.id; bestScore = n; }
     }
     if (best) { issue({ type: 'foundCompany', country: c.id, company: best }); return; }

@@ -69,3 +69,14 @@ it('an AI with a licence sends its warships raiding', async () => {
   navalDecisions(g, g.countries[3], [], new Set(), 1, c => cmds.push(c), 1);
   expect(cmds).toContainEqual(expect.objectContaining({ type: 'orderShip', order: expect.objectContaining({ type: 'raid' }) }));
 });
+
+it('a raider never captures cargo on its own route, even when the other side is its enemy', async () => {
+  const { declareWarRaw } = await import('../war');
+  const g = withRoute();
+  const t = g.ships.find(s => s.kind === 'trade')!;
+  declareWarRaw(g, 1, 2);
+  g.ships.push({ id: g.nextId++, owner: 1, kind: 'warship', cell: t.cell, fromCell: t.cell, toCell: t.cell, pathPos: 0, dir: 1, order: { type: 'raid', cell: t.cell }, hp: 1 });
+  const events: any[] = [];
+  navalEncounters(g, events);
+  expect(events.filter(e => e.type === 'shipCaptured')).toEqual([]);
+});

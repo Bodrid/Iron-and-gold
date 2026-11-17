@@ -85,3 +85,9 @@ it('starts with historical laws and politics that are quick to run', async () =>
   for (let i = 0; i < 12; i++) monthlyPolitics(g, []);
   expect((performance.now() - t0) / 12).toBeLessThan(8);
 });
+
+it('starts with historical literacy, so Britain out-researches Qing from the start', () => {
+  expect(tag('GBR').literacy).toBeCloseTo(0.55);
+  expect(tag('CHI').literacy).toBeCloseTo(0.15);
+  expect(tag('GBR').researchRate).toBeGreaterThan(tag('CHI').researchRate);
+});
