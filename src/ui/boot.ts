@@ -28,6 +28,8 @@ async function begin(start: (host: GameHost) => Promise<ReadyMsg>): Promise<void
     session.game = new GameController(host, map, ready);
     if (ready.outcome) ui.outcomeDismissed.value = true;
     ui.screen.value = 'game';
+    hookVisibility();
+    session.game.host.onMessage(m => { if (m.type === 'saved') (window as any).__lastSaved = m.slot; });
     if (debugEnabled) installDebugHooks();
   } catch (err) {
     ui.error.value = err instanceof Error ? err.message : String(err);
@@ -37,6 +39,16 @@ async function begin(start: (host: GameHost) => Promise<ReadyMsg>): Promise<void
 
 export function startNewGame(setup: GameSetup) { return begin(host => host.newGame(setup, BASE)); }
 export function continueGame(slot: SaveSlot) { return begin(host => host.loadGame(slot, BASE)); }
+
+let visibilityHooked = false;
+function hookVisibility() {
+  if (visibilityHooked) return;
+  visibilityHooked = true;
+  // iOS may kill a Home Screen app in the background: save whenever it is hidden.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && session.game) void session.game.host.save('background');
+  });
+}
 
 function installDebugHooks() {
   const w = window as any;

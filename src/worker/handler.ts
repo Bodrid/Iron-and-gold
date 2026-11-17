@@ -81,6 +81,9 @@ export function createWorkerHandler(deps: HandlerDeps) {
     for (let i = 0; i < n; i++) {
       const r = step(state, queue);
       queue = [];
+      if (r.newMonth && deps.hooks?.save && dateAtTick(state.startDate, state.tick - 1).m === 1) {
+        void deps.hooks.save('auto', state).then(() => deps.post({ type: 'saved', slot: 'auto' })).catch(() => {});
+      }
       for (const t of r.changedTiles) dirty.push(t);
       for (const e of r.events) events.push(e);
     }

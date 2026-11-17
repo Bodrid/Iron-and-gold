@@ -83,3 +83,19 @@ it('refreshes the selected state right after a command while paused', async () =
   const sel = frames.find(f => f.selection)?.selection;
   expect(sel?.constructions).toHaveLength(1);
 });
+
+it('autosaves on 1 January', async () => {
+  let t = 0;
+  const saves: string[] = [];
+  const fake: any = { onmessage: null, terminate() {} };
+  const handler = createWorkerHandler({
+    post: msg => fake.onmessage?.({ data: msg }), loadMap: async () => makeTestWorld(['ABBB', 'ABBB']), getStart: () => start, now: () => t,
+    hooks: { save: async (slot: string) => { saves.push(slot); } },
+  });
+  fake.postMessage = (m: any) => handler.onMessage(m);
+  const host = new GameHost(fake);
+  await host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
+  host.setSpeed(3);
+  for (let i = 0; i < 400 * 4 / 8 + 10; i++) { t += 1000 / 3; handler.pump(); }
+  expect(saves).toContain('auto');
+});
