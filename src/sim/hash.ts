@@ -24,6 +24,7 @@ export function hashState(state: GameState): number {
   for (const sh of state.ships) { mix(sh.id); mix(sh.owner); mix(sh.cell); mix(sh.pathPos); mix(sh.hp); mix(sh.troops ?? 0); }
   mix(state.shipBuilds.length);
   mix(state.eventLog.length); mix(state.pendingEvents.length); mix(state.flags.length);
+  for (const c of state.countries) { mix(c.flags.length); mix(c.modifiers.length); for (const m of c.modifiers) mix(m.until % 1e6); }
   for (let i = 0; i < state.relations.length; i++) h = Math.imul(h ^ state.relations[i], 0x01000193);
   mix(state.diploActions.length);
   for (const t of state.treaties) { mix(t.id); mix(t.a); mix(t.b); }

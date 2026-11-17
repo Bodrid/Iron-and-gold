@@ -1,5 +1,6 @@
 // Relations between countries: a target value from circumstances (borders, rivalries, enemies, trade, treaties),
 // actions that push it, and monthly drift toward it.
+import { anyTag } from '../tags';
 import { personalityOf } from '../../content/personalities';
 import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
@@ -84,7 +85,7 @@ function baseline(state: GameState, a: CountryId, b: CountryId, idx: PairIndex):
   const ca = state.countries[a], cb = state.countries[b];
   let v = idx.extra.get(k) ?? 0;
   if (idx.borders.has(k)) v += D.BORDER;
-  if (personalityOf(ca.personality).rivals.includes(cb.tag) || personalityOf(cb.personality).rivals.includes(ca.tag)) v += D.RIVAL;
+  if (anyTag(personalityOf(ca.personality).rivals, cb) || anyTag(personalityOf(cb.personality).rivals, ca)) v += D.RIVAL;
   const ea = idx.enemies.get(a), eb = idx.enemies.get(b);
   if (ea && eb && !ea.has(b)) { for (const e of ea) if (eb.has(e)) { v += D.SHARED_ENEMY; break; } }
   if (idx.trade.has(k)) v += D.TRADE_ROUTE;

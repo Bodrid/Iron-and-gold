@@ -7,6 +7,7 @@ import { step } from '../../sim/step';
 import { hashState } from '../../sim/hash';
 import { invariantProblems } from '../../sim/testing';
 import { getStart } from './index';
+import { serialize, deserialize } from '../../save/saves';
 import type { GameState, SimEvent } from '../../sim/types';
 
 let map: MapData;
@@ -46,7 +47,7 @@ it('runs AI years with no rejected AI commands, the American Revolution fires, a
   expect(invariantProblems(g)).toEqual([]);
   expect(g.eventLog.some(l => l.event === 'ar.independence')).toBe(true);
   expect(g.countries.some(c => c.tag === 'USA' && c.alive)).toBe(true);
-  const copy = structuredClone(g);
+  const copy = deserialize(serialize(g, 'auto'), map);   // the real save path
   for (let i = 0; i < 120 * 4; i++) { step(g, []); step(copy, []); }
   expect(hashState(copy)).toBe(hashState(g));
 }, 120_000);

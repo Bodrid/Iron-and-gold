@@ -1,4 +1,5 @@
 // The AI's diplomacy: relations, treaties, sides in plays, climb-downs, puppets, privateers, separate peace.
+import { anyTag } from '../tags';
 import { personalityOf } from '../../content/personalities';
 import { TICKS_PER_DAY } from '../calendar';
 import { BALANCE } from '../balance';
@@ -17,7 +18,7 @@ const D = BALANCE.diplomacy;
 export function diplomacyDecisions(state: GameState, c: Country, d: DifficultyParams, neighbours: Set<CountryId>, issue: (cmd: Command) => void): void {
   const pers = personalityOf(c.personality);
   const alive = state.countries.filter(x => x.alive && x.id && x.id !== c.id);
-  const isRival = (x: Country) => pers.rivals.includes(x.tag) || personalityOf(x.personality).rivals.includes(c.tag);
+  const isRival = (x: Country) => anyTag(pers.rivals, x) || anyTag(personalityOf(x.personality).rivals, c);
 
   // Relations: warm up to strong non-rival neighbours, cool down on rivals, within our diplomats.
   const mine = state.diploActions.filter(a => a.from === c.id);

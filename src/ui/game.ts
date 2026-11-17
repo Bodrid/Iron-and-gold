@@ -112,6 +112,14 @@ export class GameController {
   }
 
   private inviteToasts: Record<number, number> = {};
+  private eventToasts: Record<number, number> = {};
+  private speedBeforeEvent: 0 | 1 | 2 | 3 = 0;
+
+  /** Called when an event card closes: resume the speed the game had before the card paused it. */
+  resumeAfterEvent() {
+    if (this.speedBeforeEvent && ui.speed.value === 0) this.setSpeed(this.speedBeforeEvent);
+    this.speedBeforeEvent = 0;
+  }
 
   private onFrame(f: FrameMsg) {
     if (f.tiles.idx.length) {
@@ -138,7 +146,12 @@ export class GameController {
       for (const [from, id] of Object.entries(this.inviteToasts)) if (!f.diplo.bloc.invites.some(i => i.from === Number(from))) { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); delete this.inviteToasts[Number(from)]; }
     }
     if (f.politics) ui.politics.value = f.politics;
-    if (f.events) { ui.events.value = f.events; if (ui.openEvent.value !== null && !f.events.pending.some(p => p.id === ui.openEvent.value)) ui.openEvent.value = null; }
+    if (f.events) {
+      ui.events.value = f.events;
+      if (ui.openEvent.value !== null && !f.events.pending.some(p => p.id === ui.openEvent.value)) ui.openEvent.value = null;
+      // Cards answered elsewhere or timed out lose their toast.
+      for (const [pending, id] of Object.entries(this.eventToasts)) if (!f.events.pending.some(p => p.id === Number(pending))) { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); delete this.eventToasts[Number(pending)]; }
+    }
     if (f.countryDetail !== undefined) ui.countryDetail.value = f.countryDetail;
   }
 
@@ -185,10 +198,14 @@ export class GameController {
       else if (e.type === 'charterEnded' && e.country === me) pushToast({ kind: 'info', text: `${COMPANY_BY_ID[e.company]?.name ?? 'A company'} lost its investment charter: you have no puppets left.` });
       else if (e.type === 'eventFired' && e.country === me) {
         const pending = e.pending, title = eventById(e.event)?.title ?? 'Something has happened';
-        const id = pushToast({ kind: 'peace', sticky: true, text: `New event: ${title}`, actions: [{ label: 'Open', run: () => { ui.openEvent.value = pending; ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); } }] });
+        const id = this.eventToasts[pending] = pushToast({ kind: 'peace', sticky: true, text: `New event: ${title}`, actions: [{ label: 'Open', run: () => { ui.openEvent.value = pending; } }] });
+        void id;
+        // Time stops while the player reads a history card; it resumes when the card is answered or put off.
+        if (ui.speed.value > 0) { this.speedBeforeEvent = ui.speed.value as 1 | 2 | 3; this.setSpeed(0); }
+        if (ui.openEvent.value === null) ui.openEvent.value = pending;
         haptic('light');
       }
-      else if (e.type === 'eventResolved' && e.country === me && e.skipped > 0) pushToast({ kind: 'info', text: `${e.skipped} of the chosen effects no longer applied and were skipped.` });
+      else if (e.type === 'eventResolved' && e.country === me && e.skipped > 0) pushToast({ kind: 'info', text: `Circumstances changed: ${e.skipped} of the chosen effects no longer applied.` });
       else if (e.type === 'nationFormed') pushToast({ kind: e.country === me ? 'good' : 'info', text: e.country === me ? `You have proclaimed ${e.name}!` : `${e.name} has been proclaimed.` });
       else if (e.type === 'nationReleased') pushToast({ kind: 'info', text: `${name(e.country)} is now independent of ${name(e.from)}.` });
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });

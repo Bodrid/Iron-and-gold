@@ -24,12 +24,14 @@ const V = BALANCE.events;
 
 const dateNum = (d: GameDate) => d.y * 10000 + d.m * 100 + d.d;
 
+/** Current tags first, then former tags (a country that formed Germany still answers to Prussia's events). */
 function tagMap(state: GameState): Map<string, CountryId> {
   const m = new Map<string, CountryId>();
+  for (const c of state.countries) if (c.alive && c.id) for (const t of c.formerTags ?? []) m.set(t, c.id);
   for (const c of state.countries) if (c.alive && c.id) m.set(c.tag, c.id);
   return m;
 }
-const byTag = (state: GameState, tag: string) => state.countries.find(c => c.alive && c.id && c.tag === tag);
+const byTag = (state: GameState, tag: string) => state.countries.find(c => c.alive && c.id && c.tag === tag) ?? state.countries.find(c => c.alive && c.id && c.formerTags?.includes(tag));
 const stateByKey = (state: GameState, key: string) => state.map.states.find(s => s.key === key)?.id ?? 0;
 
 export function conditionHolds(state: GameState, c: Country, k: Condition): boolean {
@@ -96,12 +98,22 @@ function applyEffect(state: GameState, c: Country, e: EventEffect, events: SimEv
       const from = e.from ? (e.from === 'self' ? c : byTag(state, e.from)) : undefined;
       if (!to || (e.from && !from)) return false;
       let moved = 0;
+      const fromPlayer = new Map<CountryId, number[]>();
       for (const key of e.keys) {
         const s = stateByKey(state, key);
         const owner = s ? state.states[s].owner : 0;
         if (!s || !owner || owner === to.id || (from && owner !== from.id)) continue;
-        for (const t of getStateTiles(state.map, s)) if (state.owner[t] === owner) setTile(state, t, to.id, to.id, changed);
+        const o = state.countries[owner];
+        // Never a capital, and never land someone else is occupying: those change hands only through war.
+        if (s === o.capitalState || state.states[s].controller !== owner) continue;
+        // The player is never annexed by an AI's event: the AI makes demands instead (a diplomatic play).
+        if (o.isPlayer && !c.isPlayer) { fromPlayer.set(owner, [...(fromPlayer.get(owner) ?? []), s]); continue; }
+        for (const t of getStateTiles(state.map, s)) if (state.owner[t] === owner) setTile(state, t, to.id, state.controller[t] === owner ? to.id : state.controller[t], changed);
         moved++;
+      }
+      for (const [owner, ids] of fromPlayer) {
+        const cmd = { type: 'startPlay' as const, country: to.id, target: owner, demands: ids.slice(0, BALANCE.diplomacy.MAX_DEMANDS).map(s => ({ kind: 'state' as const, state: s })) };
+        if (!playCheck(state, cmd)) { startPlay(state, to.id, owner, cmd.demands, events); moved++; }
       }
       return moved > 0;
     }
@@ -120,7 +132,9 @@ export const effectHooks: Record<'independence' | 'release' | 'formNation', (sta
 export function resolveEvent(state: GameState, def: EventDef, c: Country, option: number, events: SimEvent[], changed: number[]): void {
   const opt = def.options[option] ?? def.options[0];
   let skipped = 0;
-  for (const e of opt.effects) if (!applyEffect(state, c, e, events, changed)) skipped++;
+  // A card answered later than it fired: if its circumstances changed, nothing applies (rather than half of it).
+  const stillHolds = def.conditions.every(k => conditionHolds(state, c, k));
+  for (const e of opt.effects) if (!stillHolds || !applyEffect(state, c, e, events, changed)) skipped++;
   state.eventLog.push({ event: def.id, country: c.id, tick: state.tick, option });
   events.push({ type: 'eventResolved', country: c.id, event: def.id, option, skipped });
 }
@@ -135,7 +149,7 @@ function aiChoice(state: GameState, def: EventDef, c: Country): number {
   return w.length - 1;
 }
 
-export function monthlyEvents(state: GameState, events: SimEvent[]): void {
+export function monthlyEvents(state: GameState, events: SimEvent[], changed: number[] = []): void {
   for (const c of state.countries) if (c.alive && c.modifiers.length) c.modifiers = c.modifiers.filter(m => m.until > state.tick);
   const now = dateNum(dateAtTick(state.startDate, state.tick));
   const tags = tagMap(state);
@@ -154,7 +168,7 @@ export function monthlyEvents(state: GameState, events: SimEvent[]): void {
         const p = { id: state.nextId++, event: def.id, country: id, tick: state.tick };
         state.pendingEvents.push(p);
         events.push({ type: 'eventFired', country: id, event: def.id, pending: p.id });
-      } else resolveEvent(state, def, c, aiChoice(state, def, c), events, []);
+      } else resolveEvent(state, def, c, aiChoice(state, def, c), events, changed);
     }
   }
 }
@@ -189,5 +203,5 @@ handlers.chooseEventOption = (state, cmd: Extract<Command, { type: 'chooseEventO
   return null;
 };
 
-systems.month.push((state, events) => monthlyEvents(state, events));
+systems.month.push((state, events, changed) => monthlyEvents(state, events, changed));
 systems.day.push((state, events, changed) => eventDay(state, events, changed));

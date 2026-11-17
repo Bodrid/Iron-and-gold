@@ -1,4 +1,5 @@
 // The computer players. Each AI country decides every few days (more often on harder levels) and acts only through commands.
+import { anyTag } from '../tags';
 import { personalityOf } from '../../content/personalities';
 import { TICKS_PER_DAY } from '../calendar';
 import { BALANCE } from '../balance';
@@ -94,7 +95,7 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
         const t = state.countries[n];
         let w = c.troops / Math.max(1, t.troops);
         if (t.isPlayer) w *= d.playerFocus;
-        if (pers.rivals.includes(t.tag)) w *= 2;
+        if (anyTag(pers.rivals, t)) w *= 2;
         if (pers.interests.length && state.states.some(s => s.owner === n && pers.interests.some(p => state.map.states[s.id].key.startsWith(p)))) w *= 2;
         if (d.level >= 2 && (warsOf(state, n).length > 0 || t.troops < t.maxTroops * 0.4)) w *= 2;
         return w;
@@ -182,7 +183,7 @@ systems.init.push(state => {
   for (const c of state.countries) {
     if (!c.alive || c.isPlayer) continue;
     const borders = state.states.some(s => s.owner === c.id && state.map.states[s.id].neighbors.some(n => playerStates.has(n)));
-    const rival = borders || personalityOf(c.personality).rivals.includes(player.tag);
+    const rival = borders || anyTag(personalityOf(c.personality).rivals, player);
     c.difficulty = effectiveDifficulty(state.setup, rival);
   }
 });

@@ -2,7 +2,7 @@ import { it, expect } from 'vitest';
 import { step } from './step';
 import { makeGame, runDays, invariantProblems } from './testing';
 import { atWar, startWar } from './war';
-import { formCheck, coreShare, startIndependence, releaseNation } from './nations';
+import { formCheck, coreShare, startIndependence, releaseNation, formNation } from './nations';
 import { makePuppet } from './diplomacy/subjects';
 import { relation, changeRelation } from './diplomacy/relations';
 import { sign } from './diplomacy/treaties';
@@ -90,4 +90,15 @@ it('independence mid-war and for a puppet parent keeps wars consistent; a releas
   expect(free.alive).toBe(true);
   expect(atWar(h, free.id, 2)).toBeUndefined();
   expect(free.techs).toEqual(h.countries[2].techs);
+});
+
+it('forming a nation never swallows the player’s country, and old tags still count for rivals and companies', async () => {
+  const g = world('QQQ');
+  makePuppet(g, 1, 2, []);                       // the player (QQQ) is PPP's puppet and owns a core state
+  formNation(g, 1, 'TST', [], []);
+  expect(g.countries[2].alive).toBe(true);
+  expect(g.countries[1].formerTags).toEqual(['PPP']);
+  const { hasTag } = await import('./nations');
+  expect(hasTag(g.countries[1], 'PPP')).toBe(true);
+  expect(hasTag(g.countries[1], 'TST')).toBe(true);
 });

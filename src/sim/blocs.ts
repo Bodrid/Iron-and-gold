@@ -1,4 +1,5 @@
 // Power blocs: a major power leads, members (and everyone's puppets) share the principles' buffs.
+import { anyTag } from './tags';
 import { BLOC_TYPES, BLOC_TYPE_IDS, PRINCIPLES, PRINCIPLE_IDS, type BlocType, type PrincipleId } from '../content/blocs';
 import { personalityOf } from '../content/personalities';
 import { BALANCE } from './balance';
@@ -89,10 +90,10 @@ export const blocPolicy = {
     const rel = relation(state, ai, b.leader);
     const me = state.countries[ai], lead = state.countries[b.leader];
     const rivals = personalityOf(me.personality).rivals;
-    if (rivals.includes(lead.tag)) return false;
+    if (anyTag(rivals, lead)) return false;
     // A great power doesn't take orders lightly.
     if (isMajor(state, ai)) return rel >= B.AI_MAJOR_JOIN_RELATION;
-    const sharedRival = rivals.some(t => personalityOf(lead.personality).rivals.includes(t));
+    const sharedRival = state.countries.some(x => x.alive && x.id && anyTag(rivals, x) && anyTag(personalityOf(lead.personality).rivals, x));
     // Or: a much stronger neighbour that shares our enemies.
     return rel >= B.AI_JOIN_RELATION || (rel >= 0 && lead.troops >= me.troops * 3 && sharedRival && sharesBorder(state, ai, b.leader));
   },
@@ -100,7 +101,7 @@ export const blocPolicy = {
   admits(state: GameState, b: Bloc, applicant: CountryId): boolean {
     const lead = state.countries[b.leader], app = state.countries[applicant];
     const rivals = personalityOf(lead.personality).rivals;
-    if (rivals.includes(app.tag) || personalityOf(app.personality).rivals.includes(lead.tag)) return false;
+    if (anyTag(rivals, app) || anyTag(personalityOf(app.personality).rivals, lead)) return false;
     return relation(state, b.leader, applicant) >= B.AI_JOIN_RELATION;
   },
 };
@@ -162,7 +163,7 @@ demandHooks.joinBlocCheck = (state, initiator, target) => {
 };
 demandHooks.joinBloc = (state, leader, c, events) => addToBloc(state, leader, c, events);
 
-// No embargoes or plays inside a bloc with a free market / common defence: members settle things otherwise.
+// No embargoes inside a free-trade bloc, and no plays between members of any bloc: members settle things otherwise.
 treatyCheckHooks.push((state, from, to, kind) => (kind === 'embargo' && sameBloc(state, from, to) && hasPrinciple(blocOf(state, from), 'freeTradeArea') ? 'sameBloc' : null));
 playCheckHooks.push((state, initiator, target) => (sameBloc(state, initiator, target) ? 'sameBloc' : null));
 

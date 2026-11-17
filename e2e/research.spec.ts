@@ -6,7 +6,7 @@ test('research a tech and start passing a law as Britain', async ({ page }) => {
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await expect(page.getByText(/Nothing is being researched/)).toBeVisible();
   await page.locator('[data-tech="powerLooms"] button', { hasText: 'Research' }).click();
-  await expect(page.getByText(/of \d[\d,.]* points/)).toBeVisible();
+  await expect(page.getByText(/of \d[\d,.]*[kM]? points/)).toBeVisible();
   await expect(page.locator('[data-tech="powerLooms"]')).toHaveClass(/researching/);
 
   await page.getByRole('button', { name: 'Nation', exact: true }).click();

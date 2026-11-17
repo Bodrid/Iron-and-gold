@@ -129,7 +129,7 @@ export function createWorkerHandler(deps: HandlerDeps) {
       if (!events.length) { frame(true); return; }
     }
     if (events.length) {
-      const remap = (e: SimEvent) => e.type === 'peace' || e.type === 'eliminated' || e.type === 'revolt' || e.type === 'revoltEnded';
+      const remap = (e: SimEvent) => e.type === 'peace' || e.type === 'eliminated' || e.type === 'revolt' || e.type === 'revoltEnded' || e.type === 'nationFormed' || e.type === 'nationReleased' || e.type === 'eventResolved';
       if (events.some(e => e.type === 'built' || remap(e))) buildingsDirty = true;
       if (events.some(remap)) { lastLabelsDay = -Infinity; lastCountriesDay = -Infinity; }
       if (events.some(e => e.type !== 'rejected' || (e.command as any).country === player())) selectionDirty = selected !== null;

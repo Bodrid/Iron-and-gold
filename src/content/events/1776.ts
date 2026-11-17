@@ -11,7 +11,7 @@ export const EVENTS_1776: EventDef[] = [
     text: 'In Philadelphia the Continental Congress has declared the thirteen colonies free and independent states. Washington’s army besieges Boston.\n\nParliament must decide: fight to keep the colonies, or let them go.',
     conditions: [{ kind: 'ownsState', key: 'USA-Pennsylvania' }],
     options: [
-      { label: 'Crush the rebellion', effects: [{ kind: 'independence', tag: 'USA', name: 'United States', color: 0x5d7fc4, keys: COLONIES, group: 'intellectuals', troops: 0.5, defensePct: 110 }, { kind: 'modifier', name: 'An ocean away', effects: { attackPct: -60 }, months: 96 }, { kind: 'flag', flag: 'ar.war', global: true }], ai: 4 },
+      { label: 'Crush the rebellion', effects: [{ kind: 'independence', tag: 'USA', name: 'United States', color: 0x5d7fc4, keys: COLONIES, group: 'intellectuals', troops: 0.5, defensePct: 110, personality: 'usa' }, { kind: 'modifier', name: 'An ocean away', effects: { attackPct: -60 }, months: 96 }, { kind: 'flag', flag: 'ar.war', global: true }], ai: 4 },
       { label: 'Let them go', effects: [{ kind: 'release', tag: 'USA', name: 'United States', color: 0x5d7fc4, keys: COLONIES }, { kind: 'approval', group: 'landowners', radicalism: 20 }], ai: 0.3 },
     ] },
   { id: 'ar.france', title: 'An American Alliance', starts: S1776, countries: ['FRA'], start: y(1776, 6), end: y(1783), mtthMonths: 4,

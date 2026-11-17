@@ -1,6 +1,8 @@
 import { it, expect, afterEach } from 'vitest';
 import { step } from './step';
-import { makeGame, runDays, stateId } from './testing';
+import { makeGame, runDays, stateId, occupy } from './testing';
+import { startWar } from './war';
+import { getStateTiles } from '../map/stateTiles';
 import { EVENTS } from '../content/events';
 import { monthlyEvents, conditionHolds } from './events';
 import { mods } from './mods';
@@ -113,4 +115,55 @@ it('the player never has more than two cards open; the rest wait', () => {
   monthlyEvents(g, []);
   expect(g.pendingEvents).toHaveLength(2);
   expect(g.eventLog).toHaveLength(1);
+});
+
+// ---- stage 6 review fixes ----
+it('map changes from AI events reach changedTiles', () => {
+  const g = world('ZZZ');
+  add(gift({ countries: ['YYY'], options: [{ label: 'Take B', effects: [{ kind: 'transferStates', keys: ['T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  g.countries[1].capitalState = stateId(g, 'T-A');
+  let changed: number[] = [];
+  for (let i = 0; i < 35 * 4 && !g.eventLog.length; i++) changed = changed.concat(step(g, []).changedTiles);
+  const bTiles = g.map.states[stateId(g, 'T-B')].tiles;
+  expect(g.states[stateId(g, 'T-B')].owner).toBe(2);
+  expect(new Set(changed.filter(t => g.map.stateOf[t] === stateId(g, 'T-B'))).size).toBe(bTiles);
+});
+
+it('an AI event never takes the player’s land without a war: it makes demands instead; capitals never move', () => {
+  const g = world('XXX');
+  add(gift({ countries: ['YYY'], options: [{ label: 'Take the player’s land', effects: [{ kind: 'transferStates', keys: ['T-A', 'T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  g.countries[1].capitalState = stateId(g, 'T-A');
+  const events: import('./types').SimEvent[] = [];
+  monthlyEvents(g, events);
+  expect(g.states[stateId(g, 'T-A')].owner).toBe(1);
+  expect(g.states[stateId(g, 'T-B')].owner).toBe(1);
+  expect(g.plays).toContainEqual(expect.objectContaining({ initiator: 2, target: 1, demands: [{ kind: 'state', state: stateId(g, 'T-B') }] }));
+  // Between AI countries the capital is never taken either.
+  const h = world('ZZZ');
+  add(gift({ id: 'test.cap', countries: ['YYY'], options: [{ label: 'Take', effects: [{ kind: 'transferStates', keys: ['T-A', 'T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  h.countries[1].capitalState = stateId(h, 'T-A');
+  monthlyEvents(h, []);
+  expect(h.states[stateId(h, 'T-A')].owner).toBe(1);
+  expect(h.states[stateId(h, 'T-B')].owner).toBe(2);
+});
+
+it('transfers skip states occupied by a third country', () => {
+  const g = world('ZZZ');
+  add(gift({ countries: ['YYY'], options: [{ label: 'Take B', effects: [{ kind: 'transferStates', keys: ['T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  g.countries[1].capitalState = stateId(g, 'T-A');
+  startWar(g, [3], [1], [], []);
+  occupy(g, 3, Array.from(getStateTiles(g.map, stateId(g, 'T-B'))));
+  monthlyEvents(g, []);
+  expect(g.states[stateId(g, 'T-B')].owner).toBe(1);
+});
+
+it('a player card whose conditions no longer hold applies nothing', () => {
+  const g = world();
+  add(gift({ countries: ['XXX'], conditions: [{ kind: 'atPeace' }] }));
+  monthlyEvents(g, []);
+  startWar(g, [1], [2], [], []);
+  const m = g.countries[1].money;
+  const r = step(g, [{ type: 'chooseEventOption', country: 1, pending: g.pendingEvents[0].id, option: 0 }]);
+  expect(g.countries[1].money).toBe(m);
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'eventResolved', skipped: 1 }));
 });

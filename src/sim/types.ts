@@ -44,6 +44,7 @@ export interface Country {
   flags: string[];
   /** Temporary modifiers from events. */ modifiers: { name: string; effects: Effects; until: number }[];
   /** No bloc invites this (player) country before this tick. */ blocInvitesUntil?: number;
+  /** Tags it had before forming a nation (rivals, companies and events still recognise them). */ formerTags?: string[];
   /** Set on rebel countries while their revolt lasts. */ rebel?: { parent: CountryId; group: GroupId; law: string; /** Fighting to be a country of its own. */ independence?: boolean };
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;

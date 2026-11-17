@@ -7,6 +7,8 @@ import { setTile } from './control';
 import { changeRelation } from './diplomacy/relations';
 import { effectHooks } from './events';
 import { handlers, systems } from './registry';
+import { hasTag } from './tags';
+export { hasTag };
 import { splinter } from './revolts';
 import { eliminate, startWar, warsOf } from './war';
 import type { Command, Country, CountryId, GameState, SimEvent } from './types';
@@ -15,17 +17,18 @@ const N = BALANCE.nations;
 const stateIdsFor = (state: GameState, keys: string[]) => keys.map(k => state.map.states.find(s => s.key === k)?.id ?? 0).filter(s => s > 0);
 const tagTaken = (state: GameState, tag: string) => state.countries.some(c => c.alive && c.id && c.tag === tag);
 
-interface Who { tag: string; name: string; color: number; keys: string[]; group?: GroupId; troops?: number; defensePct?: number }
+interface Who { tag: string; name: string; color: number; keys: string[]; group?: GroupId; troops?: number; defensePct?: number; personality?: string }
 
 /** Rebels rise for independence in the listed states the parent owns (never its capital). */
 export function startIndependence(state: GameState, parent: Country, who: Who, events: SimEvent[], changed: number[]): Country | null {
   if (!parent.alive || tagTaken(state, who.tag) || state.countries.length >= BALANCE.politics.MAX_COUNTRIES) return null;
-  const ids = stateIdsFor(state, who.keys).filter(s => state.states[s].owner === parent.id && s !== parent.capitalState);
+  const ids = stateIdsFor(state, who.keys).filter(s => state.states[s].owner === parent.id && state.states[s].controller === parent.id && s !== parent.capitalState);
   if (!ids.length) return null;
   const pop = ids.reduce((n, s) => n + state.states[s].population, 0);
   const share = Math.min(N.INDEPENDENCE_MAX_SHARE, N.INDEPENDENCE_BASE_SHARE + pop / Math.max(1, parent.population));
   const rebels = splinter(state, parent, who, ids, share, changed);
   rebels.rebel = { parent: parent.id, group: who.group ?? 'intellectuals', law: '', independence: true };
+  if (who.personality) rebels.personality = who.personality;
   // Independence fighters raise more than their numbers suggest and defend their homes fiercely for some years.
   const extra = Math.max(0, Math.round(Math.max(pop * BALANCE.troops.MANPOWER_SHARE * N.INDEPENDENCE_TROOPS, parent.troops * (who.troops ?? N.INDEPENDENCE_MIN_PARENT_SHARE))) - rebels.troops);
   rebels.troops += extra;
@@ -64,7 +67,7 @@ export function formCheck(state: GameState, c: CountryId, tag: string): string |
   const x = state.countries[c];
   if (!f) return 'unknown nation';
   if (tagTaken(state, tag)) return 'alreadyExists';
-  if (!f.from.includes(x.tag)) return 'notEligible';
+  if (!f.from.some(t => hasTag(x, t))) return 'notEligible';
   if (x.overlord) return 'puppet';
   if (x.rebel) return 'rebels';
   if (warsOf(state, c).length) return 'atWar';
@@ -75,11 +78,12 @@ export function formCheck(state: GameState, c: CountryId, tag: string): string |
 export function formNation(state: GameState, c: CountryId, tag: string, events: SimEvent[], changed: number[]): void {
   const f = formableByTag(tag)!;
   const x = state.countries[c];
+  x.formerTags = [...(x.formerTags ?? []), x.tag];
   x.tag = f.tag; x.name = f.name; x.color = f.color;
   x.modifiers.push({ name: `${f.name} united`, effects: { outputPct: { all: N.FORM_OUTPUT_PCT } }, until: Number.MAX_SAFE_INTEGER });
   // Its puppets inside the nation's lands join it.
   const cores = new Set(coreStates(state, f));
-  for (const p of state.countries.filter(y => y.alive && y.overlord === c)) {
+  for (const p of state.countries.filter(y => y.alive && y.overlord === c && !y.isPlayer)) {   // never the player's country
     if (![...cores].some(s => state.states[s].owner === p.id)) continue;
     for (let t = 0; t < state.owner.length; t++) if (state.owner[t] === p.id) setTile(state, t, c, state.controller[t] === p.id ? c : state.controller[t], changed);
     eliminate(state, p.id, events, changed, true);
@@ -105,7 +109,7 @@ systems.month.push((state, events, changed) => {
   for (const f of FORMABLES) {
     if (tagTaken(state, f.tag)) continue;
     for (const c of state.countries) {
-      if (!c.alive || c.isPlayer || !f.from.includes(c.tag)) continue;
+      if (!c.alive || c.isPlayer || !f.from.some(t => hasTag(c, t))) continue;
       if (!formCheck(state, c.id, f.tag)) { formNation(state, c.id, f.tag, events, changed); break; }
     }
   }

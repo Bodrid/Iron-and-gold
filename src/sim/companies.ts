@@ -1,5 +1,6 @@
 // Companies: each boosts the output of its building types, more as the country owns more of them (bonus
 // recomputed monthly, so the modifier cache stays cheap). Charters trade a bigger bonus for a cost.
+import { hasTag } from './tags';
 import { BUILDINGS } from '../content/buildings';
 import { CHARTERS, COMPANY_BY_ID, type CharterKind } from '../content/companies';
 import type { Effects } from '../content/effects';
@@ -32,7 +33,7 @@ export function foundCompanyCheck(state: GameState, c: CountryId, id: string): s
   const x = state.countries[c];
   if (!def) return 'unknown company';
   if (x.rebel) return 'rebels';
-  if (def.tag && def.tag !== x.tag) return 'notYours';
+  if (def.tag && !hasTag(x, def.tag)) return 'notYours';
   if (x.companies.some(k => k.id === id)) return 'alreadyFounded';
   if (x.companies.length >= companyLimit(state, c)) return 'tooMany';
   if (x.money < K.FOUND_COST) return 'cantAfford';

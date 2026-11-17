@@ -92,7 +92,8 @@ export function splinter(state: GameState, parent: Country, who: { tag: string; 
   }
   state.countries.push(c);
   ensureRelations(state);
-  for (const s of stateIds) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === parent.id) setTile(state, t, id, id, changed);
+  // Tiles a third country occupies stay occupied (and are skipped by the callers where it matters).
+  for (const s of stateIds) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === parent.id) setTile(state, t, id, state.controller[t] === parent.id ? id : state.controller[t], changed);
   for (const s of stateIds) c.population += state.states[s].population;
   return c;
 }
