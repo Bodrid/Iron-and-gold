@@ -7,7 +7,8 @@ import { buildCheck, buildCostHooks, researchHooks } from '../economy';
 import { applyCommand, systems } from '../registry';
 import { nextRandom } from '../rng';
 import { refillBonusHooks } from '../troops';
-import { atWar, peacePolicy, warScore } from '../war';
+import { atWar, enemiesIn, peacePolicy, warScore, warsOf } from '../war';
+import { playCheck } from '../diplomacy/plays';
 import type { Command, Country, CountryId, GameState } from '../types';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
@@ -30,8 +31,8 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   const d = DIFFICULTIES[c.difficulty];
   const pers = personalityOf(c.personality);
   const mistake = () => d.mistakeChance > 0 && nextRandom(state) < d.mistakeChance;
-  const myWars = state.wars.filter(w => w.a === c.id || w.b === c.id);
-  const enemies = myWars.map(w => (w.a === c.id ? w.b : w.a));
+  const myWars = warsOf(state, c.id);
+  const enemies = [...new Set(myWars.flatMap(w => enemiesIn(w, c.id)))];
   const neighbors = neighborCountries(state, c);
   const threatened = enemies.length > 0 || [...neighbors].some(n => n && state.countries[n].troops > c.troops * 1.5);
   const minAttack = BALANCE.combat.MIN_ATTACK_TROOPS;
@@ -69,7 +70,7 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1);
 
   // 5. Start a war against a weaker neighbour.
-  if (!enemies.length && c.troops >= c.maxTroops * 0.6) {
+  if (!enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {
     const chance = WAR_CHANCE_PER_MONTH * d.aggression * pers.aggression * (d.decisionDays / 30);
     if (nextRandom(state) < chance) {
       const targets = [...neighbors].filter(n => n && state.countries[n].alive && state.countries[n].troops < c.troops * 0.6);
@@ -79,21 +80,25 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
         if (t.isPlayer) w *= d.playerFocus;
         if (pers.rivals.includes(t.tag)) w *= 2;
         if (pers.interests.length && state.states.some(s => s.owner === n && pers.interests.some(p => state.map.states[s.id].key.startsWith(p)))) w *= 2;
-        if (d.level >= 2 && (state.wars.some(x => x.a === n || x.b === n) || t.troops < t.maxTroops * 0.4)) w *= 2;
+        if (d.level >= 2 && (warsOf(state, n).length > 0 || t.troops < t.maxTroops * 0.4)) w *= 2;
         return w;
       };
       let target = pick(state, targets, weight, mistake());
       if (target && state.countries[target].isPlayer && nextRandom(state) > d.playerFocus) target = undefined;
       if (target && sharesBorder(state, c.id, target)) {
-        issue({ type: 'declareWar', country: c.id, target });
-        attack(target, Math.min(0.8, d.attackRatio + 0.2));
+        // No surprise attacks: demand a state next to us and let the play run its course.
+        const mine = new Set(state.states.filter(s => s.owner === c.id).map(s => s.id));
+        const wanted = state.states.filter(s => s.owner === target && state.map.states[s.id].neighbors.some(n => mine.has(n)))
+          .sort((a, b) => b.population - a.population || a.id - b.id)[0];
+        const cmd = { type: 'startPlay' as const, country: c.id, target, demands: [{ kind: 'state' as const, state: wanted?.id ?? 0 }] };
+        if (wanted && !playCheck(state, cmd)) issue(cmd);
       }
     }
   }
 
   // 6. Peace when clearly winning, or after a long losing war.
   for (const w of myWars) {
-    if (!state.wars.includes(w)) continue;
+    if (!state.wars.includes(w) || (w.a !== c.id && w.b !== c.id)) continue;   // only war leaders negotiate
     const enemy = w.a === c.id ? w.b : w.a;
     const mine = warScore(state, w, c.id);
     const old = state.tick - w.startTick >= 2 * YEAR;

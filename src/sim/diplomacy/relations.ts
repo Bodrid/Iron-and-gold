@@ -65,7 +65,7 @@ export function baseline(state: GameState, a: CountryId, b: CountryId, borders: 
   let v = 0;
   if (borders.has(Math.min(a, b) * n + Math.max(a, b))) v += D.BORDER;
   if (personalityOf(ca.personality).rivals.includes(cb.tag) || personalityOf(cb.personality).rivals.includes(ca.tag)) v += D.RIVAL;
-  const enemiesOf = (c: CountryId) => state.wars.filter(w => w.a === c || w.b === c).map(w => (w.a === c ? w.b : w.a));
+  const enemiesOf = (c: CountryId) => state.wars.flatMap(w => (w.sideA.includes(c) ? w.sideB : w.sideB.includes(c) ? w.sideA : []));
   const ea = enemiesOf(a), eb = enemiesOf(b);
   if (!ea.includes(b) && ea.some(e => eb.includes(e))) v += D.SHARED_ENEMY;
   if (state.tradeRoutes.some(r => (r.exporter === a && r.importer === b) || (r.exporter === b && r.importer === a))) v += D.TRADE_ROUTE;

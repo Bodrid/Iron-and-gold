@@ -17,7 +17,8 @@ export function hashState(state: GameState): number {
   }
   for (const s of state.states) { mix(s.owner); mix(s.controller); mix(s.population); for (const b of s.buildings) { mix(b.level); mix(b.tile); } }
   for (const a of state.attacks) { mix(a.id); mix(a.attacker); mix(a.target); mix(a.troops); }
-  for (const w of state.wars) { mix(w.id); mix(w.a); mix(w.b); mix(w.casualties[0]); mix(w.casualties[1]); }
+  for (const w of state.wars) { mix(w.id); for (const c of w.sideA) mix(c); mix(-1); for (const c of w.sideB) mix(c); mix(w.casualties[0]); mix(w.casualties[1]); }
+  for (const p of state.plays) { mix(p.id); mix(p.initiator); mix(p.target); mix(p.sideA.length); mix(p.sideB.length); }
   mix(state.constructions.length);
   for (const r of state.tradeRoutes) { mix(r.id); mix(r.exporter); mix(r.importer); mix(r.amount); mix(r.captured ? 1 : 0); }
   for (const sh of state.ships) { mix(sh.id); mix(sh.owner); mix(sh.cell); mix(sh.pathPos); mix(sh.hp); mix(sh.troops ?? 0); }

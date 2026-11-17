@@ -26,6 +26,7 @@ export interface Country {
   gdp: number; income: number; sol: number; literacy: number; researchPoints: number;
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
+  /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
   /** Owned tiles. */ tiles: number;
   /** Controlled tiles (owned and not occupied, plus occupied enemy tiles). */ controlled: number;
   population: number; history: StatSample[];
@@ -35,7 +36,10 @@ export interface Building { type: BuildingType; level: number; tile: number }
 export interface StateRuntime { id: number; owner: CountryId; controller: CountryId; population: number; buildings: Building[] }
 export interface Construction { id: number; country: CountryId; state: number; type: BuildingType; doneTick: number }
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
-export interface War { id: number; a: CountryId; b: CountryId; startTick: number; casualties: [number, number] }
+export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' };
+/** a/b are the side leaders (the play's initiator and target). casualties[0] is side A's, [1] side B's. */
+export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number] }
+export interface Play { id: number; initiator: CountryId; target: CountryId; demands: Demand[]; sideA: CountryId[]; sideB: CountryId[]; startTick: number; endTick: number }
 export interface TradeRoute {
   id: number; exporter: CountryId; importer: CountryId; fromState: number; toState: number; good: Good; amount: number;
   createdTick: number; idleMonths: number; /** Set when its trade ship was captured; that month's cargo is lost. */ captured: boolean;
@@ -77,6 +81,8 @@ export interface GameState {
   constructions: Construction[];
   attacks: Attack[];
   wars: War[];
+  plays: Play[];
+  reparations: { from: CountryId; to: CountryId; until: number }[];
   peaceOffers: PeaceOffer[];
   tradeRoutes: TradeRoute[];
   /** Routes the player or AI cancelled: not reopened until `until`. */ tradeBlocks: { exporter: CountryId; importer: CountryId; good: Good; until: number }[];
@@ -96,7 +102,6 @@ export type Command =
   | { type: 'attack'; country: CountryId; target: CountryId; ratio: number }
   | { type: 'cancelAttack'; country: CountryId; attackId: number }
   | { type: 'build'; country: CountryId; state: number; building: BuildingType }
-  | { type: 'declareWar'; country: CountryId; target: CountryId }
   | { type: 'offerPeace'; country: CountryId; target: CountryId }
   | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean }
   | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
@@ -109,7 +114,10 @@ export type Command =
   | { type: 'stopDiploAction'; country: CountryId; target: CountryId }
   | { type: 'proposeTreaty'; country: CountryId; target: CountryId; kind: TreatyKind }
   | { type: 'respondTreaty'; country: CountryId; from: CountryId; kind: TreatyKind; accept: boolean }
-  | { type: 'cancelTreaty'; country: CountryId; treatyId: number };
+  | { type: 'cancelTreaty'; country: CountryId; treatyId: number }
+  | { type: 'startPlay'; country: CountryId; target: CountryId; demands: Demand[] }
+  | { type: 'joinPlay'; country: CountryId; playId: number; side: 'A' | 'B' }
+  | { type: 'backDown'; country: CountryId; playId: number };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -129,7 +137,11 @@ export type SimEvent =
   | { type: 'treatyRefused'; from: CountryId; to: CountryId; kind: TreatyKind }
   | { type: 'treatyEnded'; a: CountryId; b: CountryId; kind: TreatyKind }
   | { type: 'coalitionFormed'; target: CountryId; members: CountryId[] }
-  | { type: 'coalitionDissolved'; target: CountryId };
+  | { type: 'coalitionDissolved'; target: CountryId }
+  | { type: 'playStarted'; initiator: CountryId; target: CountryId; playId: number }
+  | { type: 'playJoined'; country: CountryId; playId: number; side: 'A' | 'B' }
+  | { type: 'playYielded'; initiator: CountryId; target: CountryId; demands: Demand[] }
+  | { type: 'playCancelled'; initiator: CountryId; target: CountryId };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

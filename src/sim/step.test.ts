@@ -13,7 +13,7 @@ it('different seeds give different rng state', () => {
 });
 it('rejects commands for countries that do not exist', () => {
   const g = makeGame();
-  const r = step(g, [{ type: 'declareWar', country: 99, target: 1 }]);
+  const r = step(g, [{ type: 'improveRelations', country: 99, target: 1 }]);
   expect(r.events[0]).toMatchObject({ type: 'rejected' });
 });
 it('advances the tick and flags new days and months', () => {

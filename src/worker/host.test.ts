@@ -38,10 +38,10 @@ it('round-trips commands and events', async () => {
   await host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
   const events: any[] = [];
   host.onEvents(e => events.push(...e));
-  host.send({ type: 'declareWar', country: 1, target: 2 });
+  host.send({ type: 'startPlay', country: 1, target: 2, demands: [{ kind: 'reparations' }] });
   host.setSpeed(1);
   advance(200);
-  expect(events).toContainEqual({ type: 'warDeclared', a: 1, b: 2 });
+  expect(events).toContainEqual(expect.objectContaining({ type: 'playStarted', initiator: 1, target: 2 }));
 });
 
 it('sends frames with the date and country summaries', async () => {

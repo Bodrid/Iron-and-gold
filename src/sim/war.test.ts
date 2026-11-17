@@ -1,28 +1,20 @@
 import { it, expect } from 'vitest';
 import { step } from './step';
 import { makeGame, occupy, runTicks, runDays, stateTiles, stateId } from './testing';
-import { declareWarRaw, warScore } from './war';
+import { atWar, declareWarRaw, startWar, warScore } from './war';
 import { TICKS_PER_DAY } from './calendar';
 import type { SimEvent } from './types';
 import { rebuildControl } from './control';
 
 const threeStates = () => makeGame({ rows: ['AABBCC'], owners: { A: 'XXX', B: 'YYY', C: 'YYY' } });
 
-it('declaring war emits an event and allows attacks', () => {
+it('starting a war emits an event and allows attacks', () => {
   const g = makeGame();
-  const r = step(g, [{ type: 'declareWar', country: 1, target: 2 }]);
-  expect(r.events).toContainEqual({ type: 'warDeclared', a: 1, b: 2 });
+  const events: SimEvent[] = [];
+  startWar(g, [1], [2], [], events);
+  expect(events).toContainEqual({ type: 'warDeclared', a: 1, b: 2 });
   expect(g.wars).toHaveLength(1);
-});
-
-it('rejects war on self, on the dead, and duplicate wars', () => {
-  const g = makeGame();
-  g.countries[2].alive = false;
-  const r = step(g, [{ type: 'declareWar', country: 1, target: 1 }, { type: 'declareWar', country: 1, target: 2 }]);
-  expect(r.events.filter(e => e.type === 'rejected')).toHaveLength(2);
-  const h = makeGame();
-  const r2 = step(h, [{ type: 'declareWar', country: 1, target: 2 }, { type: 'declareWar', country: 2, target: 1 }]);
-  expect(r2.events.filter(e => e.type === 'rejected')).toHaveLength(1);
+  expect(atWar(g, 2, 1)).toBeDefined();
 });
 
 it('war score rises with occupation', () => {

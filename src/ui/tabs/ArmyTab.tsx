@@ -7,7 +7,7 @@ export function ArmyTab({ send = defaultSend }: { send?: Send }) {
   const p = player();
   if (!p) return null;
   const me = p.id;
-  const wars = ui.wars.value.filter(w => w.a === me || w.b === me);
+  const wars = ui.wars.value.filter(w => w.a === me || w.b === me);  // leaders negotiate; members see wars on the map
   const attacks = ui.attacks.value.filter(a => a.attacker === me);
   const offered = (id: number) => ui.peaceOffers.value.some(o => o.from === me && o.to === id);
   return (

@@ -10,5 +10,7 @@ import './naval/invasion';
 import './diplomacy/relations';
 import './diplomacy/treaties';
 import './diplomacy/infamy';
+import './diplomacy/demands';
+import './diplomacy/plays';
 import './ai/ai';
 import './victory';

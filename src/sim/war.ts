@@ -7,39 +7,59 @@ import { setTile, stateControlShare, statesOwnedBy } from './control';
 import { handlers, systems } from './registry';
 import type { Command, CountryId, GameState, SimEvent, War } from './types';
 
+export function sideOf(war: War, c: CountryId): 'A' | 'B' | null {
+  return war.sideA.includes(c) ? 'A' : war.sideB.includes(c) ? 'B' : null;
+}
+
+export function enemiesIn(war: War, c: CountryId): CountryId[] {
+  const s = sideOf(war, c);
+  return s === 'A' ? war.sideB : s === 'B' ? war.sideA : [];
+}
+
+export function warsOf(state: GameState, c: CountryId): War[] {
+  return state.wars.filter(w => sideOf(w, c) !== null);
+}
+
 export function atWar(state: GameState, a: CountryId, b: CountryId): War | undefined {
-  return state.wars.find(w => (w.a === a && w.b === b) || (w.a === b && w.b === a));
+  return state.wars.find(w => (w.sideA.includes(a) && w.sideB.includes(b)) || (w.sideA.includes(b) && w.sideB.includes(a)));
 }
 
 /** Starts a war with no checks (tests and internal use). */
 export function declareWarRaw(state: GameState, a: CountryId, b: CountryId): War {
-  const w: War = { id: state.nextId++, a, b, startTick: state.tick, casualties: [0, 0] };
+  const w: War = { id: state.nextId++, a, b, sideA: [a], sideB: [b], goals: [], startTick: state.tick, casualties: [0, 0] };
   state.wars.push(w);
+  return w;
+}
+
+/** Called with each new war (puppets and other automatic joiners plug in here). */
+export const warStartHooks: ((state: GameState, war: War) => void)[] = [];
+
+export function startWar(state: GameState, sideA: CountryId[], sideB: CountryId[], goals: War['goals'], events: SimEvent[]): War {
+  const w: War = { id: state.nextId++, a: sideA[0], b: sideB[0], sideA: [...sideA], sideB: [...sideB], goals, startTick: state.tick, casualties: [0, 0] };
+  state.wars.push(w);
+  for (const h of warStartHooks) h(state, w);
+  events.push({ type: 'warDeclared', a: w.a, b: w.b });
   return w;
 }
 
 export function addCasualties(state: GameState, country: CountryId, enemy: CountryId, n: number): void {
   const w = atWar(state, country, enemy);
-  if (w) w.casualties[w.a === country ? 0 : 1] += n;
+  if (w) w.casualties[sideOf(w, country) === 'A' ? 0 : 1] += n;
 }
 
-export function declareWar(state: GameState, a: CountryId, b: CountryId, events: SimEvent[]): string | null {
-  if (a === b) return 'cannot declare war on yourself';
-  if (!state.countries[b]?.alive || b === 0) return 'no such country';
-  if (atWar(state, a, b)) return 'already at war';
-  declareWarRaw(state, a, b);
-  events.push({ type: 'warDeclared', a, b });
-  return null;
-}
-
-/** 0..100 for `side`: mostly how much of the enemy's land it occupies, partly the casualty balance. */
+/** 0..100 for the side `side` is on: mostly how much of the other side's land it occupies, partly the casualty balance. */
 export function warScore(state: GameState, war: War, side: CountryId): number {
-  const enemy = war.a === side ? war.b : war.a;
-  const own = war.casualties[war.a === side ? 0 : 1];
-  const theirs = war.casualties[war.a === side ? 1 : 0];
-  let occupied = 0;
-  for (const s of statesOwnedBy(state, enemy)) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === enemy && state.controller[t] === side) occupied++;
-  const occ = occupied / Math.max(1, state.countries[enemy].tiles);
+  const mine = sideOf(war, side) === 'A';
+  const mySide = mine ? war.sideA : war.sideB;
+  const enemies = mine ? war.sideB : war.sideA;
+  const own = war.casualties[mine ? 0 : 1];
+  const theirs = war.casualties[mine ? 1 : 0];
+  let occupied = 0, total = 0;
+  for (const e of enemies) {
+    total += state.countries[e].tiles;
+    for (const s of statesOwnedBy(state, e)) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === e && mySide.includes(state.controller[t])) occupied++;
+  }
+  const occ = occupied / Math.max(1, total);
   const cas = own + theirs > 0 ? theirs / (own + theirs) : 0.5;
   return Math.min(100, occ * 150) * 0.75 + cas * 25;
 }
@@ -52,29 +72,38 @@ export const peacePolicy = {
   },
 };
 
+/** Returns every tile occupied between the two sides to its owner. */
+export function returnOccupied(state: GameState, war: War, changed: number[]): void {
+  for (const side of [war.sideA, war.sideB]) {
+    const other = side === war.sideA ? war.sideB : war.sideA;
+    for (const c of side) for (const s of statesOwnedBy(state, c)) for (const t of getStateTiles(state.map, s)) {
+      if (state.owner[t] === c && other.includes(state.controller[t])) setTile(state, t, c, c, changed);
+    }
+  }
+}
+
+export function endWar(state: GameState, war: War): void {
+  for (const a of war.sideA) for (const b of war.sideB) endAttacksBetween(state, a, b, true);
+  state.wars = state.wars.filter(w => w !== war);
+  state.peaceOffers = state.peaceOffers.filter(o => !((war.sideA.includes(o.from) && war.sideB.includes(o.to)) || (war.sideB.includes(o.from) && war.sideA.includes(o.to))));
+}
+
 export function makePeace(state: GameState, war: War, events: SimEvent[], changed: number[]): void {
   const sa = warScore(state, war, war.a), sb = warScore(state, war, war.b);
   const winner = sa > sb ? war.a : sb > sa ? war.b : 0;
-  const loser = winner === war.a ? war.b : war.a;
+  const losers = winner === war.a ? war.sideB : war.sideA;
   const transferred: number[] = [];
   if (winner) {
-    for (const s of statesOwnedBy(state, loser)) {
+    for (const loser of losers) for (const s of statesOwnedBy(state, loser)) {
       if (stateControlShare(state, s, winner) > 0.5) {
         transferred.push(s);
         for (const t of getStateTiles(state.map, s)) if (state.owner[t] === loser) setTile(state, t, winner, winner, changed);
       }
     }
   }
-  for (const side of [war.a, war.b]) {
-    const other = side === war.a ? war.b : war.a;
-    for (const s of statesOwnedBy(state, side)) for (const t of getStateTiles(state.map, s)) {
-      if (state.owner[t] === side && state.controller[t] === other) setTile(state, t, side, side, changed);
-    }
-  }
+  returnOccupied(state, war, changed);
   if (winner && transferred.length) state.countries[winner].infamy += BALANCE.diplomacy.INFAMY_PER_STATE * transferred.length;
-  endAttacksBetween(state, war.a, war.b, true);
-  state.wars = state.wars.filter(w => w !== war);
-  state.peaceOffers = state.peaceOffers.filter(o => !((o.from === war.a && o.to === war.b) || (o.from === war.b && o.to === war.a)));
+  endWar(state, war);
   events.push({ type: 'peace', a: war.a, b: war.b, transferred });
 }
 
@@ -102,20 +131,22 @@ export function checkElimination(state: GameState, events: SimEvent[], changed: 
     if (!c.alive || c.id === 0 || c.tiles > 0) continue;
     c.alive = false;
     attackHooks.endAllOf(state, c.id);
-    for (const w of state.wars.filter(x => x.a === c.id || x.b === c.id)) {
-      const other = w.a === c.id ? w.b : w.a;
-      for (const s of statesOwnedBy(state, other)) for (const t of getStateTiles(state.map, s)) {
+    for (const w of warsOf(state, c.id)) {
+      for (const other of enemiesIn(w, c.id)) for (const s of statesOwnedBy(state, other)) for (const t of getStateTiles(state.map, s)) {
         if (state.owner[t] === other && state.controller[t] === c.id) setTile(state, t, other, other, changed);
       }
+      w.sideA = w.sideA.filter(x => x !== c.id);
+      w.sideB = w.sideB.filter(x => x !== c.id);
+      if (w.a === c.id) w.a = w.sideA[0] ?? 0;
+      if (w.b === c.id) w.b = w.sideB[0] ?? 0;
+      if (!w.sideA.length || !w.sideB.length) endWar(state, w);
     }
-    state.wars = state.wars.filter(w => w.a !== c.id && w.b !== c.id);
     state.peaceOffers = state.peaceOffers.filter(o => o.from !== c.id && o.to !== c.id);
     c.troops = 0;
     events.push({ type: 'eliminated', country: c.id });
   }
 }
 
-handlers.declareWar = (state, cmd: Extract<Command, { type: 'declareWar' }>, events) => declareWar(state, cmd.country, cmd.target, events);
 handlers.offerPeace = (state, cmd: Extract<Command, { type: 'offerPeace' }>, events, changed) => offerPeace(state, cmd.country, cmd.target, events, changed);
 handlers.respondPeace = (state, cmd: Extract<Command, { type: 'respondPeace' }>, events, changed) => {
   const offer = state.peaceOffers.find(o => o.from === cmd.from && o.to === cmd.country);

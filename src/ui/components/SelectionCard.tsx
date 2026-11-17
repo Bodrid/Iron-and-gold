@@ -29,10 +29,10 @@ export function SelectionCard() {
         {!d.owner && <button class="war" onClick={() => session.game!.attack(0)}>Attack</button>}
         {boatable && <button onClick={() => session.game!.send({ type: 'navalInvasion', country: me, target: d.owner, tile: beach, ratio: ui.attackRatio.value })}>Send boat</button>}
         {owner && !mine && atWar && <button class="war" onClick={() => session.game!.attack(owner.id)}>Attack</button>}
-        {owner && !mine && !atWar && !confirm && <button onClick={() => (ui.confirmWar.value = owner.id)}>Declare war</button>}
+        {owner && !mine && !atWar && !confirm && <button onClick={() => (ui.confirmWar.value = owner.id)}>Demand this state</button>}
         {owner && !mine && !atWar && confirm && (
           <>
-            <button class="war" onClick={() => { session.game!.send({ type: 'declareWar', country: me, target: owner.id }); ui.confirmWar.value = null; }}>Yes, declare war on {owner.name}</button>
+            <button class="war" onClick={() => { session.game!.send({ type: 'startPlay', country: me, target: owner.id, demands: [{ kind: 'state', state: d.id }] }); ui.confirmWar.value = null; }}>Yes, demand {d.name} from {owner.name}</button>
             <button class="ghost" onClick={() => (ui.confirmWar.value = null)}>Cancel</button>
           </>
         )}

@@ -14,7 +14,7 @@ export function summarize(state: GameState, c: Country): CountrySummary {
     id: c.id, tag: c.tag, name: c.name, color: c.color, alive: c.alive, isPlayer: c.isPlayer, capitalState: c.capitalState,
     troops: Math.round(c.troops), maxTroops: c.maxTroops, money: c.money, income: c.income, gdp: c.gdp, population: c.population, sol: c.sol,
     literacy: c.literacy, tiles: c.tiles, researchPoints: c.researchPoints,
-    atWarWith: state.wars.filter(w => w.a === c.id || w.b === c.id).map(w => (w.a === c.id ? w.b : w.a)),
+    atWarWith: state.wars.flatMap(w => (w.sideA.includes(c.id) ? w.sideB : w.sideB.includes(c.id) ? w.sideA : [])),
     stockpile: { ...c.stockpile }, prices: { ...c.prices }, produced: { ...c.produced }, demanded: { ...c.demanded },
     history: c.isPlayer ? c.history.map(h => ({ tick: h.tick, gdp: h.gdp, population: h.population, sol: h.sol })) : [],
   };

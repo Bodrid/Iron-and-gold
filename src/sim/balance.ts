@@ -130,6 +130,12 @@ export const BALANCE = {
     COALITION_RELATION: -15,
     /** Infamy per state taken in a peace deal (stage-1 placeholder peace). */
     INFAMY_PER_STATE: 4,
+    PLAY_DAYS: 60,
+    /** The target gives in if its side is weaker than this share of the initiator's side. */
+    BACK_DOWN_RATIO: 0.5,
+    MAX_DEMANDS: 3,
+    REPARATIONS_YEARS: 5,
+    REPARATIONS_SHARE: 0.1,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

@@ -19,7 +19,7 @@ function makeCountry(id: number, def: CountryDef, capitalState: number, isPlayer
     id, tag: def.tag, name: def.name, color: def.color, alive: id !== 0, isPlayer, capitalState, difficulty,
     personality: def.personality ?? 'default', troops: 0, maxTroops: 0, money: def.money,
     stockpile: emptyGoods(), prices: { ...BASE_PRICE }, produced: emptyGoods(), demanded: emptyGoods(),
-    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, tradeIncome: 0, infamy: 0, tiles: 0, controlled: 0, population: 0, history: [],
+    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, tradeIncome: 0, infamy: 0, overlord: 0, tiles: 0, controlled: 0, population: 0, history: [],
   };
 }
 
@@ -57,7 +57,7 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     map, owner: new Uint16Array(n), controller: new Uint16Array(n),
     countries: [placeholderCountry()],
     states: map.states.map(s => ({ id: s.id, owner: s.id ? stateOwner[s.id] : 0, controller: s.id ? stateOwner[s.id] : 0, population: 0, buildings: [] })),
-    constructions: [], attacks: [], wars: [], peaceOffers: [], tradeRoutes: [], tradeBlocks: [], tradeOff: [], ships: [], shipBuilds: [], relations: new Int16Array(0), diploActions: [], treaties: [], treatyOffers: [], coalitions: [], nextId: 1, outcome: null,
+    constructions: [], attacks: [], wars: [], plays: [], reparations: [], peaceOffers: [], tradeRoutes: [], tradeBlocks: [], tradeOff: [], ships: [], shipBuilds: [], relations: new Int16Array(0), diploActions: [], treaties: [], treatyOffers: [], coalitions: [], nextId: 1, outcome: null,
   };
   start.countries.forEach((def, i) => {
     state.countries.push(makeCountry(i + 1, def, stateId(def.capital), def.tag === setup.playerTag, setup.difficulty));
