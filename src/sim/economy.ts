@@ -5,12 +5,13 @@ import { BASE_PRICE, GOODS } from '../content/goods';
 import { BALANCE } from './balance';
 import { TICKS_PER_DAY } from './calendar';
 import { statesOwnedBy } from './control';
+import { buildingUnlocked, mods, pctMult } from './mods';
 import { handlers, systems } from './registry';
 import type { Building, Command, Country, CountryId, GameState, Good, SimEvent } from './types';
 
 const E = BALANCE.economy;
 
-export type BuildRejection = 'notYours' | 'occupied' | 'noSlots' | 'needsCoast' | 'needsCoal' | 'needsIron' | 'needsFarmland' | 'needsForest' | 'maxLevel' | 'cantAfford' | 'tooManyConstructions';
+export type BuildRejection = 'needsTech' | 'notYours' | 'occupied' | 'noSlots' | 'needsCoast' | 'needsCoal' | 'needsIron' | 'needsFarmland' | 'needsForest' | 'maxLevel' | 'cantAfford' | 'tooManyConstructions';
 export type BuildCheck = { ok: true; cost: number } | { ok: false; reason: BuildRejection };
 
 /** Multipliers on building cost (Grand Master AI uses this). */
@@ -19,8 +20,9 @@ export const buildCostHooks: ((state: GameState, c: Country) => number)[] = [];
 export const researchHooks: ((state: GameState, c: Country) => number)[] = [];
 
 export function buildCost(state: GameState, country: CountryId, type: BuildingType): number {
-  let m = 1;
-  for (const h of buildCostHooks) m *= h(state, state.countries[country]);
+  const c = state.countries[country];
+  let m = pctMult(mods(state, c).buildCostPct);
+  for (const h of buildCostHooks) m *= h(state, c);
   return Math.round(BUILDINGS[type].cost * m);
 }
 
@@ -51,6 +53,7 @@ export function buildCheck(state: GameState, country: CountryId, stateId: number
   const sd = state.map.states[stateId];
   if (!def || !st || !stateId || st.owner !== country) return { ok: false, reason: 'notYours' };
   if (st.controller !== country) return { ok: false, reason: 'occupied' };
+  if (!buildingUnlocked(state.countries[country], type)) return { ok: false, reason: 'needsTech' };
   const r = def.requires ?? {};
   if (r.coastal && !sd.coastal) return { ok: false, reason: 'needsCoast' };
   if (r.coal && !sd.resources.coal) return { ok: false, reason: 'needsCoal' };
@@ -108,6 +111,7 @@ export function monthlyEconomy(state: GameState): void {
 }
 
 function countryMonth(state: GameState, c: Country): void {
+  const md = mods(state, c);
   const states = statesOwnedBy(state, c.id).filter(s => state.states[s].owner === c.id);
   const producing = states.filter(s => state.states[s].controller === c.id);
 
@@ -149,8 +153,9 @@ function countryMonth(state: GameState, c: Country): void {
       for (const g of GOODS) if (def.inputs[g]) eff = Math.min(eff, inputAvail[g]);
       for (const g of GOODS) if (def.inputs[g]) used[g] += def.inputs[g]! * b.level * eff;
       const local = b.type === 'farm' ? sd.resources.fertility : b.type === 'loggingCamp' ? Math.max(0.3, sd.resources.forest) : 1;
+      const techPct = md.output[b.type] + (def.category === 'industry' ? md.industryPct : 0);
       for (const g of GOODS) {
-        const out = (def.outputs[g] ?? 0) * b.level * eff * local * (1 + outputPct / 100) * (1 + c.literacy * BALANCE.growth.LITERACY_OUTPUT);
+        const out = (def.outputs[g] ?? 0) * b.level * eff * local * (1 + (outputPct + techPct) / 100) * (1 + c.literacy * BALANCE.growth.LITERACY_OUTPUT);
         produced[g] += out;
         stateValue += out * c.prices[g];
       }
@@ -170,7 +175,7 @@ function countryMonth(state: GameState, c: Country): void {
     sat[g] = want > 0 ? take / want : 1;
     demand[g] += want;
   }
-  c.sol = Math.max(0, Math.min(30, E.SOL_BASE + E.SOL_GRAIN * sat.grain + E.SOL_TEXTILES * sat.textiles + E.SOL_LUXURIES * sat.luxuries));
+  c.sol = Math.max(0, Math.min(30, E.SOL_BASE + E.SOL_GRAIN * sat.grain + E.SOL_TEXTILES * sat.textiles + E.SOL_LUXURIES * sat.luxuries + md.sol));
 
   // GDP at this month's prices, then new prices from supply and demand.
   let value = 0;
@@ -181,9 +186,9 @@ function countryMonth(state: GameState, c: Country): void {
   }
   c.produced = produced;
   c.demanded = demand;
-  c.income = (taxBase + taxBonus) * E.TAX_RATE - upkeep - c.troops * E.ARMY_UPKEEP;
+  c.income = (taxBase + taxBonus) * E.TAX_RATE * pctMult(md.taxPct) - upkeep - c.troops * E.ARMY_UPKEEP * pctMult(md.armyUpkeepPct);
   c.money += c.income;
-  let rm = 1;
+  let rm = pctMult(md.researchPct);
   for (const h of researchHooks) rm *= h(state, c);
   const R = BALANCE.research;
   c.researchRate = (R.BASE + R.POP * Math.sqrt(c.population / 1e6) * (0.5 + c.literacy) + research) * rm;

@@ -6,6 +6,7 @@ import { controlListeners, setTile, statesControlledBy } from './control';
 import { handlers, systems } from './registry';
 import { tileHash } from './rng';
 import { Heap } from './heap';
+import { mods, pctMult } from './mods';
 import { addCasualties, atWar, attackHooks } from './war';
 import type { Attack, Command, CountryId, GameState, SimEvent } from './types';
 
@@ -96,12 +97,14 @@ function fortLevel(state: GameState, tile: number): number {
   return n;
 }
 
-export function tileCost(state: GameState, tile: number, target: CountryId): number {
-  const base = staticCost(state, tile);
+/** Troops `attacker` spends to take `tile` from `target` (0 = unclaimed land). */
+export function tileCost(state: GameState, tile: number, target: CountryId, attacker: CountryId = 0): number {
+  const atk = attacker ? pctMult(mods(state, state.countries[attacker]).attackPct) : 1;
+  const base = staticCost(state, tile) / atk;
   if (target === 0) return base * C.UNCLAIMED_COST_MULT;
   const d = state.countries[target];
   const density = d.troops / Math.max(1, d.controlled);
-  return base * (1 + fortLevel(state, tile) * (C.FORT_MULT - 1)) * (1 + density / C.DENSITY_REF);
+  return base * pctMult(mods(state, d).defensePct) * (1 + fortLevel(state, tile) * (C.FORT_MULT - 1)) * (1 + density / C.DENSITY_REF);
 }
 
 export function launchAttack(state: GameState, cmd: Extract<Command, { type: 'attack' }>): string | null {
@@ -122,7 +125,7 @@ export function launchAttack(state: GameState, cmd: Extract<Command, { type: 'at
 
 /** Troops come ashore at a tile and fight on from there (naval invasions). Returns troops that could not land. */
 export function launchAttackFrom(state: GameState, attacker: CountryId, target: CountryId, troops: number, tile: number, changed: number[] = []): number {
-  const cost = tileCost(state, tile, target);
+  const cost = tileCost(state, tile, target, attacker);
   if (troops < cost + C.MIN_ATTACK_TROOPS) return troops;
   troops -= cost;
   setTile(state, tile, target === 0 ? attacker : state.owner[tile], attacker, changed);
@@ -149,7 +152,7 @@ export function combatTick(state: GameState, changed: number[], _events: SimEven
       while (heap.size && !isFrontier(state, heap.peek(), attack)) heap.pop();
       if (!heap.size) { done = true; break; }
       const tile = heap.peek();
-      const cost = tileCost(state, tile, attack.target);
+      const cost = tileCost(state, tile, attack.target, attack.attacker);
       if (attack.troops < cost) { done = true; break; }
       heap.pop();
       attack.troops -= cost;

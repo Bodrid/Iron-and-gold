@@ -5,6 +5,7 @@ import { TICKS_PER_DAY } from '../calendar';
 import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
 import { atWar } from '../war';
+import { mods, pctMult } from '../mods';
 import type { Command, CountryId, GameState, Ship, ShipOrder, SimEvent, TradeRoute } from '../types';
 import { getNavGrid, portCell, seaPath } from './nav';
 import { portStates, routeHooks } from './trade';
@@ -80,10 +81,10 @@ export function moveShips(state: GameState, events: SimEvent[]): void {
     if (!path) continue;
     const last = path.length - 1;
     if (s.kind === 'trade') {
-      s.pathPos += SHIPS.trade.speed * s.dir;
+      s.pathPos += SHIPS.trade.speed * pctMult(mods(state, state.countries[s.owner]).shipSpeedPct) * s.dir;
       if (s.pathPos >= last) { s.pathPos = last; s.dir = -1; } else if (s.pathPos <= 0) { s.pathPos = 0; s.dir = 1; }
     } else {
-      s.pathPos = Math.min(last, s.pathPos + SHIPS[s.kind].speed);
+      s.pathPos = Math.min(last, s.pathPos + SHIPS[s.kind].speed * pctMult(mods(state, state.countries[s.owner]).shipSpeedPct));
     }
     s.cell = path[Math.round(s.pathPos)];
   }
@@ -121,7 +122,7 @@ function neighbourhood(state: GameState, cell: number, buckets: Map<number, Ship
 }
 
 function battle(state: GameState, a: Ship[], b: Ship[], cell: number, events: SimEvent[]): CountryId {
-  const strength = (side: Ship[]) => side.reduce((n, s) => n + SHIPS[s.kind].strength * s.hp, 0);
+  const strength = (side: Ship[]) => side.reduce((n, s) => n + SHIPS[s.kind].strength * s.hp * pctMult(mods(state, state.countries[s.owner]).shipStrengthPct), 0);
   const sa = strength(a), sb = strength(b);
   const [win, lose, sw, sl] = sa >= sb ? [a, b, sa, sb] : [b, a, sb, sa];
   const N = BALANCE.navy;

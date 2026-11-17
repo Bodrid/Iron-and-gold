@@ -4,6 +4,7 @@ import { GOODS } from '../../content/goods';
 import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
 import { atWar } from '../war';
+import { mods, pctMult } from '../mods';
 import type { Command, Country, CountryId, GameState, Good, SimEvent, TradeRoute } from '../types';
 import { getNavGrid, portCell, seaPath } from './nav';
 
@@ -90,8 +91,8 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
     e.stockpile[r.good] -= amount;
     i.stockpile[r.good] += amount;
     const bonus = 1 + tradeHooks.bonus(state, r.exporter, r.importer);
-    const exportEarn = amount * e.prices[r.good] * T.EXPORT_EARN * bonus;
-    const importEarn = amount * i.prices[r.good] * T.IMPORT_EARN * bonus;
+    const exportEarn = amount * e.prices[r.good] * T.EXPORT_EARN * bonus * pctMult(mods(state, e).tradePct);
+    const importEarn = amount * i.prices[r.good] * T.IMPORT_EARN * bonus * pctMult(mods(state, i).tradePct);
     e.money += exportEarn; e.tradeIncome += exportEarn; e.income += exportEarn;
     i.money += importEarn; i.tradeIncome += importEarn; i.income += importEarn;
   }

@@ -1,6 +1,7 @@
 // The troop pool: max size from population and barracks, daily refill that consumes arms.
 import { BALANCE } from './balance';
 import { systems } from './registry';
+import { mods, pctMult } from './mods';
 import type { Country, GameState } from './types';
 
 const T = BALANCE.troops;
@@ -15,11 +16,12 @@ function buildingLevels(state: GameState, c: Country, type: string): number {
 export const refillBonusHooks: ((state: GameState, c: Country) => number)[] = [];
 
 export function recomputeMaxTroops(state: GameState, c: Country): void {
-  c.maxTroops = Math.round(c.population * T.MANPOWER_SHARE + buildingLevels(state, c, 'barracks') * T.BARRACKS_TROOPS);
+  c.maxTroops = Math.round((c.population * T.MANPOWER_SHARE + buildingLevels(state, c, 'barracks') * T.BARRACKS_TROOPS) * pctMult(mods(state, c).maxTroopsPct));
 }
 
 export function refillBonusPct(state: GameState, c: Country): number {
   let pct = Math.min(T.BARRACKS_REFILL_CAP_PCT, buildingLevels(state, c, 'barracks') * T.BARRACKS_REFILL_PCT) + buildingLevels(state, c, 'railway') * T.RAILWAY_REFILL_PCT;
+  pct += mods(state, c).refillPct;
   for (const h of refillBonusHooks) pct += h(state, c);
   return pct;
 }
