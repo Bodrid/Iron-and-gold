@@ -218,6 +218,16 @@ export function seedEconomy(state: GameState): void {
   }
 }
 
+/** Fills in GDP, income, prices and production for display at game start, without spending anything. */
+export function primeEconomy(state: GameState): void {
+  for (const c of state.countries) {
+    if (!c.alive) continue;
+    const money = c.money, stock = { ...c.stockpile }, rp = c.researchPoints;
+    countryMonth(state, c);
+    c.money = money; c.stockpile = stock; c.researchPoints = rp;
+  }
+}
+
 // ---- wiring ----
 handlers.build = (state, cmd: Extract<Command, { type: 'build' }>) => {
   if (!BUILDING_TYPES.includes(cmd.building)) return 'unknown building';
@@ -227,5 +237,6 @@ handlers.build = (state, cmd: Extract<Command, { type: 'build' }>) => {
   state.constructions.push({ id: state.nextId++, country: cmd.country, state: cmd.state, type: cmd.building, doneTick: state.tick + BUILDINGS[cmd.building].buildDays * TICKS_PER_DAY });
   return null;
 };
+systems.init.push(state => primeEconomy(state));
 systems.day.push((state, events) => constructionTick(state, events));
 systems.month.push(state => monthlyEconomy(state));

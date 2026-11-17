@@ -36,8 +36,9 @@ export class Overlay {
       if (px < 9) continue;
       const [x, y] = cam.tileToScreen(l.x, l.y);
       if (x < -300 || y < -100 || x > cam.viewW + 300 || y > cam.viewH + 100) continue;
-      g.font = `700 ${Math.min(px, 64)}px -apple-system, "SF Pro Display", "Segoe UI", system-ui, sans-serif`;
-      g.lineWidth = Math.max(2, px / 7);
+      const fontPx = Math.min(px, 34);
+      g.font = `700 ${fontPx}px -apple-system, "SF Pro Display", "Segoe UI", system-ui, sans-serif`;
+      g.lineWidth = Math.max(2, fontPx / 7);
       g.strokeStyle = 'rgba(10,16,24,0.85)';
       g.fillStyle = l.country === playerId ? '#ffe9a8' : '#ffffff';
       const text = l.text.toUpperCase();

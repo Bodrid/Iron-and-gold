@@ -110,3 +110,11 @@ it('records a history sample each month', () => {
   expect(g.countries[1].history.length).toBe(3);
   expect(stateId(g, 'T-A')).toBe(1);
 });
+
+it('a new game already shows GDP and income without changing money or stockpiles', () => {
+  const g = makeGame({ population: 2_000_000, seedEconomy: true });
+  expect(g.countries[1].gdp).toBeGreaterThan(0);
+  expect(g.countries[1].income).not.toBe(0);
+  expect(g.countries[1].money).toBe(10_000);
+  expect(g.countries[1].history).toHaveLength(0);
+});
