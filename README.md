@@ -5,11 +5,11 @@ A single-player grand strategy game for iPhone and iPad (it runs on PC too): Ope
 ## Play
 
 - **iPhone / iPad:** open the game's site in Safari, tap **Share → Add to Home Screen**, then launch it from the icon. It runs full screen and works offline.
-- **PC:** open the site in any modern browser. Scroll to zoom, drag to pan, keys: Space pause, 1–3 speed, B/A/T/D/R/N tabs, Esc close, W/S and arrow keys pan.
+- **PC:** open the site in any modern browser. Scroll to zoom, drag to pan, keys: Space pause, 1–3 speed, B/A/T/D/R/N tabs (P: power bloc on wide screens), Esc close, W/S and arrow keys pan.
 
 The game saves itself every 1 January and whenever you leave the app; **Continue** on the menu picks up where you left off.
 
-## What's in this version (stages 1–4)
+## What's in this version (stages 1–5)
 
 - The real world map with 958 named states and the 1836 borders (71 countries).
 - Tile-by-tile attacks with an attack slider, colonising unclaimed land, wars, occupation and a simple peace deal.
@@ -23,7 +23,10 @@ The game saves itself every 1 January and whenever you leave the app; **Continue
 - Research: 60 techs in three trees (Production, Military, Society) across five eras from 1770 to 1940. Techs unlock railways, raise output, troops, ships, growth and living standards; a tech most of the world knows is cheaper, one ahead of its time dearer (Research tab).
 - Laws and politics: eight law areas (government, voting, trade, labour, army, taxes, education, welfare), six interest groups whose clout comes from your economy, laws that take months to pass and need support, and revolts: groups that stay angry rise up as a rebel country and fight for the law they want (Nation tab).
 
-Coming next, in order: power blocs and companies, history events and the 1776 start, deeper AI. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
+- Power blocs: major powers found a trade league, empire, military alliance or ideological union with 2–3 of 10 principles (free trade, common defence, drill, shared science, tribute…); leaders get the full buffs, members half and protection. Invite countries, or force them in with a "Join our power bloc" demand (Diplomacy tab; its own Bloc tab on iPad).
+- Companies and charters: found historical companies (East India Company, Krupp, Mitsui…) or generic ones; each boosts its buildings more as you build them, and a charter (colonial, monopoly, investment) gives more at a price (Nation tab).
+
+Coming next, in order: history events, formable nations and the 1776 start; then deeper AI and balance. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
 
 ## Develop
 

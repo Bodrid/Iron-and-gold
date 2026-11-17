@@ -19,11 +19,16 @@ export const buildCostHooks: ((state: GameState, c: Country) => number)[] = [];
 /** Multipliers on research (Grand Master AI uses this). */
 export const researchHooks: ((state: GameState, c: Country) => number)[] = [];
 
-export function buildCost(state: GameState, country: CountryId, type: BuildingType): number {
+/** Multiplier on building costs for a country (techs, laws, Grand Master bonus). */
+export function buildCostMult(state: GameState, country: CountryId): number {
   const c = state.countries[country];
   let m = pctMult(mods(state, c).buildCostPct);
   for (const h of buildCostHooks) m *= h(state, c);
-  return Math.round(BUILDINGS[type].cost * m);
+  return m;
+}
+
+export function buildCost(state: GameState, country: CountryId, type: BuildingType, mult = buildCostMult(state, country)): number {
+  return Math.round(BUILDINGS[type].cost * mult);
 }
 
 export function levelOf(state: GameState, stateId: number, type: BuildingType): number {

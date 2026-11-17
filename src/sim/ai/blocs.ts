@@ -28,12 +28,17 @@ export function blocDecisions(state: GameState, c: Country, d: DifficultyParams,
     }
   } else if (mine.leader === c.id) {
     // Invite one likely member: AI friends who will say yes, or the player now and then.
-    const candidates = state.countries.filter(x => x.alive && x.id && x.id !== c.id && !inviteCheck(state, c.id, x.id))
-      .filter(x => x.isPlayer
-        ? relation(state, c.id, x.id) >= B.AI_INVITE_PLAYER_RELATION && state.tick - (mine.lastPlayerInvite ?? -Infinity) >= B.PLAYER_INVITE_DAYS * TICKS_PER_DAY
-        : blocPolicy.accepts(state, x.id, mine))
+    // Cheap filters first (relations), then the full checks on the warmest few.
+    const warm = state.countries.filter(x => x.alive && x.id && x.id !== c.id && relation(state, c.id, x.id) >= B.INVITE_MIN_RELATION)
       .sort((a, b) => relation(state, c.id, b.id) - relation(state, c.id, a.id) || b.troops - a.troops || a.id - b.id);
-    const pick = candidates[0];
+    let pick: Country | undefined;
+    for (const x of warm.slice(0, B.AI_INVITE_CANDIDATES)) {
+      if (inviteCheck(state, c.id, x.id)) continue;
+      const ok = x.isPlayer
+        ? relation(state, c.id, x.id) >= B.AI_INVITE_PLAYER_RELATION && state.tick - (mine.lastPlayerInvite ?? -Infinity) >= B.PLAYER_INVITE_DAYS * TICKS_PER_DAY
+        : blocPolicy.accepts(state, x.id, mine);
+      if (ok) { pick = x; break; }
+    }
     if (pick) {
       if (pick.isPlayer) mine.lastPlayerInvite = state.tick;
       issue({ type: 'inviteToBloc', country: c.id, target: pick.id });

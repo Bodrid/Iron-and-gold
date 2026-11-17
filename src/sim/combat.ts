@@ -2,7 +2,7 @@
 import { getStateTiles } from '../map/stateTiles';
 import { RIVER_BIT, Terrain, TERRAIN_MASK } from '../map/format';
 import { BALANCE } from './balance';
-import { controlListeners, setTile, statesControlledBy } from './control';
+import { controlListeners, controlsAnyIn, setTile, statesControlledBy } from './control';
 import { handlers, systems } from './registry';
 import { tileHash } from './rng';
 import { Heap } from './heap';
@@ -81,11 +81,16 @@ export function canAttack(state: GameState, attacker: CountryId, target: Country
 }
 
 export function sharesBorder(state: GameState, a: CountryId, b: CountryId): boolean {
-  for (const s of statesControlledBy(state, a)) for (const t of getStateTiles(state.map, s)) {
-    if (state.controller[t] !== a) continue;
-    let hit = false;
-    forEachNeighbor(state, t, n => { if (!hit && isLand(state, n) && state.controller[n] === b) hit = true; });
-    if (hit) return true;
+  // Only states where b holds tiles, or next to one, can hold a shared border (state neighbours use the same
+  // 4-way adjacency as tiles), so big countries don't scan every tile they control.
+  for (const s of statesControlledBy(state, a)) {
+    if (!controlsAnyIn(state, s, b) && !state.map.states[s].neighbors.some(n => controlsAnyIn(state, n, b))) continue;
+    for (const t of getStateTiles(state.map, s)) {
+      if (state.controller[t] !== a) continue;
+      let hit = false;
+      forEachNeighbor(state, t, n => { if (!hit && isLand(state, n) && state.controller[n] === b) hit = true; });
+      if (hit) return true;
+    }
   }
   return false;
 }
@@ -98,13 +103,18 @@ function fortLevel(state: GameState, tile: number): number {
 }
 
 /** Troops `attacker` spends to take `tile` from `target` (0 = unclaimed land). */
-export function tileCost(state: GameState, tile: number, target: CountryId, attacker: CountryId = 0): number {
-  const atk = attacker ? pctMult(mods(state, state.countries[attacker]).attackPct) : 1;
-  const base = staticCost(state, tile) / atk;
-  if (target === 0) return base * C.UNCLAIMED_COST_MULT / (attacker ? pctMult(mods(state, state.countries[attacker]).colonisePct) : 1);
+/** Tech/law/bloc multipliers for one attacker against one target (hoisted out of per-tile loops). */
+export function attackMults(state: GameState, attacker: CountryId, target: CountryId): { atk: number; colonise: number; def: number } {
+  const a = attacker ? mods(state, state.countries[attacker]) : null;
+  return { atk: a ? pctMult(a.attackPct) : 1, colonise: a ? pctMult(a.colonisePct) : 1, def: target ? pctMult(mods(state, state.countries[target]).defensePct) : 1 };
+}
+
+export function tileCost(state: GameState, tile: number, target: CountryId, attacker: CountryId = 0, m = attackMults(state, attacker, target)): number {
+  const base = staticCost(state, tile) / m.atk;
+  if (target === 0) return base * C.UNCLAIMED_COST_MULT / m.colonise;
   const d = state.countries[target];
   const density = d.troops / Math.max(1, d.controlled);
-  return base * pctMult(mods(state, d).defensePct) * (1 + fortLevel(state, tile) * (C.FORT_MULT - 1)) * (1 + density / C.DENSITY_REF);
+  return base * m.def * (1 + fortLevel(state, tile) * (C.FORT_MULT - 1)) * (1 + density / C.DENSITY_REF);
 }
 
 export function launchAttack(state: GameState, cmd: Extract<Command, { type: 'attack' }>): string | null {
@@ -148,11 +158,12 @@ export function combatTick(state: GameState, changed: number[], _events: SimEven
     const heap = heapOf(state, attack);
     const steps = Math.max(1, Math.min(C.MAX_TILES_PER_TICK, Math.floor(attack.troops / C.TROOPS_PER_TILE_RATE)));
     let done = false;
+    const m = attackMults(state, attack.attacker, attack.target);
     for (let k = 0; k < steps; k++) {
       while (heap.size && !isFrontier(state, heap.peek(), attack)) heap.pop();
       if (!heap.size) { done = true; break; }
       const tile = heap.peek();
-      const cost = tileCost(state, tile, attack.target, attack.attacker);
+      const cost = tileCost(state, tile, attack.target, attack.attacker, m);
       if (attack.troops < cost) { done = true; break; }
       heap.pop();
       attack.troops -= cost;

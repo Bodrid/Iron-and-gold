@@ -55,6 +55,11 @@ export function controllersOf(state: GameState, stateId: number): CountryId[] {
   return [...counts(state).controlled[stateId].keys()].sort((a, b) => a - b);
 }
 
+/** Whether `country` (0 = unclaimed) controls any tile in the state. */
+export function controlsAnyIn(state: GameState, stateId: number, country: CountryId): boolean {
+  return counts(state).controlled[stateId]?.has(country) ?? false;
+}
+
 /** States where `country` owns at least one tile, ascending. */
 export function statesOwnedBy(state: GameState, country: CountryId): number[] {
   const c = counts(state);

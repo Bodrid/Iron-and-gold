@@ -3,7 +3,7 @@ import { BUILDINGS, BUILDING_TYPES, type BuildingType } from '../../content/buil
 import { GOODS } from '../../content/goods';
 import { BALANCE } from '../balance';
 import { controllersOf, statesControlledBy } from '../control';
-import { buildCost, levelOf, maxConstructions, stateSlots } from '../economy';
+import { buildCost, buildCostMult, levelOf, maxConstructions, stateSlots } from '../economy';
 import { routeCapacity, routesOf, shortage, surplus } from '../naval/trade';
 import type { Country, CountryId, GameState } from '../types';
 import type { Personality } from './personality';
@@ -32,6 +32,7 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
   const out: BuildOption[] = [];
   const E = BALANCE.economy;
   if (state.constructions.filter(x => x.country === c.id).length >= maxConstructions(state, c.id)) return out;
+  const costMult = buildCostMult(state, c.id);
   let universities = 0;
   for (const s of state.states) if (s.owner === c.id) for (const b of s.buildings) if (b.type === 'university') universities += b.level;
   const short = (g: (typeof GOODS)[number]) => c.demanded[g] > c.produced[g] + c.stockpile[g] * 0.25;
@@ -53,7 +54,7 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
       if (r.minForest !== undefined && sd.resources.forest < r.minForest) continue;
       const queued = state.constructions.filter(q => q.state === st.id && q.type === type).length;
       if (def.maxLevel !== undefined && levelOf(state, st.id, type) + queued >= def.maxLevel) continue;
-      const cost = buildCost(state, c.id, type);
+      const cost = buildCost(state, c.id, type, costMult);
       if (cost > c.money) continue;
       let monthly = 0;
       const local = type === 'farm' ? sd.resources.fertility : type === 'loggingCamp' ? Math.max(0.3, sd.resources.forest) : 1;

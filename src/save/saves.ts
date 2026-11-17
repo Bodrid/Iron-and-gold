@@ -7,7 +7,7 @@ import { getNavGrid } from '../sim/naval/nav';
 import type { GameState } from '../sim/types';
 
 export type SaveSlot = 'auto' | 'background' | '1' | '2' | '3';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const DB_NAME = 'iron-and-gold-saves';
 const STORE = 'saves';
 

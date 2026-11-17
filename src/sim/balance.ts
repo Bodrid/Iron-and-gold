@@ -156,6 +156,8 @@ export const BALANCE = {
     /** An AI bloc invites the player at most this often. */
     PLAYER_INVITE_DAYS: 180,
     AI_LEAVE_RELATION: -20,
+    /** How many of its warmest contacts an AI bloc leader considers inviting per decision. */
+    AI_INVITE_CANDIDATES: 6,
   },
   companies: {
     MAX: 4,

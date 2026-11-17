@@ -71,7 +71,7 @@ it('save and load mid-voyage replays identically (ships, routes, invasions)', as
   expect(hashState(loaded)).toBe(hashState(g));
 }, 60_000);
 
-it('the save format is version 4', () => { expect(SAVE_VERSION).toBe(4); });
+it('the save format is version 5', () => { expect(SAVE_VERSION).toBe(5); });
 
 it('save and load in the middle of a diplomatic play replays identically', async () => {
   const { makeGame } = await import('../sim/testing');
@@ -94,6 +94,21 @@ it('save and load during research, a law being passed and a revolt replays ident
   c.groups.workers.clout = 0.3; c.groups.workers.radicalism = 100;
   runYears(g, 0.1);
   expect(g.countries.some(x => x.rebel)).toBe(true);
+  await saveGame('1', g);
+  const loaded = deserialize((await loadGame('1')) as SavedGame, g.map);
+  expect(hashState(loaded)).toBe(hashState(g));
+  runYears(g, 1);
+  runYears(loaded, 1);
+  expect(hashState(loaded)).toBe(hashState(g));
+}, 60_000);
+
+it('save and load with power blocs and companies replays identically', async () => {
+  const g = makeSmallWorldGame({ seed: 11 });
+  runYears(g, 1);
+  const [a, b] = g.countries.filter(x => x.alive && x.id && !x.isPlayer);
+  g.blocs.push({ id: g.nextId++, leader: a.id, type: 'empire', principles: ['imperialTribute', 'militaryDrill'], members: [b.id], founded: g.tick, principlesSet: g.tick });
+  a.companies.push({ id: 'agriculturalSociety', founded: g.tick, charter: 'monopoly', bonus: 0 });
+  runYears(g, 0.2);
   await saveGame('1', g);
   const loaded = deserialize((await loadGame('1')) as SavedGame, g.map);
   expect(hashState(loaded)).toBe(hashState(g));
