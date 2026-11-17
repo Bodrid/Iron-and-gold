@@ -198,7 +198,7 @@ function countryMonth(state: GameState, c: Country): void {
   const R = BALANCE.research;
   // Universities give less each: the tenth adds far less than the first.
   const research = BALANCE.growth.RESEARCH_PER_LEVEL * (uniLevels / (1 + uniLevels / R.UNIVERSITY_SOFT_CAP)) * (0.5 + c.literacy);
-  c.researchRate = (R.BASE + R.POP * Math.sqrt(c.population / 1e6) * (0.5 + c.literacy) + research) * rm;
+  c.researchRate = (R.BASE + R.POP * Math.sqrt(c.population / 1e6) * (R.LITERACY_BASE + R.LITERACY_MULT * c.literacy) + research) * rm;
   c.researchPoints += c.researchRate;
 }
 

@@ -19,7 +19,8 @@ export interface StartDef { id: string; name: string; startDate: GameDate; endYe
   /** Historical population (people) by modern territory code, spread over that territory's states; overrides CountryDef.population there. */ regionPopulation?: Record<string, number>;
   /** Every tech up to this era is known at the start (default: the era before the start year's). */ knownEra?: number;
   /** Extra known techs by country tag. */ extraTechs?: Record<string, string[]>;
-  /** Starting laws by country tag (the rest are the defaults). */ laws?: Record<string, Partial<Record<LawArea, string>>> }
+  /** Starting laws by country tag (the rest are the defaults). */ laws?: Record<string, Partial<Record<LawArea, string>>>;
+  /** Starting literacy by tag, and for everyone else. */ literacy?: Record<string, number>; defaultLiteracy?: number }
 export interface GameSetup { startId: string; playerTag: string; difficulty: Difficulty; rivalsHarder: boolean; seed: number; /** Tests/tools: AI countries do nothing. */ aiDisabled?: boolean }
 
 export interface StatSample { tick: number; gdp: number; population: number; sol: number; tiles: number; money: number }

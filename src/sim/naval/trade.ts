@@ -99,14 +99,25 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
   // Open at most one new route per country per month.
   const used = new Map<CountryId, number>();
   for (const r of state.tradeRoutes) { used.set(r.exporter, (used.get(r.exporter) ?? 0) + 1); used.set(r.importer, (used.get(r.importer) ?? 0) + 1); }
-  const free = (c: CountryId) => routeCapacity(state, c) - (used.get(c) ?? 0);
+  // Ports and capacity don't change while routes open, so look them up once (the same answers, far fewer state scans).
+  const capacity = new Map<CountryId, number>(), ports = new Map<CountryId, number>(), main = new Map<CountryId, number>();
+  for (const st of state.states) {
+    if (!st.id || !st.owner || st.owner !== st.controller) continue;
+    const port = st.buildings.find(b => b.type === 'port' && b.level > 0);
+    if (!port) continue;
+    capacity.set(st.owner, (capacity.get(st.owner) ?? 0) + port.level * (BUILDINGS.port.effects?.tradeRoutes ?? 0));
+    if (portCell(state.map, st.id) < 0) continue;
+    ports.set(st.owner, (ports.get(st.owner) ?? 0) + 1);
+  }
+  const mainOf = (c: CountryId) => { if (!main.has(c)) main.set(c, mainPort(state, c)); return main.get(c)!; };
+  const free = (c: CountryId) => (capacity.get(c) ?? 0) - (used.get(c) ?? 0);
   // Sea-lane searches are the expensive part: a few new ones per month, countries taking turns to go first.
   let budget = T.PATH_SEARCHES_PER_MONTH;
   const n = state.countries.length - 1;
   const offset = n > 0 ? (Math.floor(state.tick / 120) * 7) % n : 0;
   const order = state.countries.slice(1).map((_, k) => state.countries[1 + ((k + offset) % n)]);
   for (const e of order) {
-    if (!e.alive || !e.id || state.tradeOff.includes(e.id) || free(e.id) <= 0 || !portStates(state, e.id).length) continue;
+    if (!e.alive || !e.id || state.tradeOff.includes(e.id) || free(e.id) <= 0 || !ports.get(e.id)) continue;
     const goods = GOODS.filter(g => surplus(state, e, g) > 0).sort((a, b) => surplus(state, e, b) * e.prices[b] - surplus(state, e, a) * e.prices[a]);
     for (const g of goods) {
       const candidates = state.countries.filter(i => i.alive && i.id && i.id !== e.id && !state.tradeOff.includes(i.id) && free(i.id) > 0
@@ -115,9 +126,9 @@ export function monthlyTrade(state: GameState, _events: SimEvent[]): void {
         .sort((a, b) => shortage(state, b, g) - shortage(state, a, g) || a.id - b.id)
         .slice(0, T.CANDIDATES);
       // Rank by shortage over straight-line distance; run the (expensive) sea-lane search only to confirm the choice.
-      const from = mainPort(state, e.id), fc = portCell(state.map, from);
+      const from = mainOf(e.id), fc = portCell(state.map, from);
       const grid = getNavGrid(state.map);
-      const ranked = candidates.map(i => ({ i, to: mainPort(state, i.id) })).filter(x => x.to && grid.region[portCell(state.map, x.to)] === grid.region[fc])
+      const ranked = candidates.map(i => ({ i, to: mainOf(i.id) })).filter(x => x.to && grid.region[portCell(state.map, x.to)] === grid.region[fc])
         .map(x => ({ ...x, score: shortage(state, x.i, g) / (1 + cellDistance(state, fc, portCell(state.map, x.to)) / 50) }))
         .sort((a, b) => b.score - a.score || a.i.id - b.i.id);
       let pick: { i: Country; pair: { from: number; to: number } } | null = null;

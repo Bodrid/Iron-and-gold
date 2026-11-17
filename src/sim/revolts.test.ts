@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
 import { step } from './step';
-import { makeGame, runDays, stateId, invariantProblems } from './testing';
+import { makeGame, runDays, stateId, invariantProblems, occupy } from './testing';
 import { atWar, startWar } from './war';
 import { startRevolt, wantedLaw, revoltDay } from './revolts';
 import { makePuppet } from './diplomacy/subjects';
@@ -108,10 +108,10 @@ it('when a revolt ends, nothing on the map or in any war still belongs to the de
   // XXX occupies YYY's state in a separate war, then the rebels take it from XXX.
   const other = startWar(g, [1], [2], [], []);
   const yTiles = g.map.states.filter(s => s.key === 'T-Y').flatMap(s => Array.from(stateTilesOf(g.map, s.id)));
-  for (const t of yTiles) { g.controller[t] = 1; }
+  occupy(g, 1, yTiles);
   angry(g);
   const rebels = startRevolt(g, g.countries[1], 'workers', [], [])!;
-  for (const t of yTiles) g.controller[t] = rebels.id;
+  occupy(g, rebels.id, yTiles);
   const third = startWar(g, [3], [rebels.id], [], []);                    // ZZZ also fights the rebels
   void third; void other;
   const war = atWar(g, rebels.id, 1)!;

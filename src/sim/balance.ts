@@ -56,11 +56,11 @@ export const BALANCE = {
     /** Monthly consumption per 1,000 people. */
     GRAIN_PER_K: 2,
     TEXTILES_PER_K: 0.5,
-    LUXURIES_PER_K: 0.2,
+    LUXURIES_PER_K: 0.4,
     SOL_BASE: 2,
-    SOL_GRAIN: 8,
-    SOL_TEXTILES: 6,
-    SOL_LUXURIES: 6,
+    SOL_GRAIN: 6,
+    SOL_TEXTILES: 5,
+    SOL_LUXURIES: 5,
     TAX_RATE: 0.2,
     /** Pounds per soldier per month. */
     ARMY_UPKEEP: 0.1,
@@ -76,9 +76,9 @@ export const BALANCE = {
   },
   growth: {
     /** Monthly population growth at SoL 10. */
-    BASE_GROWTH: 0.0008,
+    BASE_GROWTH: 0.0004,
     /** Extra monthly growth per 10 SoL above 10 (negative below). */
-    SOL_GROWTH: 0.0006,
+    SOL_GROWTH: 0.00015,
     UNIVERSITY_LITERACY: 0.002,
     /** Literacy gained per month everywhere. */
     BASE_LITERACY_GROWTH: 0.0003,
@@ -88,13 +88,15 @@ export const BALANCE = {
   },
   research: {
     /** Points per month every country gets (so small countries still advance). */
-    BASE: 4,
-    /** Points per month per sqrt(millions of people), times (0.5 + literacy). */
+    BASE: 6,
+    /** Points per month per sqrt(millions of people), times (LITERACY_BASE + LITERACY_MULT × literacy). */
     POP: 3,
+    LITERACY_BASE: 0.2,
+    LITERACY_MULT: 1.6,
     /** A tech every country knows costs this much less. */
     SPREAD_DISCOUNT: 0.5,
     /** Extra cost per era ahead of the current one. */
-    AHEAD_PENALTY: 0.3,
+    AHEAD_PENALTY: 0.6,
     MAX_QUEUE: 12,
     /** University research is levels / (1 + levels / this). */
     UNIVERSITY_SOFT_CAP: 12,

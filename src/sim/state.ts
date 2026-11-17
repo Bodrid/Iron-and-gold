@@ -59,6 +59,7 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
       if (!TECH_BY_ID[t]) throw new Error(`Unknown tech "${t}" in start ${start.id}`);
       if (!c.techs.includes(t)) c.techs.push(t);
     }
+    c.literacy = start.literacy?.[c.tag] ?? start.defaultLiteracy ?? c.literacy;
     for (const [area, law] of Object.entries(start.laws?.[c.tag] ?? {})) {
       if (LAW_BY_ID[law]?.area !== area) throw new Error(`Bad law "${law}" for ${area} in start ${start.id}`);
       c.laws[area as keyof typeof c.laws] = law;

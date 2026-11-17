@@ -2,7 +2,7 @@
 // returning occupied land and eliminating countries that lose everything.
 import { getStateTiles } from '../map/stateTiles';
 import { TICKS_PER_DAY } from './calendar';
-import { setTile, stateControlShare, statesOwnedBy } from './control';
+import { setTile, stateControlShare, statesControlledBy, statesOwnedBy } from './control';
 import { handlers, systems } from './registry';
 import type { Command, CountryId, GameState, SimEvent, War } from './types';
 
@@ -112,7 +112,8 @@ export function eliminate(state: GameState, id: CountryId, events: SimEvent[], c
   if (!c.alive) return;
   c.alive = false;
   attackHooks.endAllOf(state, id);
-  for (let t = 0; t < state.controller.length; t++) {
+  // Only states where it still controls tiles (per-state counts), not the whole map.
+  for (const s of statesControlledBy(state, id)) for (const t of getStateTiles(state.map, s)) {
     if (state.controller[t] === id && state.owner[t] !== id) setTile(state, t, state.owner[t], state.owner[t], changed);
   }
   for (const w of warsOf(state, id)) {
