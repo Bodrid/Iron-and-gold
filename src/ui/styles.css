@@ -162,3 +162,18 @@ button.big small { font-weight: 400; font-size: 12px; opacity: 0.8; }
 .overlay-box h2 { margin: 0; }
 .scores tr.me td { color: var(--gold); font-weight: 600; }
 .nation-actions { margin-top: 12px; justify-content: flex-end; }
+
+/* diplomacy */
+.chip-rel { border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.rel-hostile { background: rgba(229, 83, 75, 0.3); color: #ffb3ae; }
+.rel-cold { background: rgba(110, 168, 255, 0.18); color: #b9d4ff; }
+.rel-neutral { background: rgba(255, 255, 255, 0.1); color: var(--dim); }
+.rel-cordial { background: rgba(127, 212, 143, 0.2); color: #bff0c8; }
+.rel-friendly { background: rgba(127, 212, 143, 0.4); color: #e6ffe9; }
+.play-card { display: grid; gap: 4px; padding: 8px 10px; margin: 6px 0; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.play-card small { color: var(--dim); }
+.sides { height: 8px; border-radius: 99px; background: rgba(110, 168, 255, 0.5); overflow: hidden; }
+.side-a { height: 100%; background: var(--war); }
+.relbar { position: relative; height: 8px; border-radius: 99px; background: linear-gradient(90deg, #e5534b, #8fa3b8 50%, #7fd48f); margin: 6px 0; }
+.relbar > div { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff; transform: translateX(-50%); }
+.country-panel .flag { vertical-align: -2px; margin-right: 6px; }

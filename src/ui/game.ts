@@ -123,14 +123,15 @@ export class GameController {
     if (f.ships) { ui.ships.value = f.ships; this.dirty = true; }
     if (f.trade) ui.trade.value = f.trade;
     if (f.fleet) ui.fleet.value = f.fleet;
+    if (f.diplo) ui.diplo.value = f.diplo;
+    if (f.countryDetail !== undefined) ui.countryDetail.value = f.countryDetail;
   }
 
   private onEvents(events: SimEvent[]) {
     const me = ui.playerId.value;
     const name = (id: number) => country(id)?.name ?? 'Someone';
     for (const e of events) {
-      if (e.type === 'warDeclared' && e.b === me) { pushToast({ kind: 'war', text: `${name(e.a)} has declared war on you!` }); haptic('heavy'); }
-      else if (e.type === 'warDeclared' && e.a === me) { pushToast({ kind: 'war', text: `You are at war with ${name(e.b)}.` }); haptic('heavy'); }
+      if (e.type === 'warDeclared' && (e.a === me || e.b === me)) { pushToast({ kind: 'war', text: `War with ${name(e.a === me ? e.b : e.a)} has begun!` }); haptic('heavy'); }
       else if (e.type === 'peaceOffered' && e.to === me) {
         const from = e.from;
         const id = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} offers peace.`, actions: [
@@ -144,6 +145,16 @@ export class GameController {
       else if (e.type === 'built' && e.country === me) { pushToast({ kind: 'good', text: `${BUILDING_NAMES[e.building]} finished in ${this.map.states[e.state].name}.` }); haptic('light'); }
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
+      else if (e.type === 'playStarted' && e.target === me) { pushToast({ kind: 'war', sticky: true, text: `${name(e.initiator)} makes demands of you! You have 60 days: give in or prepare for war (Diplomacy tab).`, actions: [{ label: 'Open', run: () => { ui.tab.value = 'diplomacy'; ui.sheet.value = 'half'; ui.toasts.value = ui.toasts.value.filter(t => !t.text.startsWith(name(e.initiator) + ' makes demands')); } }] }); haptic('heavy'); }
+      else if (e.type === 'playStarted' && e.initiator === me) pushToast({ kind: 'info', text: `Your demands on ${name(e.target)} are out. Others have 60 days to pick sides.` });
+      else if (e.type === 'playJoined') { const p = ui.diplo.value?.plays.find(x => x.id === e.playId); if (p && (p.initiator === me || p.target === me)) pushToast({ kind: 'info', text: `${name(e.country)} joins ${e.side === 'A' ? name(p.initiator) : name(p.target)}’s side.` }); }
+      else if (e.type === 'playYielded' && (e.initiator === me || e.target === me)) pushToast({ kind: e.initiator === me ? 'good' : 'war', text: e.initiator === me ? `${name(e.target)} gave in to your demands.` : `You gave in to ${name(e.initiator)}.` });
+      else if (e.type === 'playCancelled' && e.target === me) pushToast({ kind: 'good', text: `${name(e.initiator)} backed down.` });
+      else if (e.type === 'treatyOffered' && e.to === me) pushToast({ kind: 'peace', text: `${name(e.from)} proposes a treaty (Diplomacy tab).` });
+      else if (e.type === 'treatySigned' && (e.a === me || e.b === me)) pushToast({ kind: 'good', text: `Treaty signed with ${name(e.a === me ? e.b : e.a)}.` });
+      else if (e.type === 'treatyRefused' && e.from === me) pushToast({ kind: 'info', text: `${name(e.to)} turned down your treaty.` });
+      else if (e.type === 'coalitionFormed' && e.target === me) pushToast({ kind: 'war', sticky: true, text: `A coalition of ${e.members.length} countries has formed against you. Lower your infamy.` });
+      else if (e.type === 'puppeted' && e.puppet === me) pushToast({ kind: 'war', text: `You are now a puppet of ${name(e.overlord)}.` });
       else if (e.type === 'shipBuilt' && e.country === me) { pushToast({ kind: 'good', text: `A new ${e.kind === 'warship' ? 'warship' : 'transport'} is ready.` }); haptic('light'); }
       else if (e.type === 'shipLost' && e.country === me) pushToast({ kind: 'war', text: `You lost a ${e.kind === 'warship' ? 'warship' : 'transport'}.` });
       else if (e.type === 'shipCaptured' && e.owner === me) pushToast({ kind: 'war', text: `${name(e.by)} captured one of your trade ships.` });
@@ -232,7 +243,7 @@ export function rejectionText(reason: string): string {
     'not at war': 'You need to be at war to attack them.', 'no border': 'You have no border there to attack across.',
     'not enough troops': 'Not enough troops for that attack.', cantAfford: 'Not enough money.', noSlots: 'No free building slots in that state.',
     tooManyConstructions: 'Your builders are busy. Wait for a construction to finish.', 'already at war': 'You are already at war with them.',
-    'already offered': 'You already offered them peace.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
+    'already offered': 'You already offered them peace.', leader: 'Only the war leaders can make peace for everyone.', notTheirState: 'That state isn’t theirs.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
     needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
     unreachable: 'Your ships can’t reach there.',
   };

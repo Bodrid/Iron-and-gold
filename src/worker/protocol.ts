@@ -2,7 +2,7 @@
 import type { StateResources } from '../map/format';
 import type { BuildCheck } from '../sim/economy';
 import type { ScoreRow } from '../sim/victory';
-import type { Building, BuildingIcon, BuildingType, Command, Construction, CountryId, GameSetup, Good, Label, SimEvent } from '../sim/types';
+import type { Building, BuildingIcon, BuildingType, Command, Construction, CountryId, Demand, GameSetup, Good, Label, SimEvent, TreatyKind } from '../sim/types';
 import type { SaveSlot } from '../save/saves';
 
 export type { BuildingIcon, Label };
@@ -14,12 +14,13 @@ export type ToWorker =
   | { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 }
   | { type: 'save'; slot: SaveSlot }
   | { type: 'select'; stateId: number | null }
+  | { type: 'selectCountry'; country: CountryId | null }
   | { type: 'debug'; action: 'eliminatePlayer' };
 
 export interface CountrySummary {
   id: CountryId; tag: string; name: string; color: number; alive: boolean; isPlayer: boolean; capitalState: number;
   troops: number; maxTroops: number; money: number; income: number; gdp: number; population: number; sol: number; literacy: number;
-  tiles: number; researchPoints: number; atWarWith: CountryId[]; stockpile: Record<Good, number>; prices: Record<Good, number>;
+  tiles: number; researchPoints: number; infamy: number; overlord: CountryId; atWarWith: CountryId[]; stockpile: Record<Good, number>; prices: Record<Good, number>;
   produced: Record<Good, number>; demanded: Record<Good, number>; history: { tick: number; gdp: number; population: number; sol: number }[];
 }
 
@@ -37,6 +38,25 @@ export interface FleetView {
 /** Ships packed as [id, owner, kind (0 trade, 1 warship, 2 transport), x×16, y×16] per ship, in tile coordinates. */
 export const SHIP_STRIDE = 5;
 
+export interface DiploView {
+  infamy: number; capacity: { used: number; total: number };
+  relations: number[];                                   // by country id, player's row
+  actions: { to: CountryId; kind: 'improve' | 'worsen' }[];
+  treaties: { id: number; kind: TreatyKind; a: CountryId; b: CountryId }[];
+  treatyOffers: { from: CountryId; kind: TreatyKind }[];
+  peaceOffers: { from: CountryId; warId: number; white: boolean; give: boolean; demands: string[] }[];
+  plays: { id: number; initiator: CountryId; target: CountryId; demands: string[]; sideA: CountryId[]; sideB: CountryId[]; strengthA: number; strengthB: number; daysLeft: number }[];
+  wars: { id: number; leader: boolean; mySide: CountryId[]; enemySide: CountryId[]; myScore: number; enemyScore: number; available: number; goals: string[];
+    candidates: { demand: Demand; label: string; cost: number; goal: boolean }[] }[];
+  puppets: { id: CountryId; annex: string | null }[];
+  privateers: CountryId[];
+  coalitionAgainstMe: CountryId[];
+}
+export interface CountryDetail {
+  id: CountryId; treaty: Record<TreatyKind, string | null>; play: string | null; states: { id: number; name: string; population: number }[];
+  privateers: string | null;
+}
+
 export interface ReadyMsg {
   type: 'ready'; player: CountryId; startId: string; mapInfo: { width: number; height: number };
   countries: CountrySummary[]; owner: Uint16Array; controller: Uint16Array; date: string; tick: number;
@@ -50,7 +70,7 @@ export interface FrameMsg {
   attacks?: { id: number; attacker: CountryId; target: CountryId; troops: number }[];
   wars?: { id: number; a: CountryId; b: CountryId; scoreA: number; scoreB: number; startTick: number }[];
   peaceOffers?: { from: CountryId; to: CountryId }[];
-  ships?: Int32Array; trade?: TradeView; fleet?: FleetView;
+  ships?: Int32Array; trade?: TradeView; fleet?: FleetView; diplo?: DiploView; countryDetail?: CountryDetail | null;
 }
 
 export type FromWorker =

@@ -10,6 +10,7 @@ import { applyCommand } from '../sim/registry';
 import { coalesceTiles, type FromWorker, type ToWorker } from './protocol';
 import { TickScheduler } from './scheduler';
 import { allSummaries, fleetView, militaryView, packShips, stateDetail, tradeView } from './summaries';
+import { countryDetail, diploView } from './diploView';
 
 export interface HandlerDeps {
   post: (msg: FromWorker, transfer?: Transferable[]) => void;
@@ -42,6 +43,7 @@ export function createWorkerHandler(deps: HandlerDeps) {
   let buildingsDirty = true;
   let selected: number | null = null;
   let selectionDirty = false;
+  let selectedCountry: number | null = null;
   const player = () => state!.countries.find(c => c.isPlayer)!.id;
   const date = () => formatDate(dateAtTick(state!.startDate, state!.tick));
 
@@ -73,6 +75,8 @@ export function createWorkerHandler(deps: HandlerDeps) {
       msg.ships = packShips(s);
       msg.trade = tradeView(s, player());
       msg.fleet = fleetView(s, player());
+      msg.diplo = diploView(s, player());
+      if (selectedCountry !== null) msg.countryDetail = countryDetail(s, player(), selectedCountry);
       if (selected !== null) selectionDirty = true;
     }
     if (deps.hooks?.labels && day - lastLabelsDay >= LABEL_DAYS) { lastLabelsDay = day; msg.labels = deps.hooks.labels(s); }
@@ -155,6 +159,7 @@ export function createWorkerHandler(deps: HandlerDeps) {
         case 'command': queue.push(msg.command); break;
         case 'setSpeed': sched.setSpeed(msg.speed); if (state) frame(true); break;
         case 'select': selected = msg.stateId; selectionDirty = true; if (state) frame(true); break;
+        case 'selectCountry': selectedCountry = msg.country; if (state) frame(true); break;
         case 'save':
           if (state && deps.hooks?.save) {
             try { await deps.hooks.save(msg.slot, state); deps.post({ type: 'saved', slot: msg.slot }); }

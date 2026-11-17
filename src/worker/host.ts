@@ -49,6 +49,7 @@ export class GameHost {
   send(command: Command) { this.worker.postMessage({ type: 'command', command }); }
   setSpeed(speed: 0 | 1 | 2 | 3) { this.worker.postMessage({ type: 'setSpeed', speed }); }
   select(stateId: number | null) { this.worker.postMessage({ type: 'select', stateId }); }
+  selectCountry(country: number | null) { this.worker.postMessage({ type: 'selectCountry', country }); }
   debug(action: 'eliminatePlayer') { this.worker.postMessage({ type: 'debug', action }); }
   save(slot: SaveSlot): Promise<void> {
     return new Promise((resolve, reject) => {

@@ -3,6 +3,8 @@ export const BALANCE = {
   population: {
     /** People in an unclaimed state per unit of popWeight. */
     UNCLAIMED_POP_PER_WEIGHT: 20,
+    /** Cap on people per unit of popWeight for owned states with no historical figure. */
+    UNCOVERED_MAX_PER_WEIGHT: 2000,
   },
   troops: {
     /** Share of population that can serve. */

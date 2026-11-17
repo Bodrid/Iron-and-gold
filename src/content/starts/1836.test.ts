@@ -67,3 +67,10 @@ it('neighbouring countries have distinct colours', () => {
   }
   expect(bad).toEqual([]);
 });
+
+it('small or empty territories don’t balloon (Greenland, Iceland, Guyana…)', () => {
+  expect(modernPop(['GRL'])).toBeLessThan(50_000);
+  expect(modernPop(['ISL'])).toBeLessThan(150_000);
+  expect(modernPop(['GUY', 'SUR', 'HKG', 'FLK'])).toBeLessThan(500_000);
+  expect(tag('DEN').population / 1e6).toBeLessThan(3);
+});

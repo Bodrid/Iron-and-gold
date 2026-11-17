@@ -98,7 +98,8 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     const w = map.states[s].popWeight;
     if (pop[s] < 0) {
       if (!o) pop[s] = w * BALANCE.population.UNCLAIMED_POP_PER_WEIGHT;
-      else if (coveredW[o] > 0) pop[s] = w * (coveredPop[o] / coveredW[o]);
+      // Country density, but never more than a modest cap: big empty lands (Greenland) must not fill up.
+      else if (coveredW[o] > 0) pop[s] = w * Math.min(coveredPop[o] / coveredW[o], BALANCE.population.UNCOVERED_MAX_PER_WEIGHT);
       else pop[s] = restW[o] ? start.countries[o - 1].population * (w / restW[o]) : 0;
     }
     state.states[s].population = Math.round(pop[s]);
