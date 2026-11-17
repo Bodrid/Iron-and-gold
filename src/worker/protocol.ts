@@ -1,3 +1,5 @@
+import type { GroupId } from '../content/groups';
+import type { LawArea } from '../content/laws';
 // Messages between the main thread and the simulation worker.
 import type { StateResources } from '../map/format';
 import type { BuildCheck } from '../sim/economy';
@@ -20,7 +22,7 @@ export type ToWorker =
 export interface CountrySummary {
   id: CountryId; tag: string; name: string; color: number; alive: boolean; isPlayer: boolean; capitalState: number;
   troops: number; maxTroops: number; money: number; income: number; gdp: number; population: number; sol: number; literacy: number;
-  tiles: number; researchPoints: number; infamy: number; overlord: CountryId; atWarWith: CountryId[]; stockpile: Record<Good, number>; prices: Record<Good, number>;
+  tiles: number; researchPoints: number; researchRate: number; infamy: number; overlord: CountryId; atWarWith: CountryId[]; stockpile: Record<Good, number>; prices: Record<Good, number>;
   produced: Record<Good, number>; demanded: Record<Good, number>; history: { tick: number; gdp: number; population: number; sol: number }[];
 }
 
@@ -67,7 +69,7 @@ export interface ReadyMsg {
 export interface FrameMsg {
   type: 'frame'; tick: number; date: string; speed: 0 | 1 | 2 | 3;
   tiles: { idx: Uint32Array; val: Uint32Array };
-  countries?: CountrySummary[]; buildings?: BuildingIcon[]; labels?: Label[]; selection?: StateDetail | null;
+  countries?: CountrySummary[]; buildings?: BuildingIcon[]; labels?: Label[]; selection?: StateDetail | null; politics?: PoliticsView;
   attacks?: { id: number; attacker: CountryId; target: CountryId; troops: number }[];
   wars?: { id: number; a: CountryId; b: CountryId; scoreA: number; scoreB: number; startTick: number }[];
   peaceOffers?: { from: CountryId; to: CountryId }[];
@@ -98,4 +100,12 @@ export function coalesceTiles(changed: Iterable<number>, owner: Uint16Array, con
     val[k] = (owner[t] | (controller[t] << 16)) >>> 0;
   }
   return { idx, val };
+}
+
+export interface PoliticsView {
+  research: { researching: string | null; queue: string[]; points: number; rate: number; cost: number;
+    techs: { id: string; status: 'known' | 'researching' | 'queued' | 'available' | 'locked'; cost: number }[] };
+  laws: { area: LawArea; current: string; options: { id: string; support: number; chance: number; check: string | null }[] }[];
+  enacting: { law: string; months: number; support: number; chance: number; minMonths: number; maxMonths: number } | null;
+  groups: { id: GroupId; clout: number; approval: number; radicalism: number; wants: string | null }[];
 }

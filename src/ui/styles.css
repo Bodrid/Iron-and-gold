@@ -177,3 +177,41 @@ button.big small { font-weight: 400; font-size: 12px; opacity: 0.8; }
 .relbar { position: relative; height: 8px; border-radius: 99px; background: linear-gradient(90deg, #e5534b, #8fa3b8 50%, #7fd48f); margin: 6px 0; }
 .relbar > div { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff; transform: translateX(-50%); }
 .country-panel .flag { vertical-align: -2px; margin-right: 6px; }
+
+/* research & politics (stage 4) */
+.good { color: var(--good); }
+.war { color: #ffb3ae; }
+.dim { color: var(--dim); }
+.card { display: grid; gap: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 8px 10px; margin: 6px 0; }
+.card small, .tech small, .law-option small { color: var(--dim); font-size: 12px; }
+.card small.good, .law-option small.good { color: var(--good); }
+.card small.warn, .law-option small.warn, .group small.warn { color: #ffb3ae; }
+.group small.war { color: var(--war); font-weight: 600; }
+.bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.bar > div { height: 100%; background: var(--gold); border-radius: 99px; }
+.seg { display: flex; gap: 4px; margin: 8px 0; }
+.seg button { flex: 1; color: var(--dim); font-weight: 600; }
+.seg button.on { background: rgba(229, 181, 74, 0.2); color: var(--gold); }
+.era h3 small { color: var(--dim); font-weight: 400; font-size: 12px; }
+.techs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.tech { display: grid; gap: 2px; align-content: start; border-radius: 10px; padding: 6px 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid transparent; }
+.tech.known { opacity: 0.6; }
+.tech.known .status { color: var(--good); }
+.tech.available { border-color: rgba(229, 181, 74, 0.45); }
+.tech.researching { border-color: var(--gold); background: rgba(229, 181, 74, 0.12); }
+.tech.queued { border-color: rgba(110, 168, 255, 0.5); }
+.tech.locked { opacity: 0.75; }
+.tech .row { padding: 2px 0 0; flex-wrap: wrap; }
+.queue .crow button { min-height: 44px; }
+.law-area { border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 2px 0; }
+.law-area summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; cursor: pointer; list-style: none; }
+.law-area summary::-webkit-details-marker { display: none; }
+.law-area summary span { color: var(--dim); }
+.law-option { display: grid; gap: 2px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; padding: 6px 8px; margin: 4px 0; }
+.law-option .row { flex-wrap: wrap; }
+.group { display: grid; gap: 4px; padding: 4px 0; }
+.group .crow { border-bottom: 0; padding: 0; }
+.mood { border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 600; background: rgba(255, 255, 255, 0.08); }
+.mood.good { background: rgba(127, 212, 143, 0.2); }
+.mood.warn { background: rgba(229, 181, 74, 0.2); color: var(--gold); }
+.mood.war { background: rgba(229, 83, 75, 0.25); color: #ffb3ae; }

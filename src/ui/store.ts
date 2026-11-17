@@ -1,9 +1,9 @@
 // UI state shared by components (Preact signals).
 import { signal } from '@preact/signals';
-import type { CountryDetail, CountrySummary, DiploView, FleetView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
+import type { CountryDetail, CountrySummary, DiploView, FleetView, PoliticsView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
 import type { ScoreRow } from '../sim/victory';
 
-export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'nation';
+export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'research' | 'nation';
 export type Screen = 'menu' | 'newGame' | 'loading' | 'game';
 export interface Toast { id: number; text: string; kind: 'info' | 'war' | 'peace' | 'good'; actions?: { label: string; run: () => void }[]; sticky?: boolean }
 
@@ -37,6 +37,8 @@ export const ui = {
   /** Navigation cell of a tapped sea tile, for ship orders. */
   selectedSea: signal<number | null>(null),
   diplo: signal<DiploView | null>(null),
+  politics: signal<PoliticsView | null>(null),
+  /** Research tab: which tree is shown. */ techTree: signal<'production' | 'military' | 'society'>('production'),
   countryDetail: signal<CountryDetail | null>(null),
   /** Country open in the Diplomacy tab. */
   diploCountry: signal<number | null>(null),

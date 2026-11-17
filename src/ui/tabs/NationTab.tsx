@@ -45,7 +45,7 @@ export function NationTab({ extra }: { extra?: preact.ComponentChildren }) {
         <div><small>Treasury</small><b>{fmtMoney(p.money)}</b></div>
         <div><small>Income</small><b class={p.income < 0 ? 'warn' : ''}>{fmtMoney(p.income)}/mo</b></div>
         <div><small>Literacy</small><b>{Math.round(p.literacy * 100)}%</b></div>
-        <div><small>Research</small><b>{fmtNum(p.researchPoints)}</b><small>spent from a later update</small></div>
+        <div><small>Research</small><b>+{p.researchRate.toFixed(1)}/mo</b><small>Research tab</small></div>
         <div><small>Land</small><b>{fmtNum(p.tiles)} tiles</b></div>
       </div>
       <h3>Stockpile</h3>

@@ -10,6 +10,8 @@ import type { BuildingIcon, Command, Label, PeaceTerms, SimEvent } from '../sim/
 import { BALANCE } from '../sim/balance';
 import { DIPLO_REASON } from './tabs/diploText';
 import { LAW_BY_ID } from '../content/laws';
+import { TECH_BY_ID } from '../content/techs';
+import { GROUPS } from '../content/groups';
 import type { GameHost } from '../worker/host';
 import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
@@ -127,6 +129,7 @@ export class GameController {
     if (f.trade) ui.trade.value = f.trade;
     if (f.fleet) ui.fleet.value = f.fleet;
     if (f.diplo) ui.diplo.value = f.diplo;
+    if (f.politics) ui.politics.value = f.politics;
     if (f.countryDetail !== undefined) ui.countryDetail.value = f.countryDetail;
   }
 
@@ -148,6 +151,13 @@ export class GameController {
       else if (e.type === 'built' && e.country === me) { pushToast({ kind: 'good', text: `${BUILDING_NAMES[e.building]} finished in ${this.map.states[e.state].name}.` }); haptic('light'); }
       else if (e.type === 'annexed' && (e.puppet === me || e.overlord === me)) pushToast({ kind: e.overlord === me ? 'good' : 'war', text: e.overlord === me ? `${name(e.puppet)} has been annexed.` : `${name(e.overlord)} annexed you.` });
       else if (e.type === 'puppeted' && e.overlord === me) pushToast({ kind: 'good', text: `${name(e.puppet)} is now your puppet.` });
+      else if (e.type === 'techResearched' && e.country === me) { pushToast({ kind: 'good', text: `Researched ${TECH_BY_ID[e.tech]?.name ?? e.tech}.` }); haptic('light'); }
+      else if (e.type === 'lawPassed' && e.country === me) pushToast({ kind: 'good', text: `${LAW_BY_ID[e.law]?.name ?? e.law} is now law.` });
+      else if (e.type === 'lawFailed' && e.country === me) pushToast({ kind: 'info', text: `${LAW_BY_ID[e.law]?.name ?? e.law} failed: ${e.reason === 'noSupport' ? 'support collapsed' : e.reason === 'timeout' ? 'it took too long' : 'your overlord blocked it'}.` });
+      else if (e.type === 'revolt' && e.country === me) { pushToast({ kind: 'war', sticky: true, text: `Revolt! Your ${GROUPS[e.group].name.toLowerCase()} have risen up demanding ${LAW_BY_ID[e.law]?.name ?? 'change'}. Beat them, or give them the law in a peace deal.` }); haptic('heavy'); }
+      else if (e.type === 'revolt') pushToast({ kind: 'info', text: `Revolt in ${name(e.country)}: the ${GROUPS[e.group].name.toLowerCase()} have risen up.` });
+      else if (e.type === 'revoltEnded' && e.country === me) pushToast({ kind: e.won ? 'war' : 'good', text: e.won ? 'The rebels won: their law is now yours, and their land comes back to you.' : 'The revolt is over and the land is yours again.' });
+      else if (e.type === 'revoltEnded') continue;
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
       else if (e.type === 'playCancelled' && e.target === me && !country(e.initiator)?.alive) continue;
@@ -174,7 +184,7 @@ export class GameController {
     const a = keyAction(e);
     if (!a) return;
     e.preventDefault();
-    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabTrade: 'trade', tabDiplomacy: 'diplomacy', tabNation: 'nation' };
+    const tabs: Record<string, Tab> = { tabBuild: 'build', tabArmy: 'army', tabTrade: 'trade', tabDiplomacy: 'diplomacy', tabResearch: 'research', tabNation: 'nation' };
     if (a === 'pause') this.setSpeed(ui.speed.value === 0 ? 2 : 0);
     else if (a.startsWith('speed')) this.setSpeed(Number(a.slice(5)) as 1 | 2 | 3);
     else if (tabs[a]) ui.tab.value = ui.tab.value === tabs[a] ? null : tabs[a];

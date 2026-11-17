@@ -1,4 +1,5 @@
 // The simulation worker's logic, independent of the Worker global so tests can run it in-process.
+import { politicsView } from './politicsView';
 import type { MapData } from '../map/format';
 import { dateAtTick, formatDate, TICKS_PER_DAY } from '../sim/calendar';
 import { setTile } from '../sim/control';
@@ -76,6 +77,7 @@ export function createWorkerHandler(deps: HandlerDeps) {
       msg.trade = tradeView(s, player());
       msg.fleet = fleetView(s, player());
       msg.diplo = diploView(s, player());
+      msg.politics = politicsView(s, player());
       if (selectedCountry !== null) msg.countryDetail = countryDetail(s, player(), selectedCountry);
       if (selected !== null) selectionDirty = true;
     }
