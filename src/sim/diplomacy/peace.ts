@@ -77,6 +77,8 @@ export function concludePeace(state: GameState, war: War, proposer: CountryId, t
       if (done.length && d.kind === 'state') transferred.push(d.state);
     }
   }
+  // The losing side's army won't forget this for a while (unless it was a white peace).
+  if (!terms.white) for (const c of losers) state.countries[c].lastDefeat = state.tick;
   endWar(state, war);
   events.push({ type: 'peace', a: war.a, b: war.b, transferred });
 }

@@ -1,6 +1,8 @@
 import type { MapData } from '../map/format';
 import type { BuildingType } from '../content/buildingTypes';
 import type { ShipKind } from '../content/ships';
+import type { GroupId } from '../content/groups';
+import type { LawArea } from '../content/laws';
 
 export type { BuildingType, ShipKind };
 export type CountryId = number; // 1..4095; 0 = nobody (unclaimed)
@@ -13,7 +15,8 @@ export type OwnershipRule = { modern: string; owner: string } | { states: string
 export interface StartDef { id: string; name: string; startDate: GameDate; endYear: number; countries: CountryDef[]; ownership: OwnershipRule[]; /** Give countries starting farms, mines etc. Default true. */ seedEconomy?: boolean;
   /** Historical population (people) by modern territory code, spread over that territory's states; overrides CountryDef.population there. */ regionPopulation?: Record<string, number>;
   /** Every tech up to this era is known at the start (default: the era before the start year's). */ knownEra?: number;
-  /** Extra known techs by country tag. */ extraTechs?: Record<string, string[]> }
+  /** Extra known techs by country tag. */ extraTechs?: Record<string, string[]>;
+  /** Starting laws by country tag (the rest are the defaults). */ laws?: Record<string, Partial<Record<LawArea, string>>> }
 export interface GameSetup { startId: string; playerTag: string; difficulty: Difficulty; rivalsHarder: boolean; seed: number; /** Tests/tools: AI countries do nothing. */ aiDisabled?: boolean }
 
 export interface StatSample { tick: number; gdp: number; population: number; sol: number; tiles: number; money: number }
@@ -29,6 +32,10 @@ export interface Country {
   /** Unspent research points (banked; spent on the current tech). */ researchPoints: number;
   /** Research points earned last month. */ researchRate: number;
   techs: string[]; researching: string | null; researchQueue: string[];
+  laws: Record<LawArea, string>;
+  /** A law being passed (months counted since it started). */ enacting: { law: string; startTick: number; months: number } | null;
+  groups: Record<GroupId, { clout: number; approval: number; radicalism: number }>;
+  /** Tick of the last war this country lost (0 = never). */ lastDefeat: number;
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
   /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** The country this one is a puppet of (0 = independent). */ overlord: CountryId;
@@ -132,7 +139,9 @@ export type Command =
   | { type: 'setPrivateers'; country: CountryId; target: CountryId; on: boolean }
   | { type: 'research'; country: CountryId; tech: string }
   | { type: 'queueTech'; country: CountryId; tech: string }
-  | { type: 'unqueueTech'; country: CountryId; tech: string };
+  | { type: 'unqueueTech'; country: CountryId; tech: string }
+  | { type: 'enactLaw'; country: CountryId; law: string }
+  | { type: 'cancelEnactment'; country: CountryId };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -160,7 +169,9 @@ export type SimEvent =
   | { type: 'puppeted'; overlord: CountryId; puppet: CountryId }
   | { type: 'freed'; puppet: CountryId }
   | { type: 'annexed'; overlord: CountryId; puppet: CountryId }
-  | { type: 'techResearched'; country: CountryId; tech: string };
+  | { type: 'techResearched'; country: CountryId; tech: string }
+  | { type: 'lawPassed'; country: CountryId; law: string }
+  | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

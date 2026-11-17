@@ -12,7 +12,7 @@ export function hashState(state: GameState): number {
   mix(state.tick); mix(state.rng); mix(state.nextId);
   for (let i = 0; i < state.owner.length; i++) { h = Math.imul(h ^ state.owner[i], 0x01000193); h = Math.imul(h ^ state.controller[i], 0x01000193); }
   for (const c of state.countries) {
-    mix(c.alive ? 1 : 0); mix(c.troops); mix(c.maxTroops); mix(c.money); mix(c.tiles); mix(c.controlled); mix(c.population); mix(c.gdp); mix(c.sol); mix(c.infamy); mix(c.overlord); mix(c.researchPoints); mix(c.techs.length); mix(c.researching ? c.researching.length : -1);
+    mix(c.alive ? 1 : 0); mix(c.troops); mix(c.maxTroops); mix(c.money); mix(c.tiles); mix(c.controlled); mix(c.population); mix(c.gdp); mix(c.sol); mix(c.infamy); mix(c.overlord); mix(c.researchPoints); for (const g of Object.keys(c.groups).sort()) { const x = (c.groups as any)[g]; mix(x.clout); mix(x.approval); mix(x.radicalism); } mix(c.enacting ? c.enacting.months : -1); mix(c.techs.length); mix(c.researching ? c.researching.length : -1);
     for (const k of Object.keys(c.stockpile).sort()) mix((c.stockpile as any)[k]);
   }
   for (const s of state.states) { mix(s.owner); mix(s.controller); mix(s.population); for (const b of s.buildings) { mix(b.level); mix(b.tile); } }

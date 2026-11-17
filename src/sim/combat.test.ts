@@ -9,7 +9,7 @@ const colonyGame = (rows: string[]) => makeGame({ rows, owners: { A: 'XXX' }, un
 
 function tilesTakenAfter(c: string, ticks: number): number {
   const g = colonyGame(strip(c));
-  g.countries[1].troops = 2000;
+  g.countries[1].troops = 1500;   // few enough that mountains use them up first
   runTicks(g, ticks, [{ type: 'attack', country: 1, target: 0, ratio: 0.5 }]);
   return g.countries[1].tiles - 6;
 }

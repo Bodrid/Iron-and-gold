@@ -4,6 +4,7 @@ import './troops';
 import './war';
 import './economy';
 import './research';
+import './politics';
 import './population';
 import './naval/trade';
 import './naval/ships';

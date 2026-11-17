@@ -9,6 +9,8 @@ import { systems } from './registry';
 import { seedEconomy } from './economy';
 import { eraOfYear } from './research';
 import { TECHS, TECH_BY_ID } from '../content/techs';
+import { DEFAULT_LAWS, LAW_BY_ID } from '../content/laws';
+import { emptyGroups } from './politics';
 import './systems';
 import type { Country, CountryDef, GameSetup, GameState, StartDef } from './types';
 
@@ -21,7 +23,7 @@ function makeCountry(id: number, def: CountryDef, capitalState: number, isPlayer
     id, tag: def.tag, name: def.name, color: def.color, alive: id !== 0, isPlayer, capitalState, difficulty,
     personality: def.personality ?? 'default', troops: 0, maxTroops: 0, money: def.money,
     stockpile: emptyGoods(), prices: { ...BASE_PRICE }, produced: emptyGoods(), demanded: emptyGoods(),
-    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, researchRate: 0, techs: [], researching: null, researchQueue: [], tradeIncome: 0, infamy: 0, overlord: 0, puppetSince: 0, tiles: 0, controlled: 0, population: 0, history: [],
+    gdp: 0, income: 0, sol: 10, literacy: 0.1, researchPoints: 0, researchRate: 0, techs: [], researching: null, researchQueue: [], laws: { ...DEFAULT_LAWS }, enacting: null, groups: emptyGroups(), lastDefeat: 0, tradeIncome: 0, infamy: 0, overlord: 0, puppetSince: 0, tiles: 0, controlled: 0, population: 0, history: [],
   };
 }
 
@@ -70,6 +72,10 @@ export function createGame(map: MapData, start: StartDef, setup: GameSetup): Gam
     for (const t of start.extraTechs?.[c.tag] ?? []) {
       if (!TECH_BY_ID[t]) throw new Error(`Unknown tech "${t}" in start ${start.id}`);
       if (!c.techs.includes(t)) c.techs.push(t);
+    }
+    for (const [area, law] of Object.entries(start.laws?.[c.tag] ?? {})) {
+      if (LAW_BY_ID[law]?.area !== area) throw new Error(`Bad law "${law}" for ${area} in start ${start.id}`);
+      c.laws[area as keyof typeof c.laws] = law;
     }
   }
   for (let s = 1; s < map.states.length; s++) {

@@ -74,3 +74,14 @@ it('small or empty territories don’t balloon (Greenland, Iceland, Guyana…)',
   expect(modernPop(['GUY', 'SUR', 'HKG', 'FLK'])).toBeLessThan(500_000);
   expect(tag('DEN').population / 1e6).toBeLessThan(3);
 });
+
+it('starts with historical laws and politics that are quick to run', async () => {
+  expect(tag('USA').laws.labour).toBe('slavery');
+  expect(tag('RUS').laws.labour).toBe('serfdom');
+  expect(tag('GBR').laws.government).toBe('constitutionalMonarchy');
+  expect(tag('GBR').techs).toContain('railways');
+  const { monthlyPolitics } = await import('../../sim/politics');
+  const t0 = performance.now();
+  for (let i = 0; i < 12; i++) monthlyPolitics(g, []);
+  expect((performance.now() - t0) / 12).toBeLessThan(8);
+});

@@ -97,6 +97,27 @@ export const BALANCE = {
     AHEAD_PENALTY: 0.3,
     MAX_QUEUE: 12,
   },
+  politics: {
+    /** Living standards at which groups neither like nor dislike how people live. */
+    SOL_NEUTRAL: 10,
+    /** Approval moves this far toward its target each month. */
+    APPROVAL_STEP: 2,
+    /** At or below this approval a group grows radical. */
+    ANGRY_AT: -5,
+    /** Monthly radicalism gain = (−approval − OFFSET) × MULT (so −5 → +1, −10 → +3.5). */
+    ANGRY_RISE_OFFSET: 3,
+    ANGRY_RISE_MULT: 0.5,
+    RADICAL_DECAY: 4,
+    /** Years a lost war keeps the army (and others) unhappy. */
+    DEFEAT_YEARS: 3,
+    ENACT_MIN_MONTHS: 3,
+    ENACT_MAX_MONTHS: 24,
+    /** Support below this and the law fails (or can't be started). */
+    FAIL_SUPPORT: -0.3,
+    PASS_BASE: 0.05,
+    PASS_PER_SUPPORT: 0.2,
+    PASS_MAX: 0.4,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,
