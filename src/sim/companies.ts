@@ -88,8 +88,9 @@ effectSources.push({
   }),
 });
 approvalHooks.push((_s, c, g) => {
-  const monopolies = c.companies.filter(k => k.charter === 'monopoly').length;
-  return monopolies * (g === 'industrialists' ? 1 : g === 'workers' ? -1 : 0);
+  // Any monopoly pleases industrialists and angers workers (it doesn't stack).
+  if (!c.companies.some(k => k.charter === 'monopoly')) return 0;
+  return g === 'industrialists' ? 1 : g === 'workers' ? -1 : 0;
 });
 tributeHooks.push((state, puppet) => {
   const o = state.countries[puppet].overlord;

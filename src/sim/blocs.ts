@@ -6,6 +6,7 @@ import { TICKS_PER_DAY } from './calendar';
 import { effectSources } from './mods';
 import { handlers, systems } from './registry';
 import { atWar } from './war';
+import { sharesBorder } from './combat';
 import { joinerHooks } from './diplomacy/plays';
 import { demandHooks } from './diplomacy/demands';
 import { changeRelation, relation, relationPairHooks } from './diplomacy/relations';
@@ -84,8 +85,11 @@ export const blocPolicy = {
     const me = state.countries[ai], lead = state.countries[b.leader];
     const rivals = personalityOf(me.personality).rivals;
     if (rivals.includes(lead.tag)) return false;
+    // A great power doesn't take orders lightly.
+    if (isMajor(state, ai)) return rel >= B.AI_MAJOR_JOIN_RELATION;
     const sharedRival = rivals.some(t => personalityOf(lead.personality).rivals.includes(t));
-    return rel >= B.AI_JOIN_RELATION || (rel >= 0 && lead.troops >= me.troops * 3 && sharedRival);
+    // Or: a much stronger neighbour that shares our enemies.
+    return rel >= B.AI_JOIN_RELATION || (rel >= 0 && lead.troops >= me.troops * 3 && sharedRival && sharesBorder(state, ai, b.leader));
   },
 };
 

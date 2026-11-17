@@ -38,3 +38,5 @@ for (const t of ['GBR', 'CHI', 'RUS', 'USA']) {
   let uni = 0; for (const s of g.states) if (s.owner === c.id) for (const b of s.buildings) if (b.type === 'university') uni += b.level;
   console.log(t, 'literacy', c.literacy.toFixed(2), 'universities', uni, 'pop', (c.population / 1e6).toFixed(0));
 }
+for (const b of g.blocs) console.log('bloc', g.countries[b.leader].tag, b.type, b.principles.join('+'), 'members', b.members.map(m => g.countries[m].tag).join(','));
+console.log('companies', g.countries.filter(c => c.alive && c.companies.length).map(c => `${c.tag}:${c.companies.map(k => `${k.id}${k.charter ? '/' + k.charter : ''}+${k.bonus}`).join(',')}`).join(' '));

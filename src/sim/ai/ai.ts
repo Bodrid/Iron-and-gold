@@ -10,12 +10,14 @@ import { refillBonusHooks } from '../troops';
 import { enemiesIn, warsOf } from '../war';
 import { daysSinceRefused, peacePoints, termsCost } from '../diplomacy/peace';
 import { playCheck } from '../diplomacy/plays';
+import { blocOf } from '../blocs';
 import type { Command, Country, CountryId, Demand, GameState, PeaceTerms, War } from '../types';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
 import { navalDecisions } from './naval';
 import { diplomacyDecisions } from './diplomacy';
 import { politicsDecisions } from './politics';
+import { blocDecisions, companyDecisions } from './blocs';
 
 const YEAR = 365 * TICKS_PER_DAY;
 /** Chance per 30 days that a fully aggressive AI looks for a war. */
@@ -75,6 +77,8 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   // 4c. Diplomacy: relations, treaties, plays in progress, puppets.
   diplomacyDecisions(state, c, d, neighbors, issue);
   politicsDecisions(state, c, d, mistake, issue);
+  blocDecisions(state, c, d, issue);
+  companyDecisions(state, c, d, issue);
 
   // 5. Make demands of a weaker neighbour (a diplomatic play; war follows only if they don't give in).
   if (!enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {
@@ -98,8 +102,10 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
         const mine = new Set(state.states.filter(s => s.owner === c.id).map(s => s.id));
         const wanted = state.states.filter(s => s.owner === target && state.map.states[s.id].neighbors.some(n => mine.has(n)))
           .sort((a, b) => b.population - a.population || a.id - b.id)[0];
-        const cmd = { type: 'startPlay' as const, country: c.id, target, demands: [{ kind: 'state' as const, state: wanted?.id ?? 0 }] };
-        if (wanted && !playCheck(state, cmd)) issue(cmd);
+        // A bloc leader sometimes asks for the target to join its bloc instead of land.
+        const intoBloc = state.blocs.some(b => b.leader === c.id) && !blocOf(state, target) && nextRandom(state) < 0.3;
+        const cmd = { type: 'startPlay' as const, country: c.id, target, demands: intoBloc ? [{ kind: 'joinBloc' as const }] : [{ kind: 'state' as const, state: wanted?.id ?? 0 }] };
+        if ((wanted || intoBloc) && !playCheck(state, cmd)) issue(cmd);
       }
     }
   }

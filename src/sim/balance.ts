@@ -146,11 +146,16 @@ export const BALANCE = {
     MAX_PICKS: 2,
     INVITE_MIN_RELATION: 0,
     AI_JOIN_RELATION: 25,
+    AI_MAJOR_JOIN_RELATION: 70,
     OFFER_DAYS: 30,
     MEMBER_RELATION: 15,
     LEAVE_RELATION: -20,
     FREE_TRADE_BONUS: 0.3,
     TRIBUTE: 0.05,
+    AI_INVITE_PLAYER_RELATION: 15,
+    /** An AI bloc invites the player at most this often. */
+    PLAYER_INVITE_DAYS: 180,
+    AI_LEAVE_RELATION: -20,
   },
   companies: {
     MAX: 4,

@@ -83,7 +83,7 @@ export type TreatyKind = 'alliance' | 'defensivePact' | 'tradeAgreement' | 'guar
 export interface Treaty { id: number; kind: TreatyKind; a: CountryId; b: CountryId; since: number }
 export interface PeaceTerms { demands: Demand[]; white?: boolean; /** The proposer hands these demands to the other side. */ give?: boolean }
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number; warId: number; terms: PeaceTerms }
-export interface Bloc { id: number; leader: CountryId; type: BlocType; principles: PrincipleId[]; members: CountryId[]; founded: number; /** Last time the principles were set. */ principlesSet: number }
+export interface Bloc { id: number; leader: CountryId; type: BlocType; principles: PrincipleId[]; members: CountryId[]; founded: number; /** Last time the principles were set. */ principlesSet: number; /** AI leaders: last invitation sent to the player. */ lastPlayerInvite?: number }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
 export interface GameState {

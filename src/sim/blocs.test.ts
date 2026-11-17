@@ -15,7 +15,7 @@ const world = (player = 'QQQ'): GameState => {
   for (const c of g.countries.slice(1)) { c.troops = 10_000; c.maxTroops = 20_000; }
   return g;
 };
-const friends = (g: GameState, a: number, b: number) => changeRelation(g, a, b, 60 - relation(g, a, b));
+const friends = (g: GameState, a: number, b: number) => changeRelation(g, a, b, 90 - relation(g, a, b));   // tiny test worlds make everyone a major power
 const found = (g: GameState) => step(g, [{ type: 'foundBloc', country: 1, blocType: 'militaryAlliance', principles: ['militaryDrill'] }]);
 
 it('a major power founds a bloc with the type’s fixed principle plus its picks', () => {
