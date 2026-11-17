@@ -3,6 +3,7 @@ import type { BuildingType } from '../content/buildingTypes';
 import type { ShipKind } from '../content/ships';
 import type { GroupId } from '../content/groups';
 import type { LawArea } from '../content/laws';
+import type { BlocType, PrincipleId } from '../content/blocs';
 
 export type { BuildingType, ShipKind };
 export type CountryId = number; // 1..4095; 0 = nobody (unclaimed)
@@ -80,6 +81,7 @@ export type TreatyKind = 'alliance' | 'defensivePact' | 'tradeAgreement' | 'guar
 export interface Treaty { id: number; kind: TreatyKind; a: CountryId; b: CountryId; since: number }
 export interface PeaceTerms { demands: Demand[]; white?: boolean; /** The proposer hands these demands to the other side. */ give?: boolean }
 export interface PeaceOffer { from: CountryId; to: CountryId; tick: number; warId: number; terms: PeaceTerms }
+export interface Bloc { id: number; leader: CountryId; type: BlocType; principles: PrincipleId[]; members: CountryId[]; founded: number; /** Last time the principles were set. */ principlesSet: number }
 export type Outcome = null | { kind: 'victory' | 'defeat' | 'endDate'; tick: number };
 
 export interface GameState {
@@ -111,6 +113,8 @@ export interface GameState {
   privateers: { from: CountryId; target: CountryId }[];
   treatyOffers: { from: CountryId; to: CountryId; kind: TreatyKind; tick: number }[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
+  blocs: Bloc[];
+  /** Bloc invitations waiting for the player. */ blocOffers: { from: CountryId; to: CountryId; tick: number }[];
   nextId: number;
   outcome: Outcome;
 }
@@ -142,7 +146,14 @@ export type Command =
   | { type: 'queueTech'; country: CountryId; tech: string }
   | { type: 'unqueueTech'; country: CountryId; tech: string }
   | { type: 'enactLaw'; country: CountryId; law: string }
-  | { type: 'cancelEnactment'; country: CountryId };
+  | { type: 'cancelEnactment'; country: CountryId }
+  | { type: 'foundBloc'; country: CountryId; blocType: BlocType; principles: PrincipleId[] }
+  | { type: 'inviteToBloc'; country: CountryId; target: CountryId }
+  | { type: 'respondBlocInvite'; country: CountryId; from: CountryId; accept: boolean }
+  | { type: 'askToJoinBloc'; country: CountryId; leader: CountryId }
+  | { type: 'leaveBloc'; country: CountryId }
+  | { type: 'expelFromBloc'; country: CountryId; target: CountryId }
+  | { type: 'setPrinciples'; country: CountryId; principles: PrincipleId[] };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
@@ -174,7 +185,14 @@ export type SimEvent =
   | { type: 'lawPassed'; country: CountryId; law: string }
   | { type: 'lawFailed'; country: CountryId; law: string; reason: 'noSupport' | 'timeout' | 'puppeted' }
   | { type: 'revolt'; country: CountryId; rebels: CountryId; group: GroupId; law: string }
-  | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean };
+  | { type: 'revoltEnded'; country: CountryId; rebels: CountryId; won: boolean }
+  | { type: 'blocFounded'; leader: CountryId; blocType: BlocType }
+  | { type: 'blocInvited'; from: CountryId; to: CountryId }
+  | { type: 'blocJoined'; country: CountryId; leader: CountryId }
+  | { type: 'blocRefused'; from: CountryId; to: CountryId }
+  | { type: 'blocLeft'; country: CountryId; leader: CountryId }
+  | { type: 'blocLeaderChanged'; from: CountryId; to: CountryId }
+  | { type: 'blocDissolved'; leader: CountryId };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

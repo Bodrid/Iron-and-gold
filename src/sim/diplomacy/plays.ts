@@ -19,6 +19,9 @@ export function sideStrength(state: GameState, side: CountryId[]): number {
   return side.reduce((n, c) => n + state.countries[c].troops + state.countries[c].maxTroops * 0.5, 0);
 }
 
+/** Other systems that bring defenders into a play (power blocs). */
+export const joinerHooks: ((state: GameState, initiator: CountryId, target: CountryId) => CountryId[])[] = [];
+
 /** AI third parties decide whether to join (the AI module fills this in). */
 export const playHooks = { decide: (_s: GameState, _p: Play, _e: SimEvent[]) => {} };
 
@@ -51,6 +54,7 @@ function joiners(state: GameState, initiator: CountryId, target: CountryId) {
     if (t.kind === 'guarantee' && t.b === target && !sideB.includes(t.a)) sideB.push(t.a);
   }
   for (const m of coalitionDefenders(state, initiator, target)) if (!sideB.includes(m)) sideB.push(m);
+  for (const h of joinerHooks) for (const m of h(state, initiator, target)) if (m !== initiator && !sideB.includes(m)) sideB.push(m);
   // The initiator's allies come only if they aren't also bound to the defence.
   const sideA = [initiator, ...allies(initiator).filter(a => !sideB.includes(a) && !allies(a).includes(target))];
   // Puppets follow their overlord into wars (warStartHooks), never into someone else's play.

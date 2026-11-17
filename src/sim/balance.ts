@@ -137,6 +137,21 @@ export const BALANCE = {
     AI_UTILITY_WEIGHT: 4,
     AI_UNREST_WEIGHT: 0.08,
   },
+  blocs: {
+    /** A major power: this many people, or in the top ranks by score. */
+    MAJOR_POPULATION: 15_000_000,
+    MAJOR_RANK: 8,
+    FOUND_COST: 200_000,
+    /** Principles the leader picks on top of the type's fixed one. */
+    MAX_PICKS: 2,
+    INVITE_MIN_RELATION: 0,
+    AI_JOIN_RELATION: 25,
+    OFFER_DAYS: 30,
+    MEMBER_RELATION: 15,
+    LEAVE_RELATION: -20,
+    FREE_TRADE_BONUS: 0.3,
+    TRIBUTE: 0.05,
+  },
   trade: {
     /** Months of demand an exporter keeps before selling the rest. */
     EXPORT_KEEP_MONTHS: 2,
