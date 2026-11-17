@@ -12,7 +12,7 @@ let map: MapData, g: GameState;
 const start = getStart('1836');
 beforeAll(() => {
   const states = JSON.parse(readFileSync('public/data/states.json', 'utf8')) as StateDef[];
-  map = assembleMap(decodeGrid(gunzipSync(readFileSync('public/data/world.igm.gz'))), [placeholderState(), ...states]);
+  map = assembleMap(decodeGrid(gunzipSync(readFileSync('public/data/world.igz'))), [placeholderState(), ...states]);
   g = createGame(map, start, { startId: '1836', playerTag: 'PRU', difficulty: 'normal', rivalsHarder: false, seed: 1 });
 });
 const ownerTag = (key: string) => { const s = map.states.find(x => x.key === key); if (!s) throw new Error(key); const o = g.states[s.id].owner; return o ? g.countries[o].tag : null; };

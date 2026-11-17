@@ -1,4 +1,9 @@
 import { render, h } from 'preact';
 import { App } from './ui/app';
 
-render(h(App, {}), document.getElementById('app')!);
+const root = document.getElementById('app')!;
+if (new URLSearchParams(location.search).has('debugMap')) {
+  void import('./render/debugMap').then(m => m.startDebugMap(root));
+} else {
+  render(h(App, {}), root);
+}

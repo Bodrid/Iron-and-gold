@@ -71,10 +71,14 @@ export function assembleMap(grid: MapGrid, states: StateDef[]): MapData {
 }
 
 export async function loadMap(baseUrl: string): Promise<MapData> {
-  const [gridRes, statesRes] = await Promise.all([fetch(`${baseUrl}data/world.igm.gz`), fetch(`${baseUrl}data/states.json`)]);
+  const [gridRes, statesRes] = await Promise.all([fetch(`${baseUrl}data/world.igz`), fetch(`${baseUrl}data/states.json`)]);
   if (!gridRes.ok || !statesRes.ok) throw new Error('Could not download the world map');
-  const stream = gridRes.body!.pipeThrough(new DecompressionStream('gzip'));
-  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  let bytes = new Uint8Array(await gridRes.arrayBuffer());
+  // The file is gzip; some servers decompress it on the way, so check the magic bytes.
+  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  }
   const states = (await statesRes.json()) as StateDef[];
   return assembleMap(decodeGrid(bytes), [placeholderState(), ...states]);
 }

@@ -1,4 +1,4 @@
-// npm run map — builds public/data/world.igm.gz and public/data/states.json from Natural Earth data.
+// npm run map — builds public/data/world.igz and public/data/states.json from Natural Earth data.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { encodeGrid } from '../../src/map/format';
@@ -33,6 +33,6 @@ const cities = fetchNE('ne_10m_populated_places_simple').features.map((f: any) =
 assignResources(defs, stateOf, terrain, GRID.width, cities);
 mkdirSync('public/data', { recursive: true });
 const grid = gzipSync(encodeGrid({ width: GRID.width, height: GRID.height, terrain, stateOf }), { level: 9 });
-writeFileSync('public/data/world.igm.gz', grid);
+writeFileSync('public/data/world.igz', grid);
 writeFileSync('public/data/states.json', JSON.stringify(defs));
 console.log(`states: ${defs.length}, grid: ${(grid.length / 1e6).toFixed(2)} MB, ${Date.now() - t0} ms`);

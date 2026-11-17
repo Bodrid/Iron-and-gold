@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: false,
       workbox: {
         cacheId: 'iron-and-gold',
-        globPatterns: ['**/*.{js,css,html,png,json,gz,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,png,json,igz,webmanifest}'],
         maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
       },
     }),
