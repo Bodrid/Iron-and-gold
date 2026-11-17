@@ -60,6 +60,7 @@ function installDebugHooks() {
   w.__selectCapital = () => { const p = ui.countries.value.find(c => c.id === ui.playerId.value)!; g.flyToState(p.capitalState); };
   w.__selectStateByKey = (key: string) => { const s = g.map.states.find(x => x.key === key); if (s) g.flyToState(s.id); return !!s; };
   w.__debugEliminatePlayer = () => { g.host.debug('eliminatePlayer'); g.setSpeed(3); };
+  w.__fireEvent = (id: string) => g.host.debugFireEvent(id);
   w.__shipCount = () => ui.ships.value.length / 5;
   w.__playerTiles = () => ui.countries.value.find(c => c.id === ui.playerId.value)?.tiles ?? 0;
 }

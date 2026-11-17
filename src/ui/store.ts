@@ -1,6 +1,6 @@
 // UI state shared by components (Preact signals).
 import { signal } from '@preact/signals';
-import type { CountryDetail, CountrySummary, DiploView, FleetView, PoliticsView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
+import type { CountryDetail, CountrySummary, DiploView, FleetView, PoliticsView, EventsView, FrameMsg, StateDetail, TradeView } from '../worker/protocol';
 import type { ScoreRow } from '../sim/victory';
 
 export type Tab = 'build' | 'army' | 'trade' | 'diplomacy' | 'research' | 'nation' | 'bloc';
@@ -38,6 +38,8 @@ export const ui = {
   selectedSea: signal<number | null>(null),
   diplo: signal<DiploView | null>(null),
   politics: signal<PoliticsView | null>(null),
+  events: signal<EventsView | null>(null),
+  /** The event card on screen (pending id), if any. */ openEvent: signal<number | null>(null),
   /** Research tab: which tree is shown. */ techTree: signal<'production' | 'military' | 'society'>('production'),
   countryDetail: signal<CountryDetail | null>(null),
   /** Country open in the Diplomacy tab. */

@@ -221,3 +221,13 @@ button.big small { font-weight: 400; font-size: 12px; opacity: 0.8; }
 .principles button.on { background: rgba(229, 181, 74, 0.2); outline: 1px solid var(--gold); }
 .principles button:disabled { opacity: 0.45; }
 .seg { flex-wrap: wrap; }
+
+/* event cards (stage 6) */
+.event-backdrop { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(0, 0, 0, 0.45); padding: calc(var(--safe-t) + 8px) calc(var(--safe-r) + 12px) calc(var(--safe-b) + 8px) calc(var(--safe-l) + 12px); }
+.event-card { width: min(620px, 100%); max-height: 100%; overflow-y: auto; border-radius: 16px; padding: 12px 16px; display: grid; gap: 8px; -webkit-user-select: text; user-select: text; }
+.event-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.event-head h2 { margin: 0; font-size: 18px; color: var(--gold); }
+.event-text p { margin: 4px 0; }
+.event-options { display: grid; gap: 6px; }
+.event-option { display: grid; gap: 2px; text-align: left; padding: 8px 12px; }
+.event-option small { color: var(--dim); font-size: 12px; }

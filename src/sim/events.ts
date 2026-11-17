@@ -1,6 +1,6 @@
 // History events: monthly triggers, AI choices by weight, player cards (answered by command or defaulted after 30
 // days). Effects reuse the existing systems; ones that no longer make sense are skipped and counted.
-import { EVENTS } from '../content/events';
+import { EVENTS, eventById } from '../content/events';
 import type { Condition, EventDef, EventEffect } from '../content/events/types';
 import { LAW_BY_ID } from '../content/laws';
 import { TECH_BY_ID } from '../content/techs';
@@ -23,7 +23,6 @@ import type { Command, Country, CountryId, Demand, GameDate, GameState, SimEvent
 const V = BALANCE.events;
 
 const dateNum = (d: GameDate) => d.y * 10000 + d.m * 100 + d.d;
-export const eventById = (id: string) => EVENTS.find(e => e.id === id);
 
 function tagMap(state: GameState): Map<string, CountryId> {
   const m = new Map<string, CountryId>();

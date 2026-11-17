@@ -51,6 +51,7 @@ export class GameHost {
   select(stateId: number | null) { this.worker.postMessage({ type: 'select', stateId }); }
   selectCountry(country: number | null) { this.worker.postMessage({ type: 'selectCountry', country }); }
   debug(action: 'eliminatePlayer') { this.worker.postMessage({ type: 'debug', action }); }
+  debugFireEvent(event: string) { this.worker.postMessage({ type: 'debug', action: 'fireEvent', event }); }
   save(slot: SaveSlot): Promise<void> {
     return new Promise((resolve, reject) => {
       const list = this.pendingSaves.get(slot) ?? [];

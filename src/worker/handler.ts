@@ -1,4 +1,5 @@
 // The simulation worker's logic, independent of the Worker global so tests can run it in-process.
+import { eventsView } from './eventsView';
 import { politicsView } from './politicsView';
 import type { MapData } from '../map/format';
 import { dateAtTick, formatDate, TICKS_PER_DAY } from '../sim/calendar';
@@ -78,6 +79,7 @@ export function createWorkerHandler(deps: HandlerDeps) {
       msg.fleet = fleetView(s, player());
       msg.diplo = diploView(s, player());
       msg.politics = politicsView(s, player());
+      msg.events = eventsView(s, player());
       if (selectedCountry !== null) msg.countryDetail = countryDetail(s, player(), selectedCountry);
       if (selected !== null) selectionDirty = true;
     }
@@ -169,7 +171,15 @@ export function createWorkerHandler(deps: HandlerDeps) {
             catch (err) { deps.post({ type: 'saveFailed', slot: msg.slot, message: err instanceof Error ? err.message : String(err) }); }
           }
           break;
-        case 'debug': if (state && msg.action === 'eliminatePlayer') debugEliminate(state, dirty); break;
+        case 'debug':
+          if (state && msg.action === 'eliminatePlayer') debugEliminate(state, dirty);
+          if (state && msg.action === 'fireEvent') {
+            const p = { id: state.nextId++, event: msg.event, country: player(), tick: state.tick };
+            state.pendingEvents.push(p);
+            deps.post({ type: 'events', events: [{ type: 'eventFired', country: p.country, event: p.event, pending: p.id }] });
+            frame(true);
+          }
+          break;
       }
     } catch (err) {
       deps.post({ type: 'error', message: err instanceof Error ? err.message : String(err) });

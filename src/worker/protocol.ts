@@ -19,7 +19,8 @@ export type ToWorker =
   | { type: 'save'; slot: SaveSlot }
   | { type: 'select'; stateId: number | null }
   | { type: 'selectCountry'; country: CountryId | null }
-  | { type: 'debug'; action: 'eliminatePlayer' };
+  | { type: 'debug'; action: 'eliminatePlayer' }
+  | { type: 'debug'; action: 'fireEvent'; event: string };
 
 export interface CountrySummary {
   id: CountryId; tag: string; name: string; color: number; alive: boolean; isPlayer: boolean; capitalState: number;
@@ -88,7 +89,7 @@ export interface ReadyMsg {
 export interface FrameMsg {
   type: 'frame'; tick: number; date: string; speed: 0 | 1 | 2 | 3;
   tiles: { idx: Uint32Array; val: Uint32Array };
-  countries?: CountrySummary[]; buildings?: BuildingIcon[]; labels?: Label[]; selection?: StateDetail | null; politics?: PoliticsView;
+  countries?: CountrySummary[]; buildings?: BuildingIcon[]; labels?: Label[]; selection?: StateDetail | null; politics?: PoliticsView; events?: EventsView;
   attacks?: { id: number; attacker: CountryId; target: CountryId; troops: number }[];
   wars?: { id: number; a: CountryId; b: CountryId; scoreA: number; scoreB: number; startTick: number }[];
   peaceOffers?: { from: CountryId; to: CountryId }[];
@@ -128,4 +129,10 @@ export interface PoliticsView {
   enacting: { law: string; months: number; support: number; chance: number; minMonths: number; maxMonths: number } | null;
   groups: { id: GroupId; clout: number; approval: number; radicalism: number; wants: string | null }[];
   companies: CompanyView;
+}
+
+export interface EventsView {
+  pending: { id: number; title: string; text: string; daysLeft: number; options: { label: string; effects: string[] }[] }[];
+  history: { title: string; choice: string; date: string }[];
+  decisions: { tag: string; name: string; description: string; owned: number; total: number; needed: number; check: string | null }[];
 }

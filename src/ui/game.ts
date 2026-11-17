@@ -13,6 +13,7 @@ import { LAW_BY_ID } from '../content/laws';
 import { TECH_BY_ID } from '../content/techs';
 import { GROUPS } from '../content/groups';
 import { COMPANY_BY_ID } from '../content/companies';
+import { eventById } from '../content/events';
 import type { GameHost } from '../worker/host';
 import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
@@ -131,6 +132,7 @@ export class GameController {
     if (f.fleet) ui.fleet.value = f.fleet;
     if (f.diplo) ui.diplo.value = f.diplo;
     if (f.politics) ui.politics.value = f.politics;
+    if (f.events) { ui.events.value = f.events; if (ui.openEvent.value !== null && !f.events.pending.some(p => p.id === ui.openEvent.value)) ui.openEvent.value = null; }
     if (f.countryDetail !== undefined) ui.countryDetail.value = f.countryDetail;
   }
 
@@ -157,7 +159,8 @@ export class GameController {
       else if (e.type === 'lawFailed' && e.country === me) pushToast({ kind: 'info', text: `${LAW_BY_ID[e.law]?.name ?? e.law} failed: ${e.reason === 'noSupport' ? 'support collapsed' : e.reason === 'timeout' ? 'it took too long' : e.reason === 'revolution' ? 'the revolution changed that law' : 'your overlord blocked it'}.` });
       else if (e.type === 'revolt' && e.country === me) { pushToast({ kind: 'war', sticky: true, text: `Revolt! Your ${GROUPS[e.group].name.toLowerCase()} have risen up demanding ${LAW_BY_ID[e.law]?.name ?? 'change'}. Beat them, or give in from the Diplomacy tab (Make peace).` }); haptic('heavy'); }
       else if (e.type === 'revolt') pushToast({ kind: 'info', text: `Revolt in ${name(e.country)}: the ${GROUPS[e.group].name.toLowerCase()} have risen up.` });
-      else if (e.type === 'revoltEnded' && e.country === me) pushToast({ kind: e.won ? 'war' : 'good', text: e.won ? 'The rebels won: their law is now yours, and their land comes back to you.' : 'The revolt is over and the land is yours again.' });
+      else if (e.type === 'revoltEnded' && e.country === me) pushToast({ kind: e.won ? 'war' : 'good', text: e.independence ? `${name(e.rebels)} has won its independence.` : e.won ? 'The rebels won: their law is now yours, and their land comes back to you.' : 'The revolt is over and the land is yours again.' });
+      else if (e.type === 'revoltEnded' && e.independence) pushToast({ kind: 'info', text: `${name(e.rebels)} has won its independence from ${name(e.country)}.` });
       else if (e.type === 'revoltEnded') continue;
       else if (e.type === 'blocInvited' && e.to === me) {
         const from = e.from;
@@ -174,6 +177,14 @@ export class GameController {
       else if (e.type === 'blocLeaderChanged' && ui.diplo.value?.bloc.mine && (e.from === ui.diplo.value.bloc.mine.leader || e.to === me)) pushToast({ kind: 'info', text: `${name(e.to)} now leads the power bloc.` });
       else if (e.type === 'companyFounded' && e.country === me) pushToast({ kind: 'good', text: `${COMPANY_BY_ID[e.company]?.name ?? 'The company'} is founded.` });
       else if (e.type === 'charterEnded' && e.country === me) pushToast({ kind: 'info', text: `${COMPANY_BY_ID[e.company]?.name ?? 'A company'} lost its investment charter: you have no puppets left.` });
+      else if (e.type === 'eventFired' && e.country === me) {
+        const pending = e.pending, title = eventById(e.event)?.title ?? 'Something has happened';
+        const id = pushToast({ kind: 'peace', sticky: true, text: `New event: ${title}`, actions: [{ label: 'Open', run: () => { ui.openEvent.value = pending; ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); } }] });
+        haptic('light');
+      }
+      else if (e.type === 'eventResolved' && e.country === me && e.skipped > 0) pushToast({ kind: 'info', text: `${e.skipped} of the chosen effects no longer applied and were skipped.` });
+      else if (e.type === 'nationFormed') pushToast({ kind: e.country === me ? 'good' : 'info', text: e.country === me ? `You have proclaimed ${e.name}!` : `${e.name} has been proclaimed.` });
+      else if (e.type === 'nationReleased') pushToast({ kind: 'info', text: `${name(e.country)} is now independent of ${name(e.from)}.` });
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
       else if (e.type === 'playCancelled' && e.target === me && !country(e.initiator)?.alive) continue;

@@ -8,6 +8,7 @@ import { Dock } from './components/Dock';
 import { AttackSlider } from './components/AttackSlider';
 import { SelectionCard } from './components/SelectionCard';
 import { Toasts } from './components/Toasts';
+import { EventCard } from './components/EventCard';
 import { RotatePrompt } from './components/RotatePrompt';
 import { TabContent } from './tabs/TabContent';
 import { ScoreScreen } from './screens/ScoreScreen';
@@ -28,6 +29,7 @@ export function GameScreen() {
       {tab && <Panel title={title}><TabContent tab={tab} /></Panel>}
       <TabBar />
       <Toasts />
+      <EventCard />
       <ScoreScreen />
       {layout === 'rotate' && <RotatePrompt />}
     </div>
