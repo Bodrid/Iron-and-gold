@@ -2,7 +2,9 @@
 import { SHIPS } from '../../content/ships';
 import { GOODS } from '../../content/goods';
 import { TICKS_PER_DAY } from '../calendar';
+import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
+import { atWar } from '../war';
 import type { Command, CountryId, GameState, Ship, ShipOrder, SimEvent, TradeRoute } from '../types';
 import { getNavGrid, portCell, seaPath } from './nav';
 import { portStates, routeHooks } from './trade';
@@ -81,6 +83,88 @@ export function moveShips(state: GameState, events: SimEvent[]): void {
     }
     s.cell = path[Math.round(s.pathPos)];
   }
+  // Escorts that reached their route stay with its trade ship.
+  for (const s of state.ships) {
+    if (s.order.type !== 'escort') continue;
+    const order = s.order;
+    if (!state.tradeRoutes.some(r => r.id === order.routeId)) { s.order = { type: 'patrol', cell: s.cell }; s.fromCell = s.toCell = s.cell; s.pathPos = 0; continue; }
+    const path = lane(state, s);
+    if (path && s.pathPos < path.length - 1) continue;
+    const t = state.ships.find(x => x.kind === 'trade' && x.routeId === order.routeId);
+    if (t) { s.cell = s.fromCell = s.toCell = t.cell; s.pathPos = 0; }
+  }
+}
+
+// ---- encounters: battles, piracy, sinking transports ----
+function hostile(state: GameState, a: CountryId, b: CountryId): boolean {
+  return a !== b && atWar(state, a, b) !== undefined;
+}
+
+function neighbourhood(state: GameState, cell: number, buckets: Map<number, Ship[]>): Ship[] {
+  const g = getNavGrid(state.map);
+  const out: Ship[] = [];
+  const cx = cell % g.w, cy = Math.floor(cell / g.w);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= g.w || y >= g.h) continue;
+    const b = buckets.get(y * g.w + x);
+    if (b) for (const s of b) out.push(s);
+  }
+  return out;
+}
+
+function battle(state: GameState, a: Ship[], b: Ship[], cell: number, events: SimEvent[]): CountryId {
+  const strength = (side: Ship[]) => side.reduce((n, s) => n + SHIPS[s.kind].strength * s.hp, 0);
+  const sa = strength(a), sb = strength(b);
+  const [win, lose, sw, sl] = sa >= sb ? [a, b, sa, sb] : [b, a, sb, sa];
+  const N = BALANCE.navy;
+  const lost = Math.min(lose.length, Math.max(1, Math.ceil(lose.length * Math.min(1, N.LOSS_RATE * (sw / Math.max(1e-9, sl))))));
+  const victims = [...lose].sort((x, y) => x.hp - y.hp || SHIPS[x.kind].strength - SHIPS[y.kind].strength || x.id - y.id).slice(0, lost);
+  for (const v of victims) removeShip(state, v, events);
+  const dmg = N.WINNER_DAMAGE * (sl / Math.max(1e-9, sw));
+  for (const w of win) { w.hp -= dmg; if (w.hp <= 0.05) removeShip(state, w, events); }
+  const winner = win[0].owner;
+  events.push({ type: 'navalBattle', a: a[0].owner, b: b[0].owner, winner, cell });
+  return winner;
+}
+
+export function navalEncounters(state: GameState, events: SimEvent[]): void {
+  const buckets = new Map<number, Ship[]>();
+  for (const s of state.ships) { const b = buckets.get(s.cell); if (b) b.push(s); else buckets.set(s.cell, [s]); }
+  const fought = new Set<number>();
+  const alive = (s: Ship) => state.ships.includes(s);
+  for (const w of state.ships.slice()) {
+    if (w.kind !== 'warship' || fought.has(w.id) || !alive(w)) continue;
+    const near = neighbourhood(state, w.cell, buckets).filter(alive);
+    // Battles with enemy warships (escorts included).
+    const enemy = near.find(x => x.kind === 'warship' && hostile(state, w.owner, x.owner) && !fought.has(x.id));
+    if (enemy) {
+      const mine = near.filter(x => x.owner === w.owner && x.kind !== 'trade');
+      const theirs = near.filter(x => x.owner === enemy.owner && x.kind !== 'trade');
+      for (const s of [...mine, ...theirs]) fought.add(s.id);
+      battle(state, mine, theirs, w.cell, events);
+      if (!alive(w)) continue;
+    }
+    if (w.order.type !== 'patrol' && w.order.type !== 'raid') continue;
+    for (const t of near) {
+      if (!alive(t) || !alive(w)) continue;
+      if (t.kind === 'transport' && hostile(state, w.owner, t.owner)) {
+        const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.owner === t.owner);
+        if (!guarded) removeShip(state, t, events);
+      } else if (t.kind === 'trade') {
+        const r = state.tradeRoutes.find(x => x.id === t.routeId);
+        if (!r || r.captured || !(hostile(state, w.owner, r.exporter) || hostile(state, w.owner, r.importer))) continue;
+        const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.order.type === 'escort' && (x.order as { routeId: number }).routeId === r.id && hostile(state, w.owner, x.owner));
+        if (guarded) continue;
+        const value = r.amount * state.countries[r.exporter].prices[r.good];
+        r.captured = true;
+        state.countries[w.owner].money += value;
+        state.countries[w.owner].income += value;
+        t.pathPos = 0; t.dir = 1; t.cell = t.fromCell;   // the cargo is gone; the ship starts its voyage again
+        events.push({ type: 'shipCaptured', ship: t.id, owner: t.owner, by: w.owner, value });
+      }
+    }
+  }
 }
 
 export function shipBuildTick(state: GameState, events: SimEvent[]): void {
@@ -153,5 +237,5 @@ handlers.orderShip = (state, cmd: Extract<Command, { type: 'orderShip' }>) => {
   return null;
 };
 
-systems.day.push((state, events) => { shipBuildTick(state, events); moveShips(state, events); });
+systems.day.push((state, events) => { shipBuildTick(state, events); moveShips(state, events); navalEncounters(state, events); });
 systems.month.push(state => monthlyShipUpkeep(state));

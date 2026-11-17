@@ -97,5 +97,11 @@ export const BALANCE = {
     CANDIDATES: 5,
     PATH_SEARCHES_PER_MONTH: 2,
   },
+  navy: {
+    /** Battle losses: share of the loser's ships sunk per unit of strength advantage. */
+    LOSS_RATE: 0.6,
+    /** Damage taken by the winner, per unit of the loser's strength relative to the winner's. */
+    WINNER_DAMAGE: 0.25,
+  },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

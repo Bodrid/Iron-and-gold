@@ -101,7 +101,9 @@ export type SimEvent =
   | { type: 'rejected'; command: Command; reason: string }
   | { type: 'gameOver'; kind: 'victory' | 'defeat' | 'endDate' }
   | { type: 'shipBuilt'; country: CountryId; ship: number; kind: ShipKind }
-  | { type: 'shipLost'; country: CountryId; ship: number; kind: ShipKind };
+  | { type: 'shipLost'; country: CountryId; ship: number; kind: ShipKind }
+  | { type: 'shipCaptured'; ship: number; owner: CountryId; by: CountryId; value: number }
+  | { type: 'navalBattle'; a: CountryId; b: CountryId; winner: CountryId; cell: number };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 
