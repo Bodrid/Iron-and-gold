@@ -32,18 +32,20 @@ export function buildTerrain(src: TerrainSources, p: Projection = GRID): Uint8Ar
   const noiseScale = Math.max(2, w / 120);
   for (let y = 0; y < h; y++) {
     const lat = Math.abs(p.latTop - (y + 0.5) * degPerRow);
-    const forestChance = lat >= 50 && lat <= 65 ? 0.7 : lat <= 12 ? 0.65 : lat > 65 ? 0.15 : 0.3;
+    const bump = (c: number, r: number) => Math.max(0, 1 - ((lat - c) / r) ** 2);
+    const forestChance = Math.max(0.05, 0.25 + 0.4 * bump(57, 12) + 0.4 * bump(0, 16) - 0.3 * bump(80, 12));
     for (let x = 0; x < w; x++) {
       const i = y * w + x;
       if (!mask[i]) continue;
-      t[i] = valueNoise(x, y, noiseScale) < forestChance ? Terrain.Forest : Terrain.Plains;
+      const noise = valueNoise(x, y, noiseScale) * 0.65 + valueNoise(x + 9999, y + 7777, noiseScale / 3) * 0.35;
+      t[i] = noise < forestChance ? Terrain.Forest : Terrain.Plains;
     }
   }
 
   // Named regions: mountains, foothills/plateaus, deserts.
   const region = new Uint8Array(w * h);
   for (const f of src.regions.features) {
-    const cla = String(f.properties?.featurecla ?? '');
+    const cla = String(f.properties?.featurecla ?? f.properties?.FEATURECLA ?? '');
     const v = cla === 'Range/mtn' ? Terrain.Mountains : cla === 'Desert' ? Terrain.Desert : cla === 'Plateau' || cla === 'Foothills' ? Terrain.Hills : 0;
     if (!v) continue;
     for (const rings of projectRings(f.geometry, p.toTileF)) fillPolygon(region, w, h, rings, v);

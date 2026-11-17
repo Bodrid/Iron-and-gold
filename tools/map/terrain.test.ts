@@ -37,3 +37,10 @@ it('is deterministic', () => {
   const src = { land: fc([poly(box(-60, -40, 60, 40))]), lakes: fc([]), regions: fc([]), rivers: fc([]) };
   expect(Array.from(buildTerrain(src, p))).toEqual(Array.from(buildTerrain(src, p)));
 });
+
+it('reads the region class from the uppercase FEATURECLA field used by Natural Earth 10m', () => {
+  const p = makeProjection(36);
+  const t = buildTerrain({ land: fc([poly(box(-60, -40, 60, 40))]), lakes: fc([]), regions: fc([poly(box(30, 10, 50, 30), { FEATURECLA: 'Range/mtn' })]), rivers: fc([]) }, p);
+  const [x, y] = p.toTile(40, 20);
+  expect(t[y * p.width + x] & TERRAIN_MASK).toBe(Terrain.Mountains);
+});
