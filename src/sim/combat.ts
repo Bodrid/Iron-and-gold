@@ -5,7 +5,7 @@ import { BALANCE } from './balance';
 import { controlListeners, setTile, statesControlledBy } from './control';
 import { handlers, systems } from './registry';
 import { tileHash } from './rng';
-import { addCasualties, atWar } from './war';
+import { addCasualties, atWar, attackHooks } from './war';
 import type { Attack, Command, CountryId, GameState, SimEvent } from './types';
 
 const C = BALANCE.combat;
@@ -188,6 +188,15 @@ export function combatTick(state: GameState, changed: number[], _events: SimEven
   }
 }
 
+attackHooks.endBetween = (state, a, b, ret) => {
+  for (const x of state.attacks.slice()) if ((x.attacker === a && x.target === b) || (x.attacker === b && x.target === a)) endAttack(state, x, ret);
+};
+attackHooks.endAllOf = (state, c) => {
+  for (const x of state.attacks.slice()) {
+    if (x.attacker === c) endAttack(state, x, false);
+    else if (x.target === c) endAttack(state, x, true);
+  }
+};
 handlers.attack = (state, cmd) => launchAttack(state, cmd);
 handlers.cancelAttack = (state, cmd: Extract<Command, { type: 'cancelAttack' }>) => {
   const a = state.attacks.find(x => x.id === cmd.attackId && x.attacker === cmd.country);
