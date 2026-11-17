@@ -71,4 +71,17 @@ it('save and load mid-voyage replays identically (ships, routes, invasions)', as
   expect(hashState(loaded)).toBe(hashState(g));
 }, 60_000);
 
-it('the save format is version 2', () => { expect(SAVE_VERSION).toBe(2); });
+it('the save format is version 3', () => { expect(SAVE_VERSION).toBe(3); });
+
+it('save and load in the middle of a diplomatic play replays identically', async () => {
+  const { makeGame } = await import('../sim/testing');
+  const { step } = await import('../sim/step');
+  const g = makeGame({ rows: ['AAABBBCCC', 'AAABBBCCC'], owners: { A: 'XXX', B: 'YYY', C: 'ZZZ' }, population: 2_000_000, ai: true, seedEconomy: true });
+  step(g, [{ type: 'startPlay', country: 1, target: 2, demands: [{ kind: 'reparations' }] }]);
+  runYears(g, 0.1);
+  expect(g.plays.length + g.wars.length).toBeGreaterThan(0);
+  await saveGame('2', g);
+  const loaded = deserialize((await loadGame('2')) as SavedGame, g.map);
+  runYears(g, 1); runYears(loaded, 1);
+  expect(hashState(loaded)).toBe(hashState(g));
+}, 60_000);

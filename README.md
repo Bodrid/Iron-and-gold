@@ -9,7 +9,7 @@ A single-player grand strategy game for iPhone and iPad (it runs on PC too): Ope
 
 The game saves itself every 1 January and whenever you leave the app; **Continue** on the menu picks up where you left off.
 
-## What's in this version (stages 1–2)
+## What's in this version (stages 1–3)
 
 - The real world map with 958 named states and the 1836 borders (71 countries).
 - Tile-by-tile attacks with an attack slider, colonising unclaimed land, wars, occupation and a simple peace deal.
@@ -17,9 +17,10 @@ The game saves itself every 1 January and whenever you leave the app; **Continue
 - AI on five levels (Easy to Grand Master; only Grand Master gets bonuses, shown when you pick it).
 - Saves, end-of-century score, early victory at half the world's land.
 - Trade: ports open routes automatically for spare goods and shortages; trade ships sail visible sea lanes and both sides earn money (Trade tab).
+- Diplomacy: relations and diplomats, treaties (alliance, defensive pact, trade agreement, guarantee, embargo), infamy and coalitions, diplomatic plays (make demands, 60 days for others to pick sides, then they give in or it's war), multi-country wars, peace deals where dominating — and bleeding — earns extra demands, puppets, privateer licences. No surprise attacks.
 - Navies: shipyards build warships and transports; warships raid enemy trade in wartime, escort yours and fight; boats and transports carry troops for invasions across the sea ("Send boat").
 
-Coming next, in order: Victoria-style diplomacy (with privateers), research and laws, power blocs and companies, history events and the 1776 start, deeper AI. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
+Coming next, in order: research and laws, power blocs and companies, history events and the 1776 start, deeper AI. See `docs/superpowers/specs/2026-11-17-iron-and-gold-design.md`.
 
 ## Develop
 

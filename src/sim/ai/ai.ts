@@ -14,10 +14,11 @@ import type { Command, Country, CountryId, GameState, PeaceTerms } from '../type
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
 import { navalDecisions } from './naval';
+import { diplomacyDecisions } from './diplomacy';
 
 const YEAR = 365 * TICKS_PER_DAY;
 /** Chance per 30 days that a fully aggressive AI looks for a war. */
-const WAR_CHANCE_PER_MONTH = 0.08;
+const WAR_CHANCE_PER_MONTH = 0.12;
 
 function pick<T>(state: GameState, items: T[], weight: (t: T) => number, mistake: boolean): T | undefined {
   if (!items.length) return undefined;
@@ -70,11 +71,15 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
   // 4b. The sea: warships, raids, escorts, invasions.
   navalDecisions(state, c, enemies, neighbors, Math.max(0.2, d.attackRatio - 0.1), issue, pers.buildWeights.shipyard ?? 1);
 
-  // 5. Start a war against a weaker neighbour.
+  // 4c. Diplomacy: relations, treaties, plays in progress, puppets.
+  diplomacyDecisions(state, c, d, neighbors, issue);
+
+  // 5. Make demands of a weaker neighbour (a diplomatic play; war follows only if they don't give in).
   if (!enemies.length && !state.plays.some(p => p.sideA.includes(c.id) || p.sideB.includes(c.id)) && c.troops >= c.maxTroops * 0.6) {
     const chance = WAR_CHANCE_PER_MONTH * d.aggression * pers.aggression * (d.decisionDays / 30);
     if (nextRandom(state) < chance) {
-      const targets = [...neighbors].filter(n => n && state.countries[n].alive && state.countries[n].troops < c.troops * 0.6);
+      // A play isn't a war: the target may give in, so demand of anyone noticeably weaker.
+      const targets = [...neighbors].filter(n => n && state.countries[n].alive && !state.countries[n].overlord && state.countries[n].troops < c.troops * 0.9);
       const weight = (n: CountryId) => {
         const t = state.countries[n];
         let w = c.troops / Math.max(1, t.troops);
