@@ -100,3 +100,36 @@ button.ghost { background: transparent; color: var(--dim); }
 .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.15); border-top-color: var(--gold); margin: 0 auto; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error { color: #ffb3ae; }
+
+/* tabs */
+.hint { color: var(--dim); margin: 6px 0; }
+.warn { color: #ffb3ae; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin: 14px 0 6px; }
+.build-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 4px 0 8px; }
+.build-head small { color: var(--dim); }
+.queue { margin: 0 0 8px; padding-left: 18px; color: var(--gold); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.bcard { display: grid; gap: 2px; text-align: left; padding: 8px 10px; background: rgba(255, 255, 255, 0.06); border-radius: 10px; }
+.bcard.off { opacity: 0.5; }
+.bcard .bname { font-weight: 600; }
+.bcard .bname em { font-style: normal; color: var(--dim); font-weight: 500; }
+.bcard small { color: var(--dim); font-size: 11px; }
+.bcard .cost { color: var(--gold); font-weight: 600; font-size: 12px; }
+.bcard .reason { color: #ffb3ae; font-size: 12px; }
+.kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 6px 0; }
+.kv > div { display: grid; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 6px 10px; }
+.kv small { color: var(--dim); font-size: 11px; }
+.kv b { font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.row small { color: var(--dim); margin-left: 6px; }
+.grow { flex: 1; min-width: 0; }
+.crow { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.06); border-radius: 0; padding: 4px 6px; }
+.crow small { color: var(--dim); font-size: 11px; white-space: nowrap; }
+.chip-war { background: rgba(229, 83, 75, 0.25); color: #ffb3ae; border-radius: 99px; padding: 2px 8px; font-size: 11px; }
+.sparks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.spark { display: grid; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 6px 10px; }
+.spark small { color: var(--dim); font-size: 11px; }
+.goods { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
+.goods th { text-align: right; color: var(--dim); font-weight: 500; font-size: 11px; padding: 4px; }
+.goods td { text-align: right; padding: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.goods th:first-child, .goods td:first-child { text-align: left; }

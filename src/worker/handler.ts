@@ -77,18 +77,26 @@ export function createWorkerHandler(deps: HandlerDeps) {
     if (!state) return;
     const n = sched.dueTicks();
     const events: SimEvent[] = [];
+    const hadCommands = queue.length > 0;
     for (let i = 0; i < n; i++) {
       const r = step(state, queue);
       queue = [];
       for (const t of r.changedTiles) dirty.push(t);
       for (const e of r.events) events.push(e);
     }
+    let commanded = false;
     if (queue.length && n === 0) {
       // Paused: apply commands immediately so the player sees the result.
       const r = step0(state, queue);
       queue = [];
       for (const t of r.changed) dirty.push(t);
       events.push(...r.events);
+      commanded = true;
+    }
+    if (n > 0 && hadCommands) commanded = true;
+    if (commanded) {
+      if (selected !== null) selectionDirty = true;
+      if (!events.length) { frame(true); return; }
     }
     if (events.length) {
       if (events.some(e => e.type === 'built' || e.type === 'peace' || e.type === 'eliminated')) { buildingsDirty = true; lastLabelsDay = -Infinity; }

@@ -6,7 +6,7 @@ import type { FromWorker, ToWorker } from './protocol';
 import type { StartDef } from '../sim/types';
 
 const start: StartDef = { id: 'test', name: 'Test', startDate: { y: 1836, m: 1, d: 1 }, endYear: 1936, seedEconomy: false,
-  countries: [{ tag: 'XXX', name: 'X', color: 0xff0000, capital: 'T-A', population: 100_000, money: 1000 }, { tag: 'YYY', name: 'Y', color: 0x0000ff, capital: 'T-B', population: 100_000, money: 1000 }],
+  countries: [{ tag: 'XXX', name: 'X', color: 0xff0000, capital: 'T-A', population: 100_000, money: 100_000 }, { tag: 'YYY', name: 'Y', color: 0x0000ff, capital: 'T-B', population: 100_000, money: 1000 }],
   ownership: [{ states: ['T-A'], owner: 'XXX' }, { states: ['T-B'], owner: 'YYY' }] };
 
 function shim() {
@@ -67,4 +67,19 @@ it('reports the selected state in detail', async () => {
   const sel = frames.find(f => f.selection)?.selection;
   expect(sel?.name).toBe('A');
   expect(sel?.buildOptions.length).toBe(15);
+});
+
+it('refreshes the selected state right after a command while paused', async () => {
+  const { fake, advance } = shim();
+  const host = new GameHost(fake);
+  await host.newGame({ startId: 'test', playerTag: 'XXX', difficulty: 'normal', rivalsHarder: false, seed: 1 }, '/');
+  const frames: any[] = [];
+  host.onFrame(f => frames.push(f));
+  host.select(1);
+  advance(60);
+  frames.length = 0;
+  host.send({ type: 'build', country: 1, state: 1, building: 'barracks' });
+  advance(20);
+  const sel = frames.find(f => f.selection)?.selection;
+  expect(sel?.constructions).toHaveLength(1);
 });

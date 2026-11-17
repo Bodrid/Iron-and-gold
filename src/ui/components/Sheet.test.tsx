@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { it, expect, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
+import { it, expect, beforeEach, afterEach } from 'vitest';
+import { render, cleanup, fireEvent } from '@testing-library/preact';
 import { Sheet } from './Sheet';
 import { ui } from '../store';
 
+afterEach(cleanup);
 beforeEach(() => { ui.tab.value = 'build'; ui.sheet.value = 'half'; });
 
 function drag(el: Element, dy: number) {
