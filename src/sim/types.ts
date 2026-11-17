@@ -25,6 +25,7 @@ export interface Country {
   produced: Record<Good, number>; demanded: Record<Good, number>;
   gdp: number; income: number; sol: number; literacy: number; researchPoints: number;
   /** Money earned from trade last month (included in income). */ tradeIncome: number;
+  /** Rises when taking land and puppets; decays monthly. */ infamy: number;
   /** Owned tiles. */ tiles: number;
   /** Controlled tiles (owned and not occupied, plus occupied enemy tiles). */ controlled: number;
   population: number; history: StatSample[];
@@ -84,6 +85,7 @@ export interface GameState {
   /** Relations, n×n (index a*n+b), −100..100. */ relations: Int16Array;
   diploActions: { from: CountryId; to: CountryId; kind: 'improve' | 'worsen' }[];
   treaties: Treaty[];
+  coalitions: { id: number; target: CountryId; members: CountryId[] }[];
   treatyOffers: { from: CountryId; to: CountryId; kind: TreatyKind; tick: number }[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
@@ -125,7 +127,9 @@ export type SimEvent =
   | { type: 'treatyOffered'; from: CountryId; to: CountryId; kind: TreatyKind }
   | { type: 'treatySigned'; a: CountryId; b: CountryId; kind: TreatyKind }
   | { type: 'treatyRefused'; from: CountryId; to: CountryId; kind: TreatyKind }
-  | { type: 'treatyEnded'; a: CountryId; b: CountryId; kind: TreatyKind };
+  | { type: 'treatyEnded'; a: CountryId; b: CountryId; kind: TreatyKind }
+  | { type: 'coalitionFormed'; target: CountryId; members: CountryId[] }
+  | { type: 'coalitionDissolved'; target: CountryId };
 
 export interface TickResult { changedTiles: number[]; events: SimEvent[]; newDay: boolean; newMonth: boolean }
 

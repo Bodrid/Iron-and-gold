@@ -2,6 +2,7 @@
 // declare war, fight, then a peace deal hands over every state the winner occupies by majority.
 import { getStateTiles } from '../map/stateTiles';
 import { TICKS_PER_DAY } from './calendar';
+import { BALANCE } from './balance';
 import { setTile, stateControlShare, statesOwnedBy } from './control';
 import { handlers, systems } from './registry';
 import type { Command, CountryId, GameState, SimEvent, War } from './types';
@@ -70,6 +71,7 @@ export function makePeace(state: GameState, war: War, events: SimEvent[], change
       if (state.owner[t] === side && state.controller[t] === other) setTile(state, t, side, side, changed);
     }
   }
+  if (winner && transferred.length) state.countries[winner].infamy += BALANCE.diplomacy.INFAMY_PER_STATE * transferred.length;
   endAttacksBetween(state, war.a, war.b, true);
   state.wars = state.wars.filter(w => w !== war);
   state.peaceOffers = state.peaceOffers.filter(o => !((o.from === war.a && o.to === war.b) || (o.from === war.b && o.to === war.a)));

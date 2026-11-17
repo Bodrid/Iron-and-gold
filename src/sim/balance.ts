@@ -122,6 +122,14 @@ export const BALANCE = {
     ALLIANCE_CANCEL_PENALTY: -20,
     TRADE_AGREEMENT_BONUS: 0.25,
     OFFER_DAYS: 30,
+    INFAMY_DECAY: 0.5,
+    INFAMY_COOL: 25,
+    INFAMY_COOL_RELATION: -10,
+    INFAMY_COALITION: 50,
+    /** Relation at or below which a country joins a coalition. */
+    COALITION_RELATION: -15,
+    /** Infamy per state taken in a peace deal (stage-1 placeholder peace). */
+    INFAMY_PER_STATE: 4,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

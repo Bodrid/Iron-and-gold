@@ -9,5 +9,6 @@ import './naval/ships';
 import './naval/invasion';
 import './diplomacy/relations';
 import './diplomacy/treaties';
+import './diplomacy/infamy';
 import './ai/ai';
 import './victory';
