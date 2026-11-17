@@ -4,6 +4,8 @@ import { step } from '../step';
 import { atWar } from '../war';
 import { changeRelation, relation } from './relations';
 import type { GameState } from '../types';
+import { playHooks } from './plays';
+import { makePuppet } from './subjects';
 
 // XXX | YYY | ZZZ | QQQ in a row; YYY has two states (B, E).
 const world = (): GameState => {
@@ -70,4 +72,28 @@ it('a play whose target dies is cancelled', () => {
   runDays(g, 2);
   expect(g.plays).toHaveLength(0);
   expect(atWar(g, 1, 4)).toBeUndefined();
+});
+
+it('third parties get their say even when the play starts between day ticks', () => {
+  const g = world();
+  const seen: number[] = [];
+  const old = playHooks.decide;
+  playHooks.decide = (_s, p) => { seen.push(p.id); };
+  try {
+    step(g, []);                                   // tick 1: not a day boundary
+    step(g, [{ type: 'startPlay', country: 1, target: 2, demands: demandB(g) }]);
+    runDays(g, 40);
+    expect(seen).toHaveLength(1);
+  } finally { playHooks.decide = old; }
+});
+
+it('puppets stay out of plays', () => {
+  const g = world();
+  sign(g, 3, 2);                                   // ZZZ allied to YYY
+  makePuppet(g, 1, 3, []);                         // then ZZZ becomes XXX's puppet: its treaties end
+  expect(g.treaties.some(t => t.a === 3 || t.b === 3)).toBe(false);
+  step(g, [{ type: 'startPlay', country: 1, target: 2, demands: demandB(g) }]);
+  expect(g.plays[0].sideB).toEqual([2]);
+  const r = step(g, [{ type: 'proposeTreaty', country: 3, target: 4, kind: 'defensivePact' }]);
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'rejected' }));
 });

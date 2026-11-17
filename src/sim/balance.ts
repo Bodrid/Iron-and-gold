@@ -141,8 +141,6 @@ export const BALANCE = {
     INFAMY_COALITION: 50,
     /** Relation at or below which a country joins a coalition. */
     COALITION_RELATION: -15,
-    /** Infamy per state taken in a peace deal (stage-1 placeholder peace). */
-    INFAMY_PER_STATE: 4,
     PLAY_DAYS: 60,
     /** The target gives in if its side is weaker than this share of the initiator's side. */
     BACK_DOWN_RATIO: 0.5,
@@ -155,6 +153,11 @@ export const BALANCE = {
     ANNEX_INFAMY: 10,
     PRIVATEER_INFAMY: 5,
     PRIVATEER_RELATION: -10,
+    /** AI countries keep at most this many defensive pacts / guarantees given. */
+    AI_MAX_PACTS: 2,
+    AI_MAX_GUARANTEES: 2,
+    /** An AI initiator backs down only if the defenders are this much stronger. */
+    AI_CLIMB_DOWN_RATIO: 2,
   },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

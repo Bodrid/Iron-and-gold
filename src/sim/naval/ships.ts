@@ -172,7 +172,7 @@ function encounterLoop(state: GameState, events: SimEvent[], buckets: Map<number
         const r = state.tradeRoutes.find(x => x.id === t.routeId);
         const prey = (x: CountryId) => hostile(state, w.owner, x) || piracyHooks.licensed(state, w.owner, x);
         if (!r || r.captured || !(prey(r.exporter) || prey(r.importer))) continue;
-        const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.order.type === 'escort' && (x.order as { routeId: number }).routeId === r.id && hostile(state, w.owner, x.owner));
+        const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.order.type === 'escort' && (x.order as { routeId: number }).routeId === r.id && x.owner !== w.owner);
         if (guarded) continue;
         const value = r.amount * state.countries[r.exporter].prices[r.good];
         r.captured = true;

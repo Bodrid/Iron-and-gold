@@ -3,7 +3,7 @@ import { DEMAND_NAMES } from '../content/diplomacy';
 import { TICKS_PER_DAY } from '../sim/calendar';
 import { coalitionAgainst } from '../sim/diplomacy/infamy';
 import { peacePoints, termsCost } from '../sim/diplomacy/peace';
-import { playCheck, sideStrength } from '../sim/diplomacy/plays';
+import { playCheck, sideStrength, joinCheck } from '../sim/diplomacy/plays';
 import { diploCapacity, relation } from '../sim/diplomacy/relations';
 import { annexCheck } from '../sim/diplomacy/subjects';
 import { treatyCheck } from '../sim/diplomacy/treaties';
@@ -26,7 +26,7 @@ export function diploView(state: GameState, me: CountryId): DiploView {
     treatyOffers: state.treatyOffers.filter(o => o.to === me).map(o => ({ from: o.from, kind: o.kind })),
     peaceOffers: state.peaceOffers.filter(o => o.to === me).map(o => ({ from: o.from, warId: o.warId, white: !!o.terms.white, give: !!o.terms.give, demands: o.terms.demands.map(d => demandLabel(state, d)) })),
     plays: state.plays.map(p => ({ id: p.id, initiator: p.initiator, target: p.target, demands: p.demands.map(d => demandLabel(state, d)), sideA: [...p.sideA], sideB: [...p.sideB],
-      strengthA: sideStrength(state, p.sideA), strengthB: sideStrength(state, p.sideB), daysLeft: Math.max(0, Math.ceil((p.endTick - state.tick) / TICKS_PER_DAY)) })),
+      strengthA: sideStrength(state, p.sideA), strengthB: sideStrength(state, p.sideB), daysLeft: Math.max(0, Math.ceil((p.endTick - state.tick) / TICKS_PER_DAY)), join: joinCheck(state, me, p.id) })),
     wars: state.wars.filter(w => sideOf(w, me)).map(w => {
       const mineA = sideOf(w, me) === 'A';
       const enemySide = mineA ? w.sideB : w.sideA;

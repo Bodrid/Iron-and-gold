@@ -1,6 +1,7 @@
 // The AI's diplomacy: relations, treaties, sides in plays, climb-downs, puppets, privateers, separate peace.
 import { personalityOf } from '../../content/personalities';
 import { TICKS_PER_DAY } from '../calendar';
+import { BALANCE } from '../balance';
 import { applyCommand } from '../registry';
 import { annexCheck, puppetsOf } from '../diplomacy/subjects';
 import { diploCapacity, relation } from '../diplomacy/relations';
@@ -11,6 +12,7 @@ import type { Command, Country, CountryId, GameState, TreatyKind } from '../type
 import type { DifficultyParams } from './difficulty';
 
 const YEAR = 365 * TICKS_PER_DAY;
+const D = BALANCE.diplomacy;
 
 export function diplomacyDecisions(state: GameState, c: Country, d: DifficultyParams, neighbours: Set<CountryId>, issue: (cmd: Command) => void): void {
   const pers = personalityOf(c.personality);
@@ -29,20 +31,23 @@ export function diplomacyDecisions(state: GameState, c: Country, d: DifficultyPa
   for (const x of friends) { if (free <= 0) break; issue({ type: 'improveRelations', country: c.id, target: x.id }); free--; }
   for (const x of alive.filter(isRival)) { if (free <= 0) break; if (!mine.some(a => a.to === x.id) && relation(state, c.id, x.id) > -55) { issue({ type: 'worsenRelations', country: c.id, target: x.id }); free--; } }
 
-  // Treaties.
+  // Treaties (capped, so not every target ends up with a wall of defenders).
+  const count = (x: CountryId, kind: TreatyKind) => state.treaties.filter(t => t.kind === kind && (t.a === x || t.b === x)).length;
   const propose = (target: CountryId, kind: TreatyKind) => {
     if (treatyCheck(state, c.id, target, kind)) return;
+    if (kind === 'defensivePact' && (count(c.id, 'defensivePact') >= D.AI_MAX_PACTS || (!state.countries[target].isPlayer && count(target, 'defensivePact') >= D.AI_MAX_PACTS))) return;
+    if (kind === 'guarantee' && state.treaties.filter(t => t.kind === 'guarantee' && t.a === c.id).length >= D.AI_MAX_GUARANTEES) return;
     if (!state.countries[target].isPlayer && !treatyPolicy.accepts(state, target, c.id, kind)) return;   // don't spam refusals
     if (state.treatyOffers.some(o => o.from === c.id && o.to === target && o.kind === kind)) return;
     // Ask the player at most twice a year.
     if (state.countries[target].isPlayer && Math.floor(state.tick / TICKS_PER_DAY) % 180 >= d.decisionDays) return;
     issue({ type: 'proposeTreaty', country: c.id, target, kind });
   };
-  const alliances = state.treaties.filter(t => t.kind === 'alliance' && (t.a === c.id || t.b === c.id)).length;
+  let alliances = state.treaties.filter(t => t.kind === 'alliance' && (t.a === c.id || t.b === c.id)).length;
   for (const x of alive) {
     const v = relation(state, c.id, x.id);
     if (isRival(x)) continue;
-    if (alliances < 1 && v >= 50 && x.troops > c.troops * 0.3) propose(x.id, 'alliance');
+    if (alliances < 1 && v >= 50 && x.troops > c.troops * 0.3) { propose(x.id, 'alliance'); alliances++; }
     else if (v >= 40 && neighbours.has(x.id) && x.troops < c.troops) propose(x.id, 'defensivePact');
     if (v >= 0 && state.tradeRoutes.some(r => (r.exporter === c.id && r.importer === x.id) || (r.exporter === x.id && r.importer === c.id))) propose(x.id, 'tradeAgreement');
     if (v >= 20 && neighbours.has(x.id) && x.troops * 3 < c.troops && !hasTreaty(state, c.id, x.id, 'guarantee')) propose(x.id, 'guarantee');
@@ -50,11 +55,11 @@ export function diplomacyDecisions(state: GameState, c: Country, d: DifficultyPa
 
   // Back down from a hopeless play we started.
   for (const p of state.plays) {
-    if (p.initiator === c.id && p.endTick - state.tick <= 5 * TICKS_PER_DAY && sideStrength(state, p.sideB) > 1.5 * sideStrength(state, p.sideA)) issue({ type: 'backDown', country: c.id, playId: p.id });
+    if (p.initiator === c.id && p.endTick - state.tick <= d.decisionDays * TICKS_PER_DAY && sideStrength(state, p.sideB) > D.AI_CLIMB_DOWN_RATIO * sideStrength(state, p.sideA)) issue({ type: 'backDown', country: c.id, playId: p.id });
   }
 
   // Puppets: annex when allowed and our infamy is low.
-  for (const p of puppetsOf(state, c.id)) if (!annexCheck(state, c.id, p) && c.infamy < 20) issue({ type: 'annexPuppet', country: c.id, puppet: p });
+  for (const p of puppetsOf(state, c.id)) if (!state.countries[p].isPlayer && !annexCheck(state, c.id, p) && c.infamy < 20) issue({ type: 'annexPuppet', country: c.id, puppet: p });
 
   // Privateers against Hostile rivals if we have a navy.
   const warships = state.ships.filter(s => s.owner === c.id && s.kind === 'warship').length;

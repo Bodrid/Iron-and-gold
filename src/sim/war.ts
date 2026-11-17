@@ -1,5 +1,5 @@
-// Wars between countries. Stage-1 placeholder for Victoria-style diplomatic plays:
-// declare war, fight, then a peace deal hands over every state the winner occupies by majority.
+// Wars between two sides, started only when a diplomatic play fails: war score, casualties, separate peace,
+// returning occupied land and eliminating countries that lose everything.
 import { getStateTiles } from '../map/stateTiles';
 import { TICKS_PER_DAY } from './calendar';
 import { setTile, stateControlShare, statesOwnedBy } from './control';
@@ -62,7 +62,7 @@ export function warScore(state: GameState, war: War, side: CountryId): number {
     for (const s of statesOwnedBy(state, e)) for (const t of getStateTiles(state.map, s)) if (state.owner[t] === e && mySide.includes(state.controller[t])) occupied++;
   }
   const occ = occupied / Math.max(1, total);
-  const cas = own + theirs > 0 ? theirs / (own + theirs) : 0.5;
+  const cas = own + theirs > 0 ? theirs / (own + theirs) : 0;
   const goalStates = mine ? war.goals.filter(g => g.kind === 'state').map(g => (g as { state: number }).state) : [];
   const goal = goalStates.length
     ? goalStates.filter(s => mySide.some(c => stateControlShare(state, s, c) > 0.5)).length / goalStates.length

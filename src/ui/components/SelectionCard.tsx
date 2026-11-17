@@ -1,3 +1,4 @@
+import { DIPLO_REASON } from '../tabs/diploText';
 import { colourCss, country, fmtNum, ui } from '../store';
 import { session } from '../game';
 
@@ -29,7 +30,8 @@ export function SelectionCard() {
         {!d.owner && <button class="war" onClick={() => session.game!.attack(0)}>Attack</button>}
         {boatable && <button onClick={() => session.game!.send({ type: 'navalInvasion', country: me, target: d.owner, tile: beach, ratio: ui.attackRatio.value })}>Send boat</button>}
         {owner && !mine && atWar && <button class="war" onClick={() => session.game!.attack(owner.id)}>Attack</button>}
-        {owner && !mine && !atWar && !confirm && <button onClick={() => (ui.confirmWar.value = owner.id)}>Demand this state</button>}
+        {owner && !mine && !atWar && !confirm && <button disabled={!!d.play} onClick={() => (ui.confirmWar.value = owner.id)}>Demand this state</button>}
+        {owner && !mine && !atWar && d.play && <small class="hint">{DIPLO_REASON[d.play] ?? d.play}</small>}
         {owner && !mine && !atWar && confirm && (
           <>
             <button class="war" onClick={() => { session.game!.send({ type: 'startPlay', country: me, target: owner.id, demands: [{ kind: 'state', state: d.id }] }); ui.confirmWar.value = null; }}>Yes, demand {d.name} from {owner.name}</button>

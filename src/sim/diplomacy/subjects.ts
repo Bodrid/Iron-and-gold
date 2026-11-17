@@ -4,8 +4,9 @@ import { BALANCE } from '../balance';
 import { TICKS_PER_DAY } from '../calendar';
 import { setTile, statesOwnedBy } from '../control';
 import { handlers, systems } from '../registry';
-import { sideOf, warStartHooks } from '../war';
-import type { Command, CountryId, GameState } from '../types';
+import { sideOf, warsOf, warStartHooks } from '../war';
+import type { Command, CountryId, GameState, SimEvent, TreatyKind } from '../types';
+import { endTreaty } from './treaties';
 import { subjectHooks } from './demands';
 import { addInfamy } from './infamy';
 import { relation, relationBaselineHooks } from './relations';
@@ -16,12 +17,18 @@ export function puppetsOf(state: GameState, c: CountryId): CountryId[] {
   return state.countries.filter(x => x.alive && x.overlord === c).map(x => x.id);
 }
 
-export function makePuppet(state: GameState, overlord: CountryId, puppet: CountryId): void {
+export function makePuppet(state: GameState, overlord: CountryId, puppet: CountryId, events: SimEvent[]): void {
   for (const id of puppetsOf(state, puppet)) state.countries[id].overlord = 0;   // no chains
   if (state.countries[overlord].overlord === puppet) state.countries[overlord].overlord = 0;
   state.countries[puppet].overlord = overlord;
   state.countries[puppet].puppetSince = state.tick;
+  // A puppet's foreign policy is its overlord's: its alliances, pacts and guarantees end.
+  for (const t of state.treaties.slice()) {
+    if ((t.a === puppet || t.b === puppet) && PUPPET_ENDS.includes(t.kind)) endTreaty(state, t, events);
+  }
+  events.push({ type: 'puppeted', overlord, puppet });
 }
+const PUPPET_ENDS: TreatyKind[] = ['alliance', 'defensivePact', 'guarantee'];
 subjectHooks.makePuppet = makePuppet;
 
 relationBaselineHooks.push((state, a, b) => (state.countries[a].overlord === b || state.countries[b].overlord === a ? D.PUPPET_RELATION : 0));
@@ -39,6 +46,7 @@ export function annexCheck(state: GameState, c: CountryId, puppet: CountryId): s
   if (!p?.alive || p.overlord !== c) return 'notYourPuppet';
   if (state.tick - p.puppetSince < D.ANNEX_YEARS * 365 * TICKS_PER_DAY) return 'tooSoon';
   if (relation(state, c, puppet) <= -15) return 'needsNeutral';
+  if (warsOf(state, puppet).length || warsOf(state, c).length) return 'atWar';
   return null;
 }
 

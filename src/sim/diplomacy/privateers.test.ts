@@ -46,3 +46,26 @@ it('a licence needs Hostile relations and lapses when they warm to Cold', () => 
   navalEncounters(g, events);
   expect(events.filter(e => e.type === 'shipCaptured')).toEqual([]);
 });
+
+it('an escort protects its route from privateers too', () => {
+  const g = withRoute();
+  changeRelation(g, 3, 1, -70 - relation(g, 1, 3));
+  step(g, [{ type: 'setPrivateers', country: 3, target: 1, on: true }]);
+  const t = raider(g);
+  g.ships.push({ id: g.nextId++, owner: 1, kind: 'warship', cell: t.cell, fromCell: t.cell, toCell: t.cell, pathPos: 0, dir: 1, order: { type: 'escort', routeId: t.routeId! }, hp: 1 });
+  const events: any[] = [];
+  navalEncounters(g, events);
+  expect(events.filter(e => e.type === 'shipCaptured')).toEqual([]);
+});
+
+it('an AI with a licence sends its warships raiding', async () => {
+  const g = withRoute();
+  const { navalDecisions } = await import('../ai/naval');
+  changeRelation(g, 3, 1, -70 - relation(g, 1, 3));
+  step(g, [{ type: 'setPrivateers', country: 3, target: 1, on: true }]);
+  const t = g.ships.find(s => s.kind === 'trade')!;
+  g.ships.push({ id: g.nextId++, owner: 3, kind: 'warship', cell: t.cell, fromCell: t.cell, toCell: t.cell, pathPos: 0, dir: 1, order: { type: 'patrol', cell: t.cell }, hp: 1 });
+  const cmds: any[] = [];
+  navalDecisions(g, g.countries[3], [], new Set(), 1, c => cmds.push(c), 1);
+  expect(cmds).toContainEqual(expect.objectContaining({ type: 'orderShip', order: expect.objectContaining({ type: 'raid' }) }));
+});

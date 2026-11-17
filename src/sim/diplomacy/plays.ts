@@ -53,7 +53,9 @@ function joiners(state: GameState, initiator: CountryId, target: CountryId) {
   for (const m of coalitionDefenders(state, initiator, target)) if (!sideB.includes(m)) sideB.push(m);
   // The initiator's allies come only if they aren't also bound to the defence.
   const sideA = [initiator, ...allies(initiator).filter(a => !sideB.includes(a) && !allies(a).includes(target))];
-  return { sideA: sideA.filter((c, i) => i === 0 || (state.countries[c].alive && !busy(c))), sideB: sideB.filter((c, i) => i === 0 || (state.countries[c].alive && !busy(c) && !sideA.includes(c))) };
+  // Puppets follow their overlord into wars (warStartHooks), never into someone else's play.
+  const free = (c: CountryId) => state.countries[c].alive && !busy(c) && !state.countries[c].overlord;
+  return { sideA: sideA.filter((c, i) => i === 0 || free(c)), sideB: sideB.filter((c, i) => i === 0 || (free(c) && !sideA.includes(c))) };
 }
 
 export function startPlay(state: GameState, initiator: CountryId, target: CountryId, demands: Demand[], events: SimEvent[]): Play {
@@ -81,7 +83,7 @@ export function playTick(state: GameState, events: SimEvent[], changed: number[]
     p.sideA = p.sideA.filter(c => state.countries[c].alive);
     p.sideB = p.sideB.filter(c => state.countries[c].alive);
     if (!state.countries[p.initiator].alive || !state.countries[p.target].alive) { cancelPlay(state, p, events); continue; }
-    if (state.tick === p.startTick + Math.floor(D.PLAY_DAYS / 2) * TICKS_PER_DAY) playHooks.decide(state, p, events);
+    if (!p.decided && state.tick >= p.startTick + Math.floor(D.PLAY_DAYS / 2) * TICKS_PER_DAY) { p.decided = true; playHooks.decide(state, p, events); }
     if (state.tick < p.endTick) continue;
     const target = state.countries[p.target];
     if (!target.isPlayer && sideStrength(state, p.sideB) < D.BACK_DOWN_RATIO * sideStrength(state, p.sideA)) { yieldPlay(state, p, events, changed); continue; }
@@ -96,11 +98,17 @@ handlers.startPlay = (state, cmd: Extract<Command, { type: 'startPlay' }>, event
   startPlay(state, cmd.country, cmd.target, cmd.demands.map(d => ({ ...d })), events);
   return null;
 };
+export function joinCheck(state: GameState, country: CountryId, playId: number): string | null {
+  if (!state.plays.some(x => x.id === playId)) return 'no such play';
+  if (involved(state, country)) return 'alreadyInvolved';
+  if (state.countries[country].overlord) return 'puppet';
+  return null;
+}
+
 handlers.joinPlay = (state, cmd: Extract<Command, { type: 'joinPlay' }>, events) => {
-  const p = state.plays.find(x => x.id === cmd.playId);
-  if (!p) return 'no such play';
-  if (involved(state, cmd.country)) return 'alreadyInvolved';
-  if (state.countries[cmd.country].overlord) return 'puppet';
+  const bad = joinCheck(state, cmd.country, cmd.playId);
+  if (bad) return bad;
+  const p = state.plays.find(x => x.id === cmd.playId)!;
   (cmd.side === 'A' ? p.sideA : p.sideB).push(cmd.country);
   events.push({ type: 'playJoined', country: cmd.country, playId: p.id, side: cmd.side });
   return null;

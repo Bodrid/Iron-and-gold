@@ -8,9 +8,9 @@ import { applyCommand, systems } from '../registry';
 import { nextRandom } from '../rng';
 import { refillBonusHooks } from '../troops';
 import { enemiesIn, warsOf } from '../war';
-import { peacePoints, termsCost } from '../diplomacy/peace';
+import { daysSinceRefused, peacePoints, termsCost } from '../diplomacy/peace';
 import { playCheck } from '../diplomacy/plays';
-import type { Command, Country, CountryId, GameState, PeaceTerms } from '../types';
+import type { Command, Country, CountryId, Demand, GameState, PeaceTerms, War } from '../types';
 import { DIFFICULTIES, effectiveDifficulty } from './difficulty';
 import { buildOptions, neighborCountries } from './evaluate';
 import { navalDecisions } from './naval';
@@ -107,24 +107,42 @@ export function aiDecide(state: GameState, c: Country, issue: (cmd: Command) => 
     if (!state.wars.includes(w) || (w.a !== c.id && w.b !== c.id)) continue;   // only war leaders negotiate
     const enemy = w.a === c.id ? w.b : w.a;
     if (state.peaceOffers.some(o => o.from === c.id && o.to === enemy)) continue;
-    const mine = peacePoints(state, w, c.id), theirs = peacePoints(state, w, enemy);
-    const old = state.tick - w.startTick >= 2 * YEAR;
-    const myGoals = w.a === c.id ? w.goals : [];
-    let terms: PeaceTerms | null = null;
-    if (mine.score >= 90 && myGoals.length) {
-      const demands = [...myGoals];
-      // Dominating: add the enemy's most valuable occupied states while points last.
-      const extras = state.states.filter(st => st.owner && enemiesIn(w, c.id).includes(st.owner) && st.controller === c.id && !demands.some(d => d.kind === 'state' && d.state === st.id))
-        .sort((a, b) => b.population - a.population || a.id - b.id);
-      for (const st of extras) {
-        const next = [...demands, { kind: 'state' as const, state: st.id }];
-        if (termsCost(state, w, c.id, next) <= mine.available) demands.push({ kind: 'state', state: st.id }); else break;
-      }
-      if (termsCost(state, w, c.id, demands) <= mine.available) terms = { demands };
-    } else if (theirs.score >= 100 && w.b === c.id) terms = { demands: w.goals, give: true };
-    else if (old && Math.abs(mine.score - theirs.score) < 30) terms = { demands: [], white: true };
+    if (daysSinceRefused(state, w, c.id) < PEACE_RETRY_DAYS) continue;
+    const terms = peaceTerms(state, w, c.id, enemy);
     if (terms) issue({ type: 'proposePeace', country: c.id, warId: w.id, terms });
   }
+}
+
+const PEACE_RETRY_DAYS = 90;
+
+/** What this AI war leader proposes today, if anything. */
+function peaceTerms(state: GameState, w: War, me: CountryId, enemy: CountryId): PeaceTerms | null {
+  const mine = peacePoints(state, w, me), theirs = peacePoints(state, w, enemy);
+  const old = state.tick - w.startTick >= 2 * YEAR;
+  const myGoals = w.a === me ? w.goals : [];
+  const occupiedBy = (by: CountryId, from: CountryId[]) => state.states
+    .filter(st => st.id && st.owner && from.includes(st.owner) && st.controller === by)
+    .sort((a, b) => b.population - a.population || a.id - b.id);
+  if (mine.winning && mine.score >= 60) {
+    // Our goals first (if we have any), then the enemy's most valuable occupied states while points last.
+    const demands: Demand[] = [...myGoals];
+    for (const st of occupiedBy(me, enemiesIn(w, me))) {
+      if (demands.some(d => d.kind === 'state' && d.state === st.id)) continue;
+      const next: Demand[] = [...demands, { kind: 'state', state: st.id }];
+      if (termsCost(state, w, me, next) <= mine.available) demands.push({ kind: 'state', state: st.id }); else break;
+    }
+    if (!demands.length && termsCost(state, w, me, [{ kind: 'reparations' }]) <= mine.available) demands.push({ kind: 'reparations' });
+    if (demands.length && termsCost(state, w, me, demands) <= mine.available) return { demands };
+  }
+  if (theirs.winning && theirs.score >= 60) {
+    // Beaten: hand over what they fought for, or what they hold plus reparations.
+    const theirGoals = w.a === enemy ? w.goals : [];
+    const demands: Demand[] = theirGoals.length ? [...theirGoals]
+      : [...occupiedBy(enemy, [me]).slice(0, 2).map(st => ({ kind: 'state' as const, state: st.id })), { kind: 'reparations' as const }];
+    return { demands, give: true };
+  }
+  if (old && !mine.winning) return { demands: [], white: true };
+  return null;
 }
 
 /** For tests and tools: the commands an AI would issue today (applied as it decides). */

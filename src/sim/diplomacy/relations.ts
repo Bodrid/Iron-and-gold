@@ -8,8 +8,28 @@ import type { Command, CountryId, GameState } from '../types';
 const D = BALANCE.diplomacy;
 export type RelationLevel = 'hostile' | 'cold' | 'neutral' | 'cordial' | 'friendly';
 
-/** Extra baseline terms from other systems (treaties, infamy…). */
+/** Extra baseline terms from other systems that are cheap per pair (infamy, puppets). */
 export const relationBaselineHooks: ((state: GameState, a: CountryId, b: CountryId) => number)[] = [];
+/** Extra baseline terms that come from lists (treaties): each hook adds its terms pair by pair, once a month. */
+export const relationPairHooks: ((state: GameState, add: (a: CountryId, b: CountryId, v: number) => void) => void)[] = [];
+
+/** Everything the monthly baseline needs, indexed once per month so the pair loop stays O(1) per pair. */
+interface PairIndex { n: number; borders: Set<number>; trade: Set<number>; enemies: Map<CountryId, Set<CountryId>>; actions: Map<number, number>; extra: Map<number, number> }
+const pairKey = (n: number, a: CountryId, b: CountryId) => Math.min(a, b) * n + Math.max(a, b);
+
+function buildIndex(state: GameState): PairIndex {
+  const n = state.countries.length;
+  const trade = new Set<number>();
+  for (const r of state.tradeRoutes) trade.add(pairKey(n, r.exporter, r.importer));
+  const enemies = new Map<CountryId, Set<CountryId>>();
+  const enemy = (a: CountryId, b: CountryId) => { let s = enemies.get(a); if (!s) enemies.set(a, s = new Set()); s.add(b); };
+  for (const w of state.wars) for (const a of w.sideA) for (const b of w.sideB) { enemy(a, b); enemy(b, a); }
+  const actions = new Map<number, number>();
+  for (const x of state.diploActions) { const k = pairKey(n, x.from, x.to); actions.set(k, (actions.get(k) ?? 0) + (x.kind === 'improve' ? D.ACTION_SHIFT : -D.ACTION_SHIFT)); }
+  const extra = new Map<number, number>();
+  for (const h of relationPairHooks) h(state, (a, b, v) => { const k = pairKey(n, a, b); extra.set(k, (extra.get(k) ?? 0) + v); });
+  return { n, borders: borderPairs(state), trade, enemies, actions, extra };
+}
 
 export function ensureRelations(state: GameState): void {
   const n = state.countries.length;
@@ -59,42 +79,39 @@ function borderPairs(state: GameState): Set<number> {
   return out;
 }
 
-export function baseline(state: GameState, a: CountryId, b: CountryId, borders: Set<number>): number {
-  const n = state.countries.length;
+function baseline(state: GameState, a: CountryId, b: CountryId, idx: PairIndex): number {
+  const k = pairKey(idx.n, a, b);
   const ca = state.countries[a], cb = state.countries[b];
-  let v = 0;
-  if (borders.has(Math.min(a, b) * n + Math.max(a, b))) v += D.BORDER;
+  let v = idx.extra.get(k) ?? 0;
+  if (idx.borders.has(k)) v += D.BORDER;
   if (personalityOf(ca.personality).rivals.includes(cb.tag) || personalityOf(cb.personality).rivals.includes(ca.tag)) v += D.RIVAL;
-  const enemiesOf = (c: CountryId) => state.wars.flatMap(w => (w.sideA.includes(c) ? w.sideB : w.sideB.includes(c) ? w.sideA : []));
-  const ea = enemiesOf(a), eb = enemiesOf(b);
-  if (!ea.includes(b) && ea.some(e => eb.includes(e))) v += D.SHARED_ENEMY;
-  if (state.tradeRoutes.some(r => (r.exporter === a && r.importer === b) || (r.exporter === b && r.importer === a))) v += D.TRADE_ROUTE;
+  const ea = idx.enemies.get(a), eb = idx.enemies.get(b);
+  if (ea && eb && !ea.has(b)) { for (const e of ea) if (eb.has(e)) { v += D.SHARED_ENEMY; break; } }
+  if (idx.trade.has(k)) v += D.TRADE_ROUTE;
   for (const h of relationBaselineHooks) v += h(state, a, b);
   return v;
 }
 
-function target(state: GameState, a: CountryId, b: CountryId, borders: Set<number>): number {
-  let t = baseline(state, a, b, borders);
-  for (const x of state.diploActions) if ((x.from === a && x.to === b) || (x.from === b && x.to === a)) t += x.kind === 'improve' ? D.ACTION_SHIFT : -D.ACTION_SHIFT;
-  return t;
+function target(state: GameState, a: CountryId, b: CountryId, idx: PairIndex): number {
+  return baseline(state, a, b, idx) + (idx.actions.get(pairKey(idx.n, a, b)) ?? 0);
 }
 
 export function initRelations(state: GameState): void {
   ensureRelations(state);
-  const borders = borderPairs(state);
-  for (let a = 1; a < state.countries.length; a++) for (let b = a + 1; b < state.countries.length; b++) setRelation(state, a, b, baseline(state, a, b, borders));
+  const idx = buildIndex(state);
+  for (let a = 1; a < state.countries.length; a++) for (let b = a + 1; b < state.countries.length; b++) setRelation(state, a, b, baseline(state, a, b, idx));
 }
 
 export function monthlyRelations(state: GameState): void {
   ensureRelations(state);
-  const borders = borderPairs(state);
   state.diploActions = state.diploActions.filter(x => state.countries[x.from].alive && state.countries[x.to].alive);
   for (const x of state.diploActions) { const c = state.countries[x.from]; c.money -= D.RELATION_ACTION_COST; c.income -= D.RELATION_ACTION_COST; }
+  const idx = buildIndex(state);
   for (let a = 1; a < state.countries.length; a++) {
     if (!state.countries[a].alive) continue;
     for (let b = a + 1; b < state.countries.length; b++) {
       if (!state.countries[b].alive) continue;
-      const v = relation(state, a, b), t = Math.max(-100, Math.min(100, target(state, a, b, borders)));
+      const v = relation(state, a, b), t = Math.max(-100, Math.min(100, target(state, a, b, idx)));
       if (v !== t) setRelation(state, a, b, Math.abs(t - v) <= D.DRIFT ? t : v + Math.sign(t - v) * D.DRIFT);
     }
   }

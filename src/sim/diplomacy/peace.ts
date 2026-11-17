@@ -22,18 +22,26 @@ export function demandCost(state: GameState, d: Demand): number {
   return C[d.kind];
 }
 
-/** Points the demands cost for the side `side` is on (its own war goals cost less). */
+/** Points the demands cost for the side `side` is on. The play's war goals share `goalTotal` points between them;
+ *  anything else costs its full price times `nonGoalFactor`. */
 export function termsCost(state: GameState, war: War, side: CountryId, demands: Demand[]): number {
   const goals = sideOf(war, side) === 'A' ? war.goals : [];
-  return demands.reduce((n, d) => n + demandCost(state, d) * (goals.some(g => sameDemand(g, d)) ? 1 : C.nonGoalFactor), 0);
+  const goalSum = goals.reduce((n, g) => n + demandCost(state, g), 0);
+  return demands.reduce((n, d) => n + (goals.some(g => sameDemand(g, d))
+    ? C.goalTotal * demandCost(state, d) / Math.max(1e-9, goalSum)
+    : demandCost(state, d) * C.nonGoalFactor), 0);
 }
 
-export function peacePoints(state: GameState, war: War, side: CountryId): { score: number; available: number } {
+/** `available` is what the side can spend on demands: nothing unless it leads the enemy by `minLead`; then its score
+ *  plus a bonus for its own losses (a costly victory earns more). */
+export function peacePoints(state: GameState, war: War, side: CountryId): { score: number; available: number; winning: boolean } {
   const mine = sideOf(war, side) === 'A';
   const own = war.casualties[mine ? 0 : 1];
   const maxTroops = (mine ? war.sideA : war.sideB).reduce((n, c) => n + state.countries[c].maxTroops, 0);
   const score = warScore(state, war, side);
-  return { score, available: score + C.casualtyPoints * own / Math.max(1, maxTroops) };
+  const enemy = mine ? war.b : war.a;
+  const winning = score >= warScore(state, war, enemy) + C.minLead;
+  return { score, winning, available: winning ? score + C.casualtyPoints * own / Math.max(1, maxTroops) : 0 };
 }
 
 /** How an AI leader answers peace terms (the AI module may refine this). */
@@ -41,9 +49,15 @@ export const peacePolicy = {
   accepts(state: GameState, war: War, ai: CountryId, from: CountryId, terms: PeaceTerms): boolean {
     const mine = peacePoints(state, war, ai).score, theirs = peacePoints(state, war, from);
     const age = state.tick - war.startTick;
-    if (terms.white) return mine <= theirs.score + 20 || age >= 2 * 365 * TICKS_PER_DAY;
-    if (terms.give) return mine < 60 || termsCost(state, war, ai, terms.demands) >= mine * 0.6;
-    return termsCost(state, war, from, terms.demands) <= theirs.available;
+    const year = 365 * TICKS_PER_DAY;
+    if (terms.white) {
+      if (age >= 2 * year) return true;
+      // An AI pressing its own war goals holds out for a year unless it is losing.
+      const pressing = sideOf(war, ai) === 'A' && war.goals.length > 0 && age < year;
+      return pressing ? mine < theirs.score : mine <= theirs.score + C.minLead;
+    }
+    if (terms.give) return mine < 60 || age >= year || termsCost(state, war, ai, terms.demands) >= mine * 0.4;
+    return theirs.winning && termsCost(state, war, from, terms.demands) <= theirs.available;
   },
 };
 
@@ -76,11 +90,11 @@ handlers.proposePeace = (state, cmd: Extract<Command, { type: 'proposePeace' }>,
   if (state.countries[other].isPlayer) {
     if (state.peaceOffers.some(o => o.from === cmd.country && o.to === other)) return 'already offered';
     state.peaceOffers.push({ from: cmd.country, to: other, tick: state.tick, warId: war.id, terms });
-    events.push({ type: 'peaceOffered', from: cmd.country, to: other });
+    events.push({ type: 'peaceOffered', from: cmd.country, to: other, terms });
     return null;
   }
   if (peacePolicy.accepts(state, war, other, cmd.country, terms)) concludePeace(state, war, cmd.country, terms, events, changed);
-  else events.push({ type: 'peaceRefused', from: cmd.country, to: other });
+  else refused(war, cmd.country, other, state, events);
   return null;
 };
 
@@ -91,8 +105,17 @@ handlers.respondPeace = (state, cmd: Extract<Command, { type: 'respondPeace' }>,
   const war = state.wars.find(w => w.id === offer.warId);
   if (!war) return null;
   if (cmd.accept) concludePeace(state, war, offer.from, offer.terms, events, changed);
-  else events.push({ type: 'peaceRefused', from: cmd.from, to: cmd.country });
+  else refused(war, cmd.from, cmd.country, state, events);
   return null;
 };
 
-export function leaderOf(war: War, side: 'A' | 'B'): CountryId { return side === 'A' ? war.a : war.b; }
+function refused(war: War, from: CountryId, to: CountryId, state: GameState, events: SimEvent[]): void {
+  war.refusals = (war.refusals ?? []).filter(r => r.from !== from).concat({ from, tick: state.tick });
+  events.push({ type: 'peaceRefused', from, to });
+}
+
+/** Days since `from` last had a proposal refused in this war (Infinity if never). */
+export function daysSinceRefused(state: GameState, war: War, from: CountryId): number {
+  const r = war.refusals?.find(x => x.from === from);
+  return r ? (state.tick - r.tick) / TICKS_PER_DAY : Infinity;
+}

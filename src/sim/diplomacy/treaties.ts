@@ -1,10 +1,11 @@
 // Treaties: alliances, defensive pacts, trade agreements, guarantees of independence, embargoes.
 import { BALANCE } from '../balance';
 import { handlers, systems } from '../registry';
+import { TICKS_PER_DAY } from '../calendar';
 import { atWar } from '../war';
 import { closeRoute, tradeHooks } from '../naval/trade';
 import type { Command, CountryId, GameState, SimEvent, Treaty, TreatyKind } from '../types';
-import { changeRelation, relation, relationBaselineHooks } from './relations';
+import { changeRelation, relation, relationPairHooks } from './relations';
 
 const D = BALANCE.diplomacy;
 const TWO_WAY: TreatyKind[] = ['alliance', 'defensivePact', 'tradeAgreement'];
@@ -26,6 +27,7 @@ export function treatyCheck(state: GameState, from: CountryId, to: CountryId, ki
   if (from === to || !state.countries[to]?.alive || to <= 0) return 'no such country';
   if (hasTreaty(state, from, to, kind)) return 'alreadySigned';
   if (atWar(state, from, to)) return 'atWar';
+  if ((state.countries[from].overlord || state.countries[to].overlord) && kind !== 'tradeAgreement') return 'puppet';
   const rel = relation(state, from, to);
   switch (kind) {
     case 'alliance': case 'defensivePact': return rel >= 15 ? null : 'needsCordial';
@@ -55,11 +57,7 @@ export function endTreaty(state: GameState, t: Treaty, events: SimEvent[]): void
   events.push({ type: 'treatyEnded', a: t.a, b: t.b, kind: t.kind });
 }
 
-relationBaselineHooks.push((state, a, b) => {
-  let v = 0;
-  for (const t of state.treaties) if ((t.a === a && t.b === b) || (t.a === b && t.b === a)) v += D.TREATY_RELATION[t.kind];
-  return v;
-});
+relationPairHooks.push((state, add) => { for (const t of state.treaties) add(t.a, t.b, D.TREATY_RELATION[t.kind]); });
 
 handlers.proposeTreaty = (state, cmd: Extract<Command, { type: 'proposeTreaty' }>, events) => {
   const bad = treatyCheck(state, cmd.country, cmd.target, cmd.kind);
@@ -97,9 +95,19 @@ handlers.cancelTreaty = (state, cmd: Extract<Command, { type: 'cancelTreaty' }>,
 };
 
 systems.day.push((state, events) => {
-  state.treatyOffers = state.treatyOffers.filter(o => state.tick - o.tick <= D.OFFER_DAYS * 4);
+  state.treatyOffers = state.treatyOffers.filter(o => state.tick - o.tick <= D.OFFER_DAYS * TICKS_PER_DAY);
   for (const t of state.treaties.slice()) {
     if (!state.countries[t.a].alive || !state.countries[t.b].alive || (t.kind !== 'embargo' && atWar(state, t.a, t.b))) endTreaty(state, t, events);
+  }
+});
+
+// Between AI countries, a trade agreement lapses once no route links them (the player keeps theirs until cancelled).
+systems.month.push((state, events) => {
+  const linked = new Set<string>();
+  for (const r of state.tradeRoutes) linked.add(`${Math.min(r.exporter, r.importer)}:${Math.max(r.exporter, r.importer)}`);
+  for (const t of state.treaties.slice()) {
+    if (t.kind !== 'tradeAgreement' || state.countries[t.a].isPlayer || state.countries[t.b].isPlayer) continue;
+    if (!linked.has(`${Math.min(t.a, t.b)}:${Math.max(t.a, t.b)}`)) endTreaty(state, t, events);
   }
 });
 

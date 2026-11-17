@@ -1,3 +1,4 @@
+import { playCheck } from '../sim/diplomacy/plays';
 // Plain-data views of the game for the main thread.
 import { BUILDINGS, BUILDING_TYPES } from '../content/buildings';
 import { TICKS_PER_DAY } from '../sim/calendar';
@@ -34,6 +35,7 @@ export function stateDetail(state: GameState, stateId: number, player: number): 
     constructions: state.constructions.filter(c => c.state === stateId).map(c => ({ ...c, daysLeft: Math.max(0, Math.ceil((c.doneTick - state.tick) / TICKS_PER_DAY)) })),
     buildOptions: BUILDING_TYPES.map(type => ({ type, check: buildCheck(state, player, stateId, type) })),
     resources: { ...sd.resources }, coastal: sd.coastal,
+    play: st.owner && st.owner !== player ? playCheck(state, { type: 'startPlay', country: player, target: st.owner, demands: [{ kind: 'state', state: stateId }] }) : undefined,
   };
 }
 

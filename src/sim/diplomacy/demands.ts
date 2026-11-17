@@ -13,7 +13,7 @@ const D = BALANCE.diplomacy;
 
 /** Hooks for puppets (Task 7 replaces this simple version). */
 export const subjectHooks = {
-  makePuppet: (state: GameState, overlord: CountryId, puppet: CountryId) => { state.countries[puppet].overlord = overlord; },
+  makePuppet: (state: GameState, overlord: CountryId, puppet: CountryId, _events: SimEvent[]) => { state.countries[puppet].overlord = overlord; },
 };
 
 /** Applies what still makes sense; returns the demands actually applied. Stale ones (state no longer theirs…) are skipped. */
@@ -25,8 +25,9 @@ export function applyDemands(state: GameState, winner: CountryId, loser: Country
       if (state.states[d.state]?.owner !== loser) continue;
       for (const t of getStateTiles(state.map, d.state)) if (state.owner[t] === loser) setTile(state, t, winner, winner, changed);
     } else if (d.kind === 'puppet') {
-      if (state.countries[loser].overlord) continue;
-      subjectHooks.makePuppet(state, winner, loser);
+      // No chains: a winner that is itself a puppet can't take puppets.
+      if (state.countries[loser].overlord || state.countries[winner].overlord) continue;
+      subjectHooks.makePuppet(state, winner, loser, events);
     } else if (d.kind === 'openMarket') {
       if (hasTreaty(state, winner, loser, 'tradeAgreement')) continue;
       sign(state, winner, loser, 'tradeAgreement', events);

@@ -76,3 +76,36 @@ it('terms that no longer make sense are skipped and the rest applied', () => {
   expect(g.states[stateId(g, 'T-B')].owner).toBe(1);
   expect(g.reparations).toHaveLength(1);
 });
+
+// ---- review fixes: who is winning matters ----
+it('a losing side cannot make the winning AI pay', () => {
+  const g = world();
+  const w = goalWar(g);
+  occupy(g, 2, stateTiles(g, 'T-A').slice(0, 3));           // the AI defender is ahead
+  w.casualties = [9000, 500];                                  // and the attacker bled
+  const r = step(g, [{ type: 'proposePeace', country: 1, warId: w.id, terms: { demands: [{ kind: 'reparations' }] } }]);
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'peaceRefused', from: 1, to: 2 }));
+  expect(atWar(g, 1, 2)).toBeDefined();
+});
+
+it('nothing is won on day 0: no free open market and no free escape from an AI play', () => {
+  const g = world();
+  const w = startWar(g, [1], [2], [{ kind: 'openMarket' }], []);
+  const r = step(g, [{ type: 'proposePeace', country: 1, warId: w.id, terms: { demands: [{ kind: 'openMarket' }] } }]);
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'peaceRefused' }));
+
+  // The AI (2) started a play against the player (1) that became a war: white peace on day 0 is refused.
+  const h = world();
+  const w2 = startWar(h, [2], [1], [st(h, 'T-A')], []);
+  const r2 = step(h, [{ type: 'proposePeace', country: 1, warId: w2.id, terms: { demands: [], white: true } }]);
+  expect(r2.events).toContainEqual(expect.objectContaining({ type: 'peaceRefused', from: 1, to: 2 }));
+  expect(atWar(h, 1, 2)).toBeDefined();
+});
+
+it('war goals are priced so that holding them leaves points for more', () => {
+  const g = world();
+  const w = startWar(g, [1], [2], [st(g, 'T-B'), { kind: 'puppet' }, { kind: 'reparations' }], []);
+  occupy(g, 1, [...stateTiles(g, 'T-B'), ...stateTiles(g, 'T-E'), ...stateTiles(g, 'T-F')]);
+  w.casualties = [0, 0];
+  expect(peacePoints(g, w, 1).available).toBeGreaterThan(termsCost(g, w, 1, w.goals));
+});

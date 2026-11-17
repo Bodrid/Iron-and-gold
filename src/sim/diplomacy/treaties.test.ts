@@ -64,3 +64,11 @@ it('cancelling an alliance hurts relations', () => {
   expect(g.treaties).toHaveLength(0);
   expect(relation(g, 1, 3)).toBeLessThanOrEqual(before - 20);
 });
+
+it('a trade agreement between AI countries lapses once no route links them', () => {
+  const g = makeGame({ rows: ['AABBCC'], owners: { A: 'XXX', B: 'YYY', C: 'ZZZ' } });
+  g.treaties.push({ id: g.nextId++, kind: 'tradeAgreement', a: 2, b: 3, since: 0 }, { id: g.nextId++, kind: 'tradeAgreement', a: 1, b: 2, since: 0 });
+  runDays(g, 35);
+  expect(g.treaties.some(t => t.a === 2 && t.b === 3)).toBe(false);
+  expect(g.treaties.some(t => t.a === 1 && t.b === 2)).toBe(true);   // the player's stays
+});

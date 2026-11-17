@@ -28,6 +28,7 @@ export interface StateDetail {
   id: number; name: string; owner: CountryId; controller: CountryId; population: number;
   slots: { used: number; total: number }; buildings: Building[]; constructions: (Construction & { daysLeft: number })[];
   buildOptions: { type: BuildingType; check: BuildCheck }[]; resources: StateResources; coastal: boolean;
+  /** Why the player can't demand this state from its owner (null = can; undefined for own/unclaimed states). */ play?: string | null;
 }
 
 export interface TradeView { routes: { id: number; exporter: CountryId; importer: CountryId; good: Good; amount: number }[]; capacity: number; used: number; auto: boolean; income: number }
@@ -45,7 +46,7 @@ export interface DiploView {
   treaties: { id: number; kind: TreatyKind; a: CountryId; b: CountryId }[];
   treatyOffers: { from: CountryId; kind: TreatyKind }[];
   peaceOffers: { from: CountryId; warId: number; white: boolean; give: boolean; demands: string[] }[];
-  plays: { id: number; initiator: CountryId; target: CountryId; demands: string[]; sideA: CountryId[]; sideB: CountryId[]; strengthA: number; strengthB: number; daysLeft: number }[];
+  plays: { id: number; initiator: CountryId; target: CountryId; demands: string[]; sideA: CountryId[]; sideB: CountryId[]; strengthA: number; strengthB: number; daysLeft: number; /** Why the player can't back a side (null = can). */ join: string | null }[];
   wars: { id: number; leader: boolean; mySide: CountryId[]; enemySide: CountryId[]; myScore: number; enemyScore: number; available: number; goals: string[];
     candidates: { demand: Demand; label: string; cost: number; goal: boolean }[] }[];
   puppets: { id: CountryId; annex: string | null }[];

@@ -65,7 +65,8 @@ function Overview({ send }: { send: Send }) {
             <div class="sides"><div class="side-a" style={{ width: `${(100 * p.strengthA) / total}%` }} /></div>
             <small>{p.sideA.map(name).join(', ')} vs {p.sideB.map(name).join(', ')}</small>
             <div class="row">
-              {!inA && !inB && <><button onClick={() => send({ type: 'joinPlay', country: me, playId: p.id, side: 'A' })}>Back {name(p.initiator)}</button><button onClick={() => send({ type: 'joinPlay', country: me, playId: p.id, side: 'B' })}>Back {name(p.target)}</button></>}
+              {!inA && !inB && !p.join && <><button onClick={() => send({ type: 'joinPlay', country: me, playId: p.id, side: 'A' })}>Back {name(p.initiator)}</button><button onClick={() => send({ type: 'joinPlay', country: me, playId: p.id, side: 'B' })}>Back {name(p.target)}</button></>}
+              {!inA && !inB && p.join && <small class="hint">{reason(p.join)}</small>}
               {mine && <button class="ghost" onClick={() => send({ type: 'backDown', country: me, playId: p.id })}>{p.target === me ? 'Give in' : 'Back down'}</button>}
               {!mine && (inA || inB) && <button class="ghost" onClick={() => send({ type: 'backDown', country: me, playId: p.id })}>Leave</button>}
             </div>

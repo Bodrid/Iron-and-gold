@@ -44,8 +44,9 @@ export interface Construction { id: number; country: CountryId; state: number; t
 export interface Attack { id: number; attacker: CountryId; target: CountryId; troops: number }
 export type Demand = { kind: 'state'; state: number } | { kind: 'puppet' } | { kind: 'openMarket' } | { kind: 'reparations' };
 /** a/b are the side leaders (the play's initiator and target). casualties[0] is side A's, [1] side B's. */
-export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number] }
-export interface Play { id: number; initiator: CountryId; target: CountryId; demands: Demand[]; sideA: CountryId[]; sideB: CountryId[]; startTick: number; endTick: number }
+export interface War { id: number; a: CountryId; b: CountryId; sideA: CountryId[]; sideB: CountryId[]; goals: Demand[]; startTick: number; casualties: [number, number];
+  /** Refused peace proposals (the AI waits before proposing again). */ refusals?: { from: CountryId; tick: number }[] }
+export interface Play { id: number; initiator: CountryId; target: CountryId; demands: Demand[]; sideA: CountryId[]; sideB: CountryId[]; startTick: number; endTick: number; /** AI third parties have picked sides. */ decided?: boolean }
 export interface TradeRoute {
   id: number; exporter: CountryId; importer: CountryId; fromState: number; toState: number; good: Good; amount: number;
   createdTick: number; idleMonths: number; /** Set when its trade ship was captured; that month's cargo is lost. */ captured: boolean;
@@ -136,7 +137,7 @@ export type Command =
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
   | { type: 'peace'; a: CountryId; b: CountryId; transferred: number[] }
-  | { type: 'peaceOffered'; from: CountryId; to: CountryId }
+  | { type: 'peaceOffered'; from: CountryId; to: CountryId; terms: PeaceTerms }
   | { type: 'peaceRefused'; from: CountryId; to: CountryId }
   | { type: 'built'; country: CountryId; state: number; building: BuildingType }
   | { type: 'eliminated'; country: CountryId }

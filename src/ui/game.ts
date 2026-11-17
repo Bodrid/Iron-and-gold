@@ -6,7 +6,9 @@ import { Overlay } from '../render/overlay';
 import { buildPalette } from '../render/palette';
 import { attachInput } from '../input/attach';
 import { keyAction } from '../input/keyboard';
-import type { BuildingIcon, Command, Label, SimEvent } from '../sim/types';
+import type { BuildingIcon, Command, Label, PeaceTerms, SimEvent } from '../sim/types';
+import { BALANCE } from '../sim/balance';
+import { DIPLO_REASON } from './tabs/diploText';
 import type { GameHost } from '../worker/host';
 import type { FrameMsg, ReadyMsg } from '../worker/protocol';
 import { haptic } from './haptics';
@@ -134,7 +136,7 @@ export class GameController {
       if (e.type === 'warDeclared' && (e.a === me || e.b === me)) { pushToast({ kind: 'war', text: `War with ${name(e.a === me ? e.b : e.a)} has begun!` }); haptic('heavy'); }
       else if (e.type === 'peaceOffered' && e.to === me) {
         const from = e.from;
-        const id = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} offers peace.`, actions: [
+        const id = pushToast({ kind: 'peace', sticky: true, text: `${name(from)} offers peace: ${peaceTermsText(e.terms, this.map)}.`, actions: [
           { label: 'Accept', run: () => { this.send({ type: 'respondPeace', country: me, from, accept: true }); dismiss(); } },
           { label: 'Refuse', run: () => { this.send({ type: 'respondPeace', country: me, from, accept: false }); dismiss(); } },
         ] });
@@ -143,10 +145,13 @@ export class GameController {
       else if (e.type === 'peace' && (e.a === me || e.b === me)) pushToast({ kind: 'peace', text: `Peace with ${name(e.a === me ? e.b : e.a)}${e.transferred.length ? ` — ${e.transferred.length} state${e.transferred.length > 1 ? 's' : ''} changed hands` : ''}.` });
       else if (e.type === 'peaceRefused' && e.from === me) pushToast({ kind: 'info', text: `${name(e.to)} refused your peace offer.` });
       else if (e.type === 'built' && e.country === me) { pushToast({ kind: 'good', text: `${BUILDING_NAMES[e.building]} finished in ${this.map.states[e.state].name}.` }); haptic('light'); }
+      else if (e.type === 'annexed' && (e.puppet === me || e.overlord === me)) pushToast({ kind: e.overlord === me ? 'good' : 'war', text: e.overlord === me ? `${name(e.puppet)} has been annexed.` : `${name(e.overlord)} annexed you.` });
+      else if (e.type === 'puppeted' && e.overlord === me) pushToast({ kind: 'good', text: `${name(e.puppet)} is now your puppet.` });
       else if (e.type === 'eliminated') pushToast({ kind: 'info', text: `${name(e.country)} has fallen.` });
       else if (e.type === 'rejected' && (e.command as Command).country === me) pushToast({ kind: 'info', text: rejectionText(e.reason) });
-      else if (e.type === 'playStarted' && e.target === me) { pushToast({ kind: 'war', sticky: true, text: `${name(e.initiator)} makes demands of you! You have 60 days: give in or prepare for war (Diplomacy tab).`, actions: [{ label: 'Open', run: () => { ui.tab.value = 'diplomacy'; ui.sheet.value = 'half'; ui.toasts.value = ui.toasts.value.filter(t => !t.text.startsWith(name(e.initiator) + ' makes demands')); } }] }); haptic('heavy'); }
-      else if (e.type === 'playStarted' && e.initiator === me) pushToast({ kind: 'info', text: `Your demands on ${name(e.target)} are out. Others have 60 days to pick sides.` });
+      else if (e.type === 'playCancelled' && e.target === me && !country(e.initiator)?.alive) continue;
+      else if (e.type === 'playStarted' && e.target === me) { pushToast({ kind: 'war', sticky: true, text: `${name(e.initiator)} makes demands of you! You have ${BALANCE.diplomacy.PLAY_DAYS} days: give in or prepare for war (Diplomacy tab).`, actions: [{ label: 'Open', run: () => { ui.tab.value = 'diplomacy'; ui.sheet.value = 'half'; ui.toasts.value = ui.toasts.value.filter(t => !t.text.startsWith(name(e.initiator) + ' makes demands')); } }] }); haptic('heavy'); }
+      else if (e.type === 'playStarted' && e.initiator === me) pushToast({ kind: 'info', text: `Your demands on ${name(e.target)} are out. Others have ${BALANCE.diplomacy.PLAY_DAYS} days to pick sides.` });
       else if (e.type === 'playJoined') { const p = ui.diplo.value?.plays.find(x => x.id === e.playId); if (p && (p.initiator === me || p.target === me)) pushToast({ kind: 'info', text: `${name(e.country)} joins ${e.side === 'A' ? name(p.initiator) : name(p.target)}’s side.` }); }
       else if (e.type === 'playYielded' && (e.initiator === me || e.target === me)) pushToast({ kind: e.initiator === me ? 'good' : 'war', text: e.initiator === me ? `${name(e.target)} gave in to your demands.` : `You gave in to ${name(e.initiator)}.` });
       else if (e.type === 'playCancelled' && e.target === me) pushToast({ kind: 'good', text: `${name(e.initiator)} backed down.` });
@@ -247,7 +252,15 @@ export function rejectionText(reason: string): string {
     needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
     unreachable: 'Your ships can’t reach there.',
   };
-  return map[reason] ?? `That didn't work (${reason}).`;
+  return map[reason] ?? (DIPLO_REASON[reason] ? `${DIPLO_REASON[reason]}.` : `That didn't work (${reason}).`);
+}
+
+/** "white peace", "they demand Take Saxony, Reparations", "they hand you Take Alsace". */
+export function peaceTermsText(terms: PeaceTerms, map: MapData): string {
+  if (terms.white || !terms.demands.length) return 'a white peace, nobody gives anything';
+  const words = terms.give ? { puppet: 'becoming your puppet', openMarket: 'opening their market', reparations: 'reparations' } : { puppet: 'you become their puppet', openMarket: 'you open your market', reparations: 'reparations' };
+  const list = terms.demands.map(d => (d.kind === 'state' ? `${map.states[d.state]?.name ?? 'a state'}` : words[d.kind])).join(', ');
+  return terms.give ? `they give you ${list}` : `they demand ${list}`;
 }
 
 export const session: { game: GameController | null } = { game: null };

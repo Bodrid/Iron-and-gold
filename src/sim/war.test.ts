@@ -71,7 +71,7 @@ it('player receives peace offers as events and can refuse', () => {
   const g = makeGame();
   const w = declareWarRaw(g, 1, 2);
   const r = step(g, [{ type: 'proposePeace', country: 2, warId: w.id, terms: { demands: [], white: true } }]);
-  expect(r.events).toContainEqual({ type: 'peaceOffered', from: 2, to: 1 });
+  expect(r.events).toContainEqual(expect.objectContaining({ type: 'peaceOffered', from: 2, to: 1 }));
   const r2 = step(g, [{ type: 'respondPeace', country: 1, from: 2, accept: false }]);
   expect(r2.events).toContainEqual({ type: 'peaceRefused', from: 2, to: 1 });
   expect(g.wars).toHaveLength(1);
