@@ -43,5 +43,40 @@ export const BALANCE = {
   economy: {
     /** Stockpile at start, in months of the population's basic consumption. */
     START_STOCK_MONTHS: 3,
+    BASE_SLOTS: 4,
+    TILES_PER_SLOT: 60,
+    POP_PER_SLOT: 40_000,
+    MAX_SLOTS: 80,
+    /** Concurrent constructions: BASE + owned states / PER_STATES. */
+    CONSTRUCTION_BASE: 2,
+    CONSTRUCTION_PER_STATES: 8,
+    WORKFORCE_SHARE: 0.4,
+    /** Monthly consumption per 1,000 people. */
+    GRAIN_PER_K: 2,
+    TEXTILES_PER_K: 0.5,
+    LUXURIES_PER_K: 0.2,
+    SOL_BASE: 2,
+    SOL_GRAIN: 8,
+    SOL_TEXTILES: 6,
+    SOL_LUXURIES: 6,
+    TAX_RATE: 0.15,
+    /** Pounds per soldier per month. */
+    ARMY_UPKEEP: 0.5,
+    PRICE_MIN: 0.5,
+    PRICE_MAX: 2,
+    HISTORY_MAX: 1200,
+    /** Starting economy (when the start date seeds one). */
+    START_FARM_SHARE: 0.5,
+    START_LOGGING_SHARE: 0.05,
+    START_MINE_MIN_POP: 300_000,
+    START_UNIVERSITY_MIN_POP: 5_000_000,
+  },
+  growth: {
+    /** Monthly population growth at SoL 10. */
+    BASE_GROWTH: 0.0008,
+    /** Extra monthly growth per 10 SoL above 10 (negative below). */
+    SOL_GROWTH: 0.0006,
+    UNIVERSITY_LITERACY: 0.002,
+    RESEARCH_PER_LEVEL: 5,
   },
 } as const;

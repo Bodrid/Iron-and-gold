@@ -2,3 +2,5 @@
 import './combat';
 import './troops';
 import './war';
+import './economy';
+import './population';

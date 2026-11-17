@@ -9,7 +9,7 @@ export interface GameDate { y: number; m: number; d: number }
 
 export interface CountryDef { tag: string; name: string; color: number; capital: string; population: number; money: number; personality?: string }
 export type OwnershipRule = { modern: string; owner: string } | { states: string[]; owner: string } | { states: string[]; unclaimed: true };
-export interface StartDef { id: string; name: string; startDate: GameDate; endYear: number; countries: CountryDef[]; ownership: OwnershipRule[] }
+export interface StartDef { id: string; name: string; startDate: GameDate; endYear: number; countries: CountryDef[]; ownership: OwnershipRule[]; /** Give countries starting farms, mines etc. Default true. */ seedEconomy?: boolean }
 export interface GameSetup { startId: string; playerTag: string; difficulty: Difficulty; rivalsHarder: boolean; seed: number }
 
 export interface StatSample { tick: number; gdp: number; population: number; sol: number; tiles: number; money: number }

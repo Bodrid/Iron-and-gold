@@ -6,5 +6,5 @@ export type System = (state: GameState, events: SimEvent[], changed: number[]) =
 
 /** Handlers return null on success or a rejection reason. */
 export const handlers: Partial<Record<Command['type'], CommandHandler>> = {};
-/** Systems run in this order each tick: ai (new day), tick, day, month, end. */
-export const systems = { ai: [] as System[], tick: [] as System[], day: [] as System[], month: [] as System[], end: [] as System[] };
+/** init runs once from createGame; then each tick: ai (new day), tick, day, month, end. */
+export const systems = { init: [] as System[], ai: [] as System[], tick: [] as System[], day: [] as System[], month: [] as System[], end: [] as System[] };

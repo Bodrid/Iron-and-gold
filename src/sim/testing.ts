@@ -9,7 +9,7 @@ import type { Command, CountryId, Difficulty, GameState, SimEvent, StartDef } fr
 
 export interface MakeGameOptions extends TestWorldOptions {
   rows?: string[]; owners?: Record<string, string>; unclaimed?: string[]; player?: string; seed?: number;
-  difficulty?: Difficulty; population?: number; money?: number;
+  difficulty?: Difficulty; population?: number; money?: number; seedEconomy?: boolean;
 }
 
 export function makeGame(opts: MakeGameOptions = {}): GameState {
@@ -31,6 +31,7 @@ export function makeGame(opts: MakeGameOptions = {}): GameState {
     countries: tags.map((tag, i) => ({ tag, name: `Country ${tag}`, color: [0xc94a4a, 0x4a6fd1, 0x4f9a63, 0xd9b44a, 0x8a7bd1, 0x3fa3a0, 0xe08a3c, 0x5b6478][i % 8],
       capital: byTag.get(tag)![0], population: (opts.population ?? 200_000) * byTag.get(tag)!.length, money: opts.money ?? 10_000 })),
     ownership: tags.map(tag => ({ states: byTag.get(tag)!, owner: tag })),
+    seedEconomy: opts.seedEconomy ?? false,
   };
   return createGame(map, start, { startId: 'test', playerTag: opts.player ?? tags[0], difficulty: opts.difficulty ?? 'normal', rivalsHarder: false, seed: opts.seed ?? 1 });
 }
