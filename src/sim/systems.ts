@@ -7,5 +7,6 @@ import './population';
 import './naval/trade';
 import './naval/ships';
 import './naval/invasion';
+import './diplomacy/relations';
 import './ai/ai';
 import './victory';

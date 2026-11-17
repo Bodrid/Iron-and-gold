@@ -109,5 +109,15 @@ export const BALANCE = {
     /** How far (in navigation cells) troops look for another beach if theirs is lost. */
     REROUTE_CELLS: 10,
   },
+  diplomacy: {
+    BORDER: -10, RIVAL: -25, SHARED_ENEMY: 15, TRADE_ROUTE: 10,
+    /** How far an active improve/worsen action moves the target value. */
+    ACTION_SHIFT: 40,
+    /** Monthly movement of relations toward their target. */
+    DRIFT: 3,
+    RELATION_ACTION_COST: 500,
+    CAPACITY_BASE: 2,
+    CAPACITY_PER_POP: 20_000_000,
+  },
   score: { GDP: 40, POPULATION: 20, SOL: 20, LAND: 20 },
 } as const;

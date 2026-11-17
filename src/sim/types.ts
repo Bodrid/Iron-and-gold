@@ -78,6 +78,8 @@ export interface GameState {
   /** Routes the player or AI cancelled: not reopened until `until`. */ tradeBlocks: { exporter: CountryId; importer: CountryId; good: Good; until: number }[];
   ships: Ship[];
   shipBuilds: ShipBuild[];
+  /** Relations, n×n (index a*n+b), −100..100. */ relations: Int16Array;
+  diploActions: { from: CountryId; to: CountryId; kind: 'improve' | 'worsen' }[];
   /** Countries that switched automatic trade off. */ tradeOff: CountryId[];
   nextId: number;
   outcome: Outcome;
@@ -94,7 +96,10 @@ export type Command =
   | { type: 'setTradeAuto'; country: CountryId; on: boolean }
   | { type: 'buildShip'; country: CountryId; state: number; kind: 'warship' | 'transport' }
   | { type: 'orderShip'; country: CountryId; shipId: number; order: ShipOrder }
-  | { type: 'navalInvasion'; country: CountryId; target: CountryId; tile: number; ratio: number };
+  | { type: 'navalInvasion'; country: CountryId; target: CountryId; tile: number; ratio: number }
+  | { type: 'improveRelations'; country: CountryId; target: CountryId }
+  | { type: 'worsenRelations'; country: CountryId; target: CountryId }
+  | { type: 'stopDiploAction'; country: CountryId; target: CountryId };
 
 export type SimEvent =
   | { type: 'warDeclared'; a: CountryId; b: CountryId }
