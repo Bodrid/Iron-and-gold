@@ -108,10 +108,11 @@ function applyEffect(state: GameState, c: Country, e: EventEffect, events: SimEv
         if (state.states[s].controller !== owner) continue;
         // The player is never annexed by an AI's event: the AI makes demands instead (a diplomatic play, never the capital).
         if (o.isPlayer && !c.isPlayer) { if (s !== o.capitalState) fromPlayer.set(owner, [...(fromPlayer.get(owner) ?? []), s]); continue; }
-        for (const t of getStateTiles(state.map, s)) if (state.owner[t] === owner) setTile(state, t, to.id, state.controller[t] === owner ? to.id : state.controller[t], changed);
+        // Tiles a third country occupies stay with it only if it is at war with the new owner.
+        for (const t of getStateTiles(state.map, s)) if (state.owner[t] === owner) { const k = state.controller[t]; setTile(state, t, to.id, k === owner || !atWar(state, k, to.id) ? to.id : k, changed); }
         // A country that loses its capital (unification of minors) moves it to its most populous remaining state.
         if (s === o.capitalState) {
-          const rest = state.states.filter(x => x.id && x.owner === owner).sort((a, b) => b.population - a.population || a.id - b.id)[0];
+          const rest = state.states.filter(x => x.id && x.owner === owner && x.controller === owner).sort((a, b) => b.population - a.population || a.id - b.id)[0];
           if (rest) o.capitalState = rest.id;
         }
         moved++;

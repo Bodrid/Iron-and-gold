@@ -92,5 +92,10 @@ export function invariantProblems(g: GameState): string[] {
   for (const a of g.attacks) if (dead(a.attacker) || dead(a.target)) out.push(`attack ${a.id} involves the dead`);
   for (const b of g.blocs) if (dead(b.leader) || b.members.some(dead)) out.push(`bloc ${b.id} has the dead`);
   for (const c of g.countries) if (c.alive && dead(c.overlord)) out.push(`${c.tag} is a puppet of the dead`);
+  // Nobody occupies land in peacetime.
+  for (let t = 0; t < g.controller.length; t++) {
+    const o = g.owner[t], k = g.controller[t];
+    if (o && k && o !== k && !g.wars.some(w => (w.sideA.includes(o) && w.sideB.includes(k)) || (w.sideB.includes(o) && w.sideA.includes(k)))) { out.push(`tile ${t} of ${o} held by ${k} in peacetime`); break; }
+  }
   return out;
 }

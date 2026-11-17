@@ -66,7 +66,7 @@ routeHooks.closed = (state: GameState, r: TradeRoute) => {
 
 export function moveShips(state: GameState, events: SimEvent[]): void {
   // Ships lying in port mend their damage.
-  for (const s of state.ships) if (s.order.type === 'idle' && s.hp < 1) s.hp = Math.min(1, s.hp + BALANCE.navy.REPAIR_PER_DAY);   // moveShips runs once a day
+  for (const s of state.ships) if (s.order.type === 'idle' && s.hp < 1 && s.cell === portCell(state.map, s.order.port)) s.hp = Math.min(1, s.hp + BALANCE.navy.REPAIR_PER_DAY);   // in port only; moveShips runs once a day
   for (const s of state.ships.slice()) {
     if (!state.countries[s.owner].alive) { removeShip(state, s, null); continue; }
     // Home port lost: go to another port, or the ship is lost.
@@ -174,11 +174,12 @@ function encounterLoop(state: GameState, events: SimEvent[], buckets: Map<number
         const r = state.tradeRoutes.find(x => x.id === t.routeId);
         const prey = (x: CountryId) => hostile(state, w.owner, x) || piracyHooks.licensed(state, w.owner, x);
         // Never your own cargo: a route you are part of isn't prey, even if the other side is your enemy.
-        if (!r || r.captured || r.exporter === w.owner || r.importer === w.owner || !(prey(r.exporter) || prey(r.importer))) continue;
+        if (!r || r.captured || state.tick < (r.safeUntil ?? 0) || r.exporter === w.owner || r.importer === w.owner || !(prey(r.exporter) || prey(r.importer))) continue;
         const guarded = near.some(x => alive(x) && x.kind === 'warship' && x.order.type === 'escort' && (x.order as { routeId: number }).routeId === r.id && x.owner !== w.owner);
         if (guarded) continue;
         const value = r.amount * state.countries[r.exporter].prices[r.good];
         r.captured = true;
+        r.safeUntil = state.tick + BALANCE.navy.CAPTURE_SAFE_DAYS * TICKS_PER_DAY;   // convoys reorganise after a loss
         state.countries[w.owner].money += value;
         state.countries[w.owner].income += value;
         t.pathPos = 0; t.dir = 1; t.cell = t.fromCell;   // the cargo is gone; the ship starts its voyage again

@@ -40,6 +40,8 @@ export class GameController {
     this.cam = new Camera(map.width, map.height, innerWidth, innerHeight);
     ui.playerId.value = ready.player;
     ui.countries.value = ready.countries;
+    // A fresh game or a loaded one starts without the last game's toasts and cards.
+    ui.toasts.value = []; ui.openEvent.value = null; ui.events.value = null;
     ui.date.value = ready.date;
     ui.tick.value = ready.tick;
     ui.speed.value = 0;
@@ -116,10 +118,16 @@ export class GameController {
   private speedBeforeEvent: 0 | 1 | 2 | 3 = 0;
 
   /** Called when an event card closes: resume the speed the game had before the card paused it. */
-  resumeAfterEvent() {
-    if (this.speedBeforeEvent && ui.speed.value === 0) this.setSpeed(this.speedBeforeEvent);
+  resumeAfterEvent(later = false) {
+    // More cards waiting: show the next one and stay paused.
+    const next = ui.events.value?.pending.find(p => p.id !== ui.openEvent.value);
+    if (next) { ui.openEvent.value = next.id; return; }
+    ui.openEvent.value = null;
+    // "Later" keeps the game paused; answering resumes the speed the card interrupted (unless the player changed it).
+    if (!later && this.speedBeforeEvent && ui.speed.value === 0) this.setSpeed(this.speedBeforeEvent, true);
     this.speedBeforeEvent = 0;
   }
+  private seenEvents = false;
 
   private onFrame(f: FrameMsg) {
     if (f.tiles.idx.length) {
@@ -148,6 +156,8 @@ export class GameController {
     if (f.politics) ui.politics.value = f.politics;
     if (f.events) {
       ui.events.value = f.events;
+      // After loading a save, a waiting card comes straight back.
+      if (!this.seenEvents) { this.seenEvents = true; if (f.events.pending.length && ui.openEvent.value === null) { ui.openEvent.value = f.events.pending[0].id; if (ui.speed.value > 0) this.setSpeed(0, true); } }
       if (ui.openEvent.value !== null && !f.events.pending.some(p => p.id === ui.openEvent.value)) ui.openEvent.value = null;
       // Cards answered elsewhere or timed out lose their toast.
       for (const [pending, id] of Object.entries(this.eventToasts)) if (!f.events.pending.some(p => p.id === Number(pending))) { ui.toasts.value = ui.toasts.value.filter(t => t.id !== id); delete this.eventToasts[Number(pending)]; }
@@ -201,7 +211,7 @@ export class GameController {
         const id = this.eventToasts[pending] = pushToast({ kind: 'peace', sticky: true, text: `New event: ${title}`, actions: [{ label: 'Open', run: () => { ui.openEvent.value = pending; } }] });
         void id;
         // Time stops while the player reads a history card; it resumes when the card is answered or put off.
-        if (ui.speed.value > 0) { this.speedBeforeEvent = ui.speed.value as 1 | 2 | 3; this.setSpeed(0); }
+        if (ui.speed.value > 0) { const was = ui.speed.value as 1 | 2 | 3; this.setSpeed(0, true); this.speedBeforeEvent = was; }
         if (ui.openEvent.value === null) ui.openEvent.value = pending;
         haptic('light');
       }
@@ -247,7 +257,10 @@ export class GameController {
   }
 
   send(cmd: Command) { this.host.send(cmd); }
-  setSpeed(s: 0 | 1 | 2 | 3) { ui.speed.value = s; this.host.setSpeed(s); }
+  setSpeed(s: 0 | 1 | 2 | 3, byEvent = false) {
+    if (!byEvent) this.speedBeforeEvent = 0;   // the player took control of time
+    ui.speed.value = s; this.host.setSpeed(s);
+  }
 
   selectTile([tx, ty]: [number, number]) {
     const x = Math.floor(tx), y = Math.floor(ty);
@@ -314,7 +327,8 @@ export function rejectionText(reason: string): string {
     unreachable: 'Your ships can’t reach there.',
     'queue full': 'The research queue is full.', 'cannot queue': 'That tech can’t be queued yet: queue what it needs first.', 'needs earlier techs': 'Research the techs it needs first.',
     'already known': 'You already know that tech.', 'not queued': 'That tech isn’t queued.', notEnacting: 'No law is being passed.', noSupport: 'Not enough support for that law.',
-    alreadyEnacting: 'You are already passing another law.', rebels: 'Not possible with rebels.',
+    alreadyEnacting: 'You are already passing another law.', rebels: 'Not possible with rebels.', alreadyOffered: 'You already made them that offer.', notInvolved: 'You aren’t part of that play.',
+    alreadyLicensed: 'Your privateers already raid them.', alreadyLaw: 'That is already the law.', 'not your port': 'That isn’t your port.', 'no such route': 'That trade route has closed.',
     maxLevel: 'That building is fully built in this state.', occupied: 'The enemy holds that state.', notYours: 'That state isn’t yours.', needsCoast: 'That building needs a coast.',
     needsCoal: 'That building needs coal in the state.', needsIron: 'That building needs iron in the state.', needsFarmland: 'That state has no farmland for it.',
     needsForest: 'That state has no forest for it.', needsTech: 'Research the tech that unlocks it first.', 'bad option': 'That choice isn’t available.', 'no such event': 'That event has passed.',

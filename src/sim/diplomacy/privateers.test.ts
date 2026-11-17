@@ -80,3 +80,18 @@ it('a raider never captures cargo on its own route, even when the other side is 
   navalEncounters(g, events);
   expect(events.filter(e => e.type === 'shipCaptured')).toEqual([]);
 });
+
+it('a captured route is safe for a while (convoys reorganise)', () => {
+  const g = withRoute();
+  changeRelation(g, 3, 1, -70 - relation(g, 1, 3));
+  step(g, [{ type: 'setPrivateers', country: 3, target: 1, on: true }]);
+  const t = raider(g);
+  const first: any[] = [];
+  navalEncounters(g, first);
+  expect(first.filter(e => e.type === 'shipCaptured')).toHaveLength(1);
+  const r = g.tradeRoutes.find(x => x.id === t.routeId)!;
+  r.captured = false;   // a new month
+  const again: any[] = [];
+  navalEncounters(g, again);
+  expect(again.filter(e => e.type === 'shipCaptured')).toEqual([]);
+});

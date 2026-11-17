@@ -142,7 +142,7 @@ export const BALANCE = {
     AI_UNREST_WEIGHT: 0.08,
   },
   blocs: {
-    /** A major power: this many people, or in the top ranks by score. */
+    /** A major power: this many people, or among the top MAJOR_RANK economies by GDP. */
     MAJOR_POPULATION: 15_000_000,
     MAJOR_RANK: 6,
     FOUND_COST: 200_000,
@@ -234,6 +234,8 @@ export const BALANCE = {
     REROUTE_CELLS: 10,
     /** Hit points a ship in port mends per day. */
     REPAIR_PER_DAY: 0.02,
+    /** Days a route is safe from raiders after one of its cargoes is captured. */
+    CAPTURE_SAFE_DAYS: 90,
   },
   diplomacy: {
     BORDER: -10, RIVAL: -25, SHARED_ENEMY: 15, TRADE_ROUTE: 10,

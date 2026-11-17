@@ -22,7 +22,7 @@ export function TradeTab({ send = defaultSend }: { send?: Send }) {
         const partner = country(out ? r.importer : r.exporter)?.name ?? '…';
         return (
           <div class="row" key={r.id}>
-            <span class="grow">{GOOD_NAMES[r.good]} {out ? 'to' : 'from'} {partner} <small>{fmtNum(r.amount)}/mo{r.earns ? ` · +${fmtMoney(r.earns)}` : ''}</small></span>
+            <span class="grow">{GOOD_NAMES[r.good]} {out ? 'to' : 'from'} {partner} <small>{fmtNum(r.amount)}/mo{r.earns ? ` · ~+${fmtMoney(r.earns)}` : ''}</small></span>
             <button aria-label={`Cancel ${GOOD_NAMES[r.good]} route`} onClick={() => send({ type: 'cancelTradeRoute', country: me, routeId: r.id })}>Cancel</button>
           </div>
         );

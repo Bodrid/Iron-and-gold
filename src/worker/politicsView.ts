@@ -1,4 +1,5 @@
 // What the Research tab and the Nation tab's politics need about the player.
+import { hasTag } from '../sim/tags';
 import { COMPANIES, type CharterKind } from '../content/companies';
 import { charterCheck, companyLimit, foundCompanyCheck } from '../sim/companies';
 import { GROUP_IDS } from '../content/groups';
@@ -33,7 +34,7 @@ export function politicsView(state: GameState, me: CountryId): PoliticsView {
     companies: {
       limit: companyLimit(state, me), cost: BALANCE.companies.FOUND_COST,
       mine: c.companies.map(k => ({ id: k.id, bonus: k.bonus, charter: k.charter, charters: Object.fromEntries((['colonial', 'monopoly', 'investment'] as CharterKind[]).map(x => [x, charterCheck(state, me, k.id, x)])) as Record<CharterKind, string | null> })),
-      available: COMPANIES.filter(k => !k.tag || k.tag === c.tag).filter(k => !c.companies.some(x => x.id === k.id)).map(k => ({ id: k.id, check: foundCompanyCheck(state, me, k.id) })),
+      available: COMPANIES.filter(k => !k.tag || hasTag(c, k.tag)).filter(k => !c.companies.some(x => x.id === k.id)).map(k => ({ id: k.id, check: foundCompanyCheck(state, me, k.id) })),
     },
   };
 }

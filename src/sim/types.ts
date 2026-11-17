@@ -69,6 +69,7 @@ export interface Play { id: number; initiator: CountryId; target: CountryId; dem
 export interface TradeRoute {
   id: number; exporter: CountryId; importer: CountryId; fromState: number; toState: number; good: Good; amount: number;
   createdTick: number; idleMonths: number; /** Set when its trade ship was captured; that month's cargo is lost. */ captured: boolean;
+  /** Raiders leave it alone until then (after a capture). */ safeUntil?: number;
 }
 export type ShipOrder =
   | { type: 'idle'; port: number }

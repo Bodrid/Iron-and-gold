@@ -1,6 +1,6 @@
 import { it, expect, afterEach } from 'vitest';
 import { step } from './step';
-import { makeGame, runDays, stateId, occupy } from './testing';
+import { makeGame, runDays, stateId, occupy, invariantProblems } from './testing';
 import { startWar } from './war';
 import { getStateTiles } from '../map/stateTiles';
 import { EVENTS } from '../content/events';
@@ -166,4 +166,17 @@ it('a player card whose conditions no longer hold applies nothing', () => {
   const r = step(g, [{ type: 'chooseEventOption', country: 1, pending: g.pendingEvents[0].id, option: 0 }]);
   expect(g.countries[1].money).toBe(m);
   expect(r.events).toContainEqual(expect.objectContaining({ type: 'eventResolved', skipped: 1 }));
+});
+
+it('after land changes hands, no one occupies it in peacetime', () => {
+  const g = world('ZZZ');
+  add(gift({ countries: ['YYY'], options: [{ label: 'Take B', effects: [{ kind: 'transferStates', keys: ['T-B'], to: 'self', from: 'XXX' }], ai: 1 }] }));
+  g.countries[1].capitalState = stateId(g, 'T-A');
+  const w = startWar(g, [3], [1], [], []);
+  occupy(g, 3, Array.from(getStateTiles(g.map, stateId(g, 'T-B'))).slice(0, 1));   // a minority of the state
+  monthlyEvents(g, []);
+  expect(g.states[stateId(g, 'T-B')].owner).toBe(2);
+  g.wars = g.wars.filter(x => x !== w);
+  runDays(g, 35);   // the monthly sweep hands stray occupations back
+  expect(invariantProblems(g)).toEqual([]);
 });

@@ -2,7 +2,7 @@
 // returning occupied land and eliminating countries that lose everything.
 import { getStateTiles } from '../map/stateTiles';
 import { TICKS_PER_DAY } from './calendar';
-import { setTile, stateControlShare, statesControlledBy, statesOwnedBy } from './control';
+import { controllersOf, setTile, stateControlShare, statesControlledBy, statesOwnedBy } from './control';
 import { handlers, systems } from './registry';
 import type { Command, CountryId, GameState, SimEvent, War } from './types';
 
@@ -143,3 +143,25 @@ systems.day.push((state, events, changed) => {
   state.peaceOffers = state.peaceOffers.filter(o => state.tick - o.tick <= 30 * TICKS_PER_DAY);
   checkElimination(state, events, changed);
 });
+
+/** Monthly: any tile held by a country that is no longer at war with its owner goes back to the owner
+ *  (occupations left behind by transfers, revolts or tangled peace deals). Only mixed states are scanned. */
+export function returnPeacetimeOccupations(state: GameState, changed: number[]): void {
+  const fighting = new Map<number, boolean>();
+  const n = state.countries.length;
+  const enemies = (a: CountryId, b: CountryId) => {
+    const k = a * n + b;
+    let v = fighting.get(k);
+    if (v === undefined) { v = !!atWar(state, a, b); fighting.set(k, v); }
+    return v;
+  };
+  for (let s = 1; s < state.states.length; s++) {
+    const ctrls = controllersOf(state, s);
+    if (ctrls.length === 1 && ctrls[0] === state.states[s].owner && state.states[s].controller === ctrls[0]) continue;
+    for (const t of getStateTiles(state.map, s)) {
+      const o = state.owner[t], k = state.controller[t];
+      if (o && k && o !== k && !enemies(o, k)) setTile(state, t, o, o, changed);
+    }
+  }
+}
+systems.month.push((state, _events, changed) => returnPeacetimeOccupations(state, changed));

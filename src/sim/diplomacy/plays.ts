@@ -73,6 +73,8 @@ export function startPlay(state: GameState, initiator: CountryId, target: Countr
   const p: Play = { id: state.nextId++, initiator, target, demands, sideA, sideB, startTick: state.tick, endTick: state.tick + D.PLAY_DAYS * TICKS_PER_DAY };
   state.plays.push(p);
   addInfamy(state, initiator, demands.reduce((n, d) => n + DEMAND_INFAMY[d.kind], 0) * 0.5);
+  // Easy AIs read this to leave the player alone for a while (plays from events count too).
+  if (state.countries[target].isPlayer) state.countries[target].lastDemandedTick = state.tick;
   events.push({ type: 'playStarted', initiator, target, playId: p.id });
   return p;
 }
@@ -106,7 +108,6 @@ handlers.startPlay = (state, cmd: Extract<Command, { type: 'startPlay' }>, event
   const bad = playCheck(state, cmd);
   if (bad) return bad;
   startPlay(state, cmd.country, cmd.target, cmd.demands.map(d => ({ ...d })), events);
-  if (state.countries[cmd.target].isPlayer) state.countries[cmd.target].lastDemandedTick = state.tick;
   return null;
 };
 export function joinCheck(state: GameState, country: CountryId, playId: number): string | null {

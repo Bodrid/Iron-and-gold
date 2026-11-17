@@ -90,4 +90,4 @@ export const TECHS: TechDef[] = [
 /** No prototype: a bad id from a command is simply undefined. */
 export const TECH_BY_ID: Record<string, TechDef> = Object.assign(Object.create(null), Object.fromEntries(TECHS.map(x => [x.id, x])));
 /** Base cost in research points by era. */
-export const ERA_COST = [0, 200, 450, 900, 1600, 2600] as const;
+export const ERA_COST = [0, 200, 450, 900, 2000, 3800] as const;

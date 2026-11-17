@@ -2,7 +2,8 @@ import { ui } from '../store';
 import { defaultSend, type Send } from '../tabs/common';
 import { session } from '../game';
 
-const close = () => { ui.openEvent.value = null; session.game?.resumeAfterEvent(); };
+const answered = () => { if (session.game) session.game.resumeAfterEvent(); else ui.openEvent.value = null; };
+const later = () => { if (session.game) session.game.resumeAfterEvent(true); else ui.openEvent.value = null; };
 
 /** A history event: title, story and 2–3 choices with their effects, over the map. */
 export function EventCard({ send = defaultSend }: { send?: Send }) {
@@ -15,13 +16,13 @@ export function EventCard({ send = defaultSend }: { send?: Send }) {
       <div class="event-card glass">
         <div class="event-head">
           <h2 id={`event-${e.id}`}>{e.title}</h2>
-          <button class="ghost" aria-label="Decide later" onClick={close}>Later</button>
+          <button class="ghost" aria-label="Decide later" onClick={later}>Later</button>
         </div>
         <div class="event-text">{e.text.split('\n\n').map((p, i) => <p key={i}>{p}</p>)}</div>
-        <small class="dim">The game is paused while you decide. If you put it off, the first option is taken after {e.daysLeft} days.</small>
+        <small class="dim">The game is paused while you decide. If you put it off (Nation tab → Waiting for you), the first option is taken after {e.daysLeft} days of game time.</small>
         <div class="event-options">
           {e.options.map((o, i) => (
-            <button key={i} class="event-option" onClick={() => { send({ type: 'chooseEventOption', country: me, pending: e.id, option: i }); close(); }}>
+            <button key={i} class="event-option" onClick={() => { send({ type: 'chooseEventOption', country: me, pending: e.id, option: i }); answered(); }}>
               <b>{o.label}</b>
               {o.effects.map((x, k) => <small key={k}>{x}</small>)}
             </button>

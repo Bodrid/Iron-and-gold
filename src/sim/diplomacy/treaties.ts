@@ -111,7 +111,7 @@ systems.month.push((state, events) => {
   const linked = new Set<string>();
   for (const r of state.tradeRoutes) linked.add(`${Math.min(r.exporter, r.importer)}:${Math.max(r.exporter, r.importer)}`);
   for (const t of state.treaties.slice()) {
-    if (t.kind !== 'tradeAgreement' || state.countries[t.a].isPlayer || state.countries[t.b].isPlayer) continue;
+    if (t.kind !== 'tradeAgreement' || t.since === 0 || state.countries[t.a].isPlayer || state.countries[t.b].isPlayer) continue;   // historical ones (from the start) stay
     if (!linked.has(`${Math.min(t.a, t.b)}:${Math.max(t.a, t.b)}`)) endTreaty(state, t, events);
   }
 });

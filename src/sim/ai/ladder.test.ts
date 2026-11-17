@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest';
-import { makeGame, runYears, makeSmallWorldGame, runYearsCollect } from '../testing';
+import { makeGame, runYears, runYearsCollect } from '../testing';
 import { opportunity } from './ai';
 import { startWar } from '../war';
 import type { Difficulty } from '../types';
@@ -36,12 +36,17 @@ it('opportunity favours a target that is busy or weakened', () => {
   expect(opportunity(g, 2)).toBeGreaterThan(2 * calm);
 });
 
-it('Easy makes demands of the player at most once in five years', () => {
-  let plays = 0;
-  for (let seed = 1; seed <= 8; seed++) {
-    const g = makeSmallWorldGame({ difficulty: 'easy', seed });
-    const player = g.countries.find(c => c.isPlayer)!.id;
-    plays += runYearsCollect(g, 10).filter(e => e.type === 'playStarted' && e.target === player).length;
-  }
-  expect(plays / 8).toBeLessThanOrEqual(2);
+/** The player in the middle, bordering two AIs of the given level. Returns plays made against the player in 10 years. */
+function demandsOnPlayer(seed: number, level: Difficulty): number {
+  const rows = Array.from({ length: 4 }, () => 'AAAAAAPPPPBBBBBB');
+  const g = makeGame({ rows, owners: { A: 'AAA', P: 'PLR', B: 'BBB' }, player: 'PLR', seed, population: 1_000_000, money: 50_000, seedEconomy: true, ai: true, difficulty: level });
+  g.countries[2].population = 300_000;   // a tempting, weak player
+  return runYearsCollect(g, 10).filter(e => e.type === 'playStarted' && e.target === g.countries.find(c => c.isPlayer)!.id).length;
+}
+
+it('Easy makes demands of a neighbouring player at most about once in ten years, and less than Normal', () => {
+  let easy = 0, normal = 0;
+  for (let seed = 1; seed <= 8; seed++) { easy += demandsOnPlayer(seed, 'easy'); normal += demandsOnPlayer(seed, 'normal'); }
+  expect(easy / 8).toBeLessThanOrEqual(1);
+  expect(normal).toBeGreaterThan(easy);
 }, 120_000);
