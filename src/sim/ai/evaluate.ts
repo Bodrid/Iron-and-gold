@@ -3,7 +3,8 @@ import { BUILDINGS, BUILDING_TYPES, type BuildingType } from '../../content/buil
 import { GOODS } from '../../content/goods';
 import { BALANCE } from '../balance';
 import { controllersOf, statesControlledBy } from '../control';
-import { buildCost, buildCostMult, levelOf, maxConstructions, stateSlots } from '../economy';
+import { buildCheck, buildCost, buildCostMult, levelOf, maxConstructions, placementHooks, stateSlots, type BuildRejection } from '../economy';
+import { personalityOf } from '../../content/personalities';
 import { routeCapacity, routesOf, shortage, surplus } from '../naval/trade';
 import type { Country, CountryId, GameState } from '../types';
 import type { Personality } from './personality';
@@ -87,3 +88,23 @@ export function buildOptions(state: GameState, c: Country, pers: Personality, at
   }
   return out;
 }
+
+const SAME_EVERYWHERE: BuildRejection[] = ['needsTech', 'tooManyConstructions', 'cantAfford'];
+
+/** "Build anywhere": the owned state where `type` pays best by the AI's own ranking (then the most populous), or why none will do. */
+export function bestBuildState(state: GameState, country: CountryId, type: BuildingType): number | string {
+  const c = state.countries[country];
+  const atWar = state.wars.some(w => w.sideA.includes(country) || w.sideB.includes(country));
+  const score = new Map(buildOptions(state, c, personalityOf(c.personality), atWar, false).filter(o => o.type === type).map(o => [o.state, o.score]));
+  const rank = (s: number) => [score.get(s) ?? -Infinity, state.states[s].population];
+  let best = 0;
+  for (const st of state.states) {
+    if (!st.id || st.owner !== country) continue;
+    const check = buildCheck(state, country, st.id, type);
+    if (!check.ok) { if (SAME_EVERYWHERE.includes(check.reason)) return check.reason; continue; }
+    const [a, b] = rank(st.id), [x, y] = best ? rank(best) : [-Infinity, -1];
+    if (a > x || (a === x && b > y)) best = st.id;
+  }
+  return best || 'noPlace';
+}
+placementHooks.bestState = bestBuildState;

@@ -75,6 +75,9 @@ export function buildCheck(state: GameState, country: CountryId, stateId: number
   return { ok: true, cost };
 }
 
+/** "Build anywhere" placement; the AI's ranking fills it in from ai/evaluate (kept out of here to avoid an import cycle). */
+export const placementHooks: { bestState: (state: GameState, country: CountryId, type: BuildingType) => number | string } = { bestState: () => 'noPlace' };
+
 /** The state tile nearest its centroid that no other building icon uses. */
 function iconTile(state: GameState, stateId: number): number {
   const sd = state.map.states[stateId];
@@ -250,12 +253,15 @@ export function primeEconomy(state: GameState): void {
 }
 
 // ---- wiring ----
-handlers.build = (state, cmd: Extract<Command, { type: 'build' }>) => {
+handlers.build = (state, cmd: Extract<Command, { type: 'build' }>, events) => {
   if (!BUILDING_TYPES.includes(cmd.building)) return 'unknown building';
-  const check = buildCheck(state, cmd.country, cmd.state, cmd.building);
+  const where = cmd.state ?? placementHooks.bestState(state, cmd.country, cmd.building);
+  if (typeof where === 'string') return where;
+  const check = buildCheck(state, cmd.country, where, cmd.building);
   if (!check.ok) return check.reason;
   state.countries[cmd.country].money -= check.cost;
-  state.constructions.push({ id: state.nextId++, country: cmd.country, state: cmd.state, type: cmd.building, doneTick: state.tick + BUILDINGS[cmd.building].buildDays * TICKS_PER_DAY });
+  state.constructions.push({ id: state.nextId++, country: cmd.country, state: where, type: cmd.building, doneTick: state.tick + BUILDINGS[cmd.building].buildDays * TICKS_PER_DAY });
+  if (cmd.state === undefined) events.push({ type: 'buildOrdered', country: cmd.country, state: where, building: cmd.building });
   return null;
 };
 systems.init.push(state => primeEconomy(state));

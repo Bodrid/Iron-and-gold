@@ -9,6 +9,14 @@ test('build a farm and see it queued', async ({ page }) => {
   await expect(page.getByText(/Farm.*days left/)).toBeVisible();
 });
 
+test('build anywhere: the Build tab orders a farm in the best state', async ({ page }) => {
+  await page.goto('./?e2e=1&quickstart=PRU');
+  await page.waitForFunction(() => (window as any).__gameReady === true, null, { timeout: 60_000 });
+  await page.getByRole('button', { name: 'Build', exact: true }).click();
+  await page.getByRole('button', { name: /^Farm/ }).click();
+  await expect(page.getByText(/Farm ordered in/)).toBeVisible();
+});
+
 test('expand into unclaimed land', async ({ page }) => {
   await page.goto('./?e2e=1&quickstart=USA');
   await page.waitForFunction(() => (window as any).__gameReady === true, null, { timeout: 60_000 });

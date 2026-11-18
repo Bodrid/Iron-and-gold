@@ -3,7 +3,8 @@ import { it, expect, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, screen, fireEvent } from '@testing-library/preact';
 import { BuildTab } from './BuildTab';
 import { ui } from '../store';
-import { BUILDING_TYPES } from '../../content/buildings';
+import { BUILDINGS, BUILDING_TYPES } from '../../content/buildings';
+import { TECH_GATED } from '../../sim/mods';
 import type { StateDetail } from '../../worker/protocol';
 
 function detail(over: Partial<Record<string, any>> = {}): StateDetail {
@@ -39,8 +40,28 @@ it('lists constructions with days left and slot use', () => {
   expect(screen.getByText(/3 of 10 slots/)).toBeTruthy();
 });
 
-it('asks you to pick a state when none of yours is selected', () => {
+it('offers to build anywhere when none of your states is selected', () => {
   ui.selection.value = { ...detail(), owner: 2 };
   render(<BuildTab send={() => {}} />);
-  expect(screen.getByText('Tap one of your states on the map.')).toBeTruthy();
+  expect(screen.getByText('Build anywhere')).toBeTruthy();
+});
+
+it('with no state chosen, a building card sends a build order without a state, and only researched buildings show', () => {
+  ui.selection.value = null;
+  ui.selectedState.value = null;
+  ui.politics.value = null;
+  const sent: any[] = [];
+  render(<BuildTab send={c => sent.push(c)} />);
+  fireEvent.click(screen.getByRole('button', { name: /^Farm/ }));
+  expect(sent).toEqual([{ type: 'build', country: 1, building: 'farm' }]);
+  const gated = BUILDING_TYPES.filter(t => TECH_GATED.has(t));
+  expect(gated.length).toBeGreaterThan(0);
+  for (const t of gated) expect(screen.queryByRole('button', { name: new RegExp(`^${BUILDINGS[t].name}`) })).toBeNull();
+});
+
+it('lists buildable options before the ones that cannot be built', () => {
+  ui.selection.value = detail({ farm: { ok: false, reason: 'noSlots' } });
+  render(<BuildTab send={() => {}} />);
+  const cards = screen.getAllByRole('button').filter(b => b.classList.contains('bcard'));
+  expect(cards.at(-1)!.textContent).toMatch(/^Farm/);
 });

@@ -246,3 +246,15 @@ Calls I made on my own while building Iron & Gold, and small issues left for lat
 **Left for later**
 
 - Unclaimed states can't be taken by events, so there is nothing for Ethiopia, Madagascar or Central Asia yet. Germany still forms in a minority of seeds. Gran Colombia and Iberia rarely form, because the AI weighs those choices low on purpose.
+
+## Build anywhere
+
+**Decisions**
+
+- The Build tab opens on a grid of every researched building. Tapping one sends `build` without a state, and the sim picks the state itself. It ranks states the way the AI does (`buildOptions` score), then by population. A toast says where the building went (`buildOrdered`). If no state can take it, the toast gives the reason: `noPlace`, or the reason that applies to every state (`needsTech`, `tooManyConstructions`, `cantAfford`).
+- The placement lives in `ai/evaluate.ts` behind `placementHooks`. Importing it into `economy.ts` changed the order the monthly systems load in, and that broke the trade test.
+- Choosing a state still works: buildable cards come first, and "Any state" goes back to the grid.
+
+**Left for later**
+
+- The grid shows no costs or availability. Computing them would mean checking every state for every building in every frame, so a tap reports problems through the toast instead.

@@ -46,6 +46,16 @@ it('mines require deposits and ports require a coast', () => {
   expect(buildCheck(h, 1, 1, 'port')).toEqual({ ok: false, reason: 'needsCoast' });
 });
 
+it('a build order without a state goes to the best state that can take it, or says why none can', () => {
+  const g = rich({ rows: ['AABBCC'], owners: { A: 'PPP', B: 'PPP', C: 'QQQ' }, resources: { 'T-B': { iron: true }, 'T-C': { coal: true } } });
+  const r = step(g, [{ type: 'build', country: 1, building: 'ironMine' }]);
+  expect(g.constructions).toEqual([expect.objectContaining({ state: 2, type: 'ironMine' })]);
+  expect(r.events).toContainEqual({ type: 'buildOrdered', country: 1, state: 2, building: 'ironMine' });
+  expect(step(g, [{ type: 'build', country: 1, building: 'coalMine' }]).events).toContainEqual(expect.objectContaining({ type: 'rejected', reason: 'noPlace' }));
+  g.countries[1].money = 0;
+  expect(step(g, [{ type: 'build', country: 1, building: 'farm' }]).events).toContainEqual(expect.objectContaining({ type: 'rejected', reason: 'cantAfford' }));
+});
+
 it('cannot build in states you do not own or that are occupied', () => {
   const g = rich();
   expect(buildCheck(g, 1, 2, 'farm')).toEqual({ ok: false, reason: 'notYours' });

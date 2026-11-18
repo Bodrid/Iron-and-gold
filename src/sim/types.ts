@@ -136,7 +136,8 @@ export interface GameState {
 export type Command =
   | { type: 'attack'; country: CountryId; target: CountryId; ratio: number }
   | { type: 'cancelAttack'; country: CountryId; attackId: number }
-  | { type: 'build'; country: CountryId; state: number; building: BuildingType }
+  /** Without `state`, the sim picks the best of the country's states. */
+  | { type: 'build'; country: CountryId; state?: number; building: BuildingType }
   | { type: 'proposePeace'; country: CountryId; warId: number; terms: PeaceTerms }
   | { type: 'respondPeace'; country: CountryId; from: CountryId; accept: boolean }
   | { type: 'cancelTradeRoute'; country: CountryId; routeId: number }
@@ -180,6 +181,7 @@ export type SimEvent =
   | { type: 'peaceOffered'; from: CountryId; to: CountryId; terms: PeaceTerms }
   | { type: 'peaceRefused'; from: CountryId; to: CountryId }
   | { type: 'built'; country: CountryId; state: number; building: BuildingType }
+  | { type: 'buildOrdered'; country: CountryId; state: number; building: BuildingType }
   | { type: 'eliminated'; country: CountryId }
   | { type: 'rejected'; command: Command; reason: string }
   | { type: 'gameOver'; kind: 'victory' | 'defeat' | 'endDate' }

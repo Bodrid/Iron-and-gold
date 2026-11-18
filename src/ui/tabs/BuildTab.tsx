@@ -1,6 +1,8 @@
-import { BUILDINGS } from '../../content/buildings';
+import { BUILDINGS, BUILDING_TYPES } from '../../content/buildings';
 import { GOOD_NAMES } from '../../content/goods';
 import type { BuildingDef } from '../../content/buildings';
+import { TECH_GATED } from '../../sim/mods';
+import { session } from '../game';
 import { fmtMoney, ui } from '../store';
 import { defaultSend, REASON_TEXT, type Send } from './common';
 
@@ -21,12 +23,33 @@ function effectText(def: BuildingDef): string {
 export function BuildTab({ send = defaultSend }: { send?: Send }) {
   const d = ui.selection.value;
   const me = ui.playerId.value;
-  if (!d || d.id !== ui.selectedState.value || d.owner !== me) return <p class="hint">Tap one of your states on the map.</p>;
+  if (!d || d.id !== ui.selectedState.value || d.owner !== me) {
+    const known = new Set(ui.politics.value?.research.techs.filter(t => t.status === 'known').map(t => t.id));
+    const unlocked = BUILDING_TYPES.filter(t => !TECH_GATED.has(t) || known.has(TECH_GATED.get(t)!));
+    return (
+    <div class="build">
+      <div class="build-head">
+        <b>Build anywhere</b>
+        <small>Tap to build in your best state for it, or tap a state on the map to choose.</small>
+      </div>
+      <div class="cards">
+        {unlocked.map(type => (
+          <button class="bcard" key={type} onClick={() => send({ type: 'build', country: me, building: type })}>
+            <span class="bname">{BUILDINGS[type].name}</span>
+            <small>{effectText(BUILDINGS[type])}</small>
+          </button>
+        ))}
+      </div>
+    </div>
+    );
+  }
   const level = (t: string) => d.buildings.filter(b => b.type === t).reduce((s, b) => s + b.level, 0);
+  // Buildable first, so the useful cards are at the top.
+  const options = [...d.buildOptions].sort((a, b) => Number(b.check.ok) - Number(a.check.ok));
   return (
     <div class="build">
       <div class="build-head">
-        <b>{d.name}</b>
+        <b>{d.name}</b> <button class="ghost" onClick={() => session.game?.selectState(null)}>Any state</button>
         <small>{d.slots.used} of {d.slots.total} slots used{d.resources.coal ? ' · coal' : ''}{d.resources.iron ? ' · iron' : ''}{d.coastal ? ' · coast' : ''}</small>
       </div>
       {d.constructions.length > 0 && (
@@ -35,7 +58,7 @@ export function BuildTab({ send = defaultSend }: { send?: Send }) {
         </ul>
       )}
       <div class="cards">
-        {d.buildOptions.map(({ type, check }) => {
+        {options.map(({ type, check }) => {
           const def = BUILDINGS[type];
           const lv = level(type);
           return (

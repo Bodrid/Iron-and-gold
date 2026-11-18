@@ -180,6 +180,7 @@ export class GameController {
       }
       else if (e.type === 'peace' && (e.a === me || e.b === me)) pushToast({ kind: 'peace', text: `Peace with ${name(e.a === me ? e.b : e.a)}${e.transferred.length ? ` — ${e.transferred.length} state${e.transferred.length > 1 ? 's' : ''} changed hands` : ''}.` });
       else if (e.type === 'peaceRefused' && e.from === me) pushToast({ kind: 'info', text: `${name(e.to)} refused your peace offer.` });
+      else if (e.type === 'buildOrdered' && e.country === me) pushToast({ kind: 'info', text: `${BUILDING_NAMES[e.building]} ordered in ${this.map.states[e.state].name}.` });
       else if (e.type === 'built' && e.country === me) { pushToast({ kind: 'good', text: `${BUILDING_NAMES[e.building]} finished in ${this.map.states[e.state].name}.` }); haptic('light'); }
       else if (e.type === 'annexed' && (e.puppet === me || e.overlord === me)) pushToast({ kind: e.overlord === me ? 'good' : 'war', text: e.overlord === me ? `${name(e.puppet)} has been annexed.` : `${name(e.overlord)} annexed you.` });
       else if (e.type === 'puppeted' && e.overlord === me) pushToast({ kind: 'good', text: `${name(e.puppet)} is now your puppet.` });
@@ -321,7 +322,7 @@ export function rejectionText(reason: string): string {
   const map: Record<string, string> = {
     'not at war': 'You need to be at war to attack them.', 'no border': 'You have no border there to attack across.',
     'not enough troops': 'Not enough troops for that attack.', cantAfford: 'Not enough money.', noSlots: 'No free building slots in that state.',
-    tooManyConstructions: 'Your builders are busy. Wait for a construction to finish.', 'already at war': 'You are already at war with them.',
+    tooManyConstructions: 'Your builders are busy. Wait for a construction to finish.', noPlace: 'None of your states can take that building.', 'already at war': 'You are already at war with them.',
     'already offered': 'You already offered them peace.', 'no such offer': 'That offer has lapsed.', leader: 'Only the war leaders can make peace for everyone.', notTheirState: 'That state isn’t theirs.', needsShipyard: 'Ships are built in a state with a shipyard.', shipyardBusy: 'That shipyard is busy.',
     needsGoods: 'Not enough wood, iron or arms in stock.', 'no port on that sea': 'You need a port on that sea.', 'bad landing': 'Boats can only land on a coast you can attack.',
     unreachable: 'Your ships can’t reach there.',
